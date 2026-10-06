@@ -17,3 +17,11 @@ We used AI tools to help draft and refine some of our documents.
 - *What AI produced:* A Thai translation of the SRS, and a draft Golden Thread covering FR-1 to FR-6 in simple README style.
 - *What we changed / verified:* FR-2 to FR-5 were based on our SRS section 7. FR-1 and FR-6 were written by AI without our design details. 
 - *What we learned:* AI can quickly set up the structure, but it guesses names and details it does not know, so every row must be checked against our real design.
+
+## Entry 3: Drafting the Design Document and Diagrams
+* **Date:** 7 Oct 2026
+* **Tool / model:** Gemini
+* **What we asked:** Help draft the structure for Design-Doc.md, including system architecture overview, Mermaid.js sequence diagrams for Happy and Unhappy paths, data model schema, and UI screen mapping table based on our Must-Have FRs.
+* **What AI produced:** A Markdown draft containing the design document template, Mermaid code for sequence diagrams, ERD/database table specifications, and a UI screen mapping matrix linked to requirements.
+* **What we changed / verified:** Standardized attribute names (e.g., user_id and status) across the data model and diagrams, refined the Unhappy Path sequence flow to match actual validation errors, and verified that all components directly map back to SRS requirements.
+* **What we learned:** AI accelerates writing Mermaid diagram syntax and table formatting, but manual alignment is necessary to ensure attribute names and state logic remain strictly coherent throughout the design specs.
