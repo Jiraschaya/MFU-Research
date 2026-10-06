@@ -3,10 +3,10 @@
  shows how each problem we found leads to requirement, design, feature, and test.
 
 # FR-1: Grant Call Management
--*Problem:* Researchers submit outside the open period or mix up the budget caps of different tiers.
--*Design:* Staff create a call with a tier cap and a deadline. After the deadline the system blocks submissions.
--*Feature:* Grant call management page.
--*Test:* Create a call with a 200k cap, wait until it closes, then try to submit. It should show "Call Closed".
+- *Problem:* Researchers submit outside the open period or mix up the budget caps of different tiers.
+- *Design:* Staff create a call with a tier cap and a deadline. After the deadline the system blocks submissions.
+- *Feature:* Grant call management page.
+- *Test:* Create a call with a 200k cap, wait until it closes, then try to submit. It should show "Call Closed".
 
 # FR-2: Researcher Profile and RS-01 Import
 *Problem:* Researchers spend hours retyping their profile and proposal text for every submission.
