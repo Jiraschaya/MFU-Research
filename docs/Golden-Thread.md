@@ -1,5 +1,7 @@
 # Golden Thread 
 
+ shows how each problem we found leads to requirement, design, feature, and test.
+
 # FR-1: Grant Call Management
 *Problem:* Researchers submit outside the open period or mix up the budget caps of different tiers.
 *Design:* Staff create a call with a tier cap and a deadline. After the deadline the system blocks submissions.
