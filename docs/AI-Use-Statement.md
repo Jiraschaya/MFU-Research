@@ -2,7 +2,7 @@
 
 We used AI tools to help draft and refine some of our documents.
 
-# Entry 1: Refining the SRS
+# Entry 1 : Refining the SRS
 - *Date:* 24 Sep 2026
 - *Tool / model:* Gemini 2.5
 - *What we asked:* Refine the English SRS according to the instructor's feedback image, fix contradictions in the flow, and add usable end-to-end details.
@@ -10,7 +10,7 @@ We used AI tools to help draft and refine some of our documents.
 - *What we changed / verified:* Added field-level form locking rules and an admin reassign for finance claims. Checked all Given/When/Then acceptance criteria.
 - *What we learned:* AI is good at structuring acceptance criteria and traceability, but we had to add the form-level locking logic ourselves so the review flow works in real life.
 
-# Entry 2: Drafting the Golden Thread
+# Entry 2 : Drafting the Golden Thread
 - Date:* 7 Oct 2026
 - Tool / model:* Claude (Anthropic)
 - What we asked:* Help write Golden-Thread.md from our SRS, and translate the SRS into Thai so we could understand it.
