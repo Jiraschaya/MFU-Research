@@ -33,7 +33,7 @@
 - *Test:* Submit a revision where one track is approved and check that its fields are read-only.
 
 # FR-6: Committee Resolution and Award Announcement
-*Problem:* Drafting announcements is slow and results are emailed by hand.
-*Design:* The committee records its decision, then the system generates the announcement and sends notifications automatically.
-*Feature:* Committee resolution page and announcement generator.
-*Test:* Mark a proposal as Approved, generate the announcement, and check that the email and To-Do notification are sent.
+- *Problem:* Drafting announcements is slow and results are emailed by hand.
+- *Design:* The committee records its decision, then the system generates the announcement and sends notifications automatically.
+- *Feature:* Committee resolution page and announcement generator.
+- *Test:* Mark a proposal as Approved, generate the announcement, and check that the email and To-Do notification are sent.
