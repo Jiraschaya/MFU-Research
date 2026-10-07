@@ -50,7 +50,7 @@ The diagram shows the workflow sequence for both the happy path and unhappy path
   3. The UI displays an appropriate Error Message, such as “Form is locked during review” or a missing required field notification.
 
 ## 3. Data Model & Database Schema
-Data Structures Used to Store and Support Must-Have FRs[span_3](start_span)[span_3](end_span)
+Data Structures Used to Store and Support Must-Have FRs
 
 ### Entity-Relationship Summary
 * **Entity 1**: [ชื่อ Entity เช่น Users] — User Profile Data Storage
