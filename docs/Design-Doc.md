@@ -1,36 +1,53 @@
 # Design Document: [MFU-Research]
 
 ## 1. System Architecture Overview
-[อธิบายสถาปัตยกรรมของระบบเชิงแนวคิด เพื่อแสดงการไหลของข้อมูลระหว่างส่วนประกอบต่างๆ]
-* **Frontend Component**: โครงสร้างส่วนต่อประสานผู้ใช้ที่ใช้ทำ Prototype และการจัดการ State ภายในหน้าจอ
-* **Mock Data Layer**: โครงสร้างข้อมูลจำลอง (JSON/State Store) ที่ใช้แทนการต่อ Database จริงในการทำ Clickable Prototype
-* **System Boundary**: ขอบเขตการทำงานของระบบที่ครอบคลุมเฉพาะ Must-Have FRs
+The MFU Research prototype use a layered archiecture to separate user interfaces, workflow processing, and data management. 
+It consists of th Presentation layer, Business Logic layer, and Data Access layer, with the System Boundary defining the scope of the prototype.
+
+* **Presentation Layer**: **Provides interfaces for Researchers, Reviewers, and Finance admins** to interact with the system and view workflow information.
+* **Business Logic Layer**: Handles workflow rules and system behavior, including **Form-Level Locking and Admin Reassign**
+* **Data Mocking Layer: Store simulated **Propoasls** and **Finance Claims** in memory instead of using a real database.
+* **System Boundary**: Defines the functions included in the prototype, focusing on the **Must-have FUnctional Requirement** and excluding processes outside 
+the system scope.
 
 ## 2. UML Diagrams
-### 2.1 Use Case Diagram
-[แนบรูปภาพหรือโค้ด Mermaid Diagram]
 
-* **Actors**: [ระบุผู้ใช้งาน เช่น General User, Admin]
+### 2.1 Use Case Diagram
+
+* **Display the scope of the MFU Research system, focusing on the **Must-have Functional Requirements** (FR-01 to FR-06)
+<img width="1160" height="1055" alt="Screenshot 2026-10-07 021056" src="https://github.com/user-attachments/assets/18663ebb-ecd0-4f6b-be55-9172ecc986d4" />  
+
+* **Actors**: [Researchers, Research chair/Dean, School Secretary, Research Operation Staff, Research Finance Staff, 
+Sub-Committee, Executive/Research Committee]
+
 * **Use Cases**:
-  * `UC-01`: [ชื่อ Use Case] — รองรับ FR-01
-  * `UC-02`: [ชื่อ Use Case] — รองรับ FR-02
+	* `UC-01`: [Open and Manage Call for Proposals] — รองรับ FR-01
+	* `UC-02`: [Manage Researcher Profile & Import Proposal] — รองรับ FR-02
+	* `UC-03`: [Manage Budget & Validate Rules] — รองรับ FR-03
+	* `UC-04`: [School-Level Endorsement & Tracking] — รองรับ FR-04
+	* `UC-05`: [Parallel 2 Track Review, Field Locking & Revise Loop] — รองรับ FR-05
+	* `UC-06`: [Committee Resolution & Award Announcement] — รองรับ FR-06
+
+
 
 ### 2.2 Sequence Diagram
-ไดอะแกรมแสดงลำดับขั้นตอนการทำงานทั้งแบบปกติและแบบเกิดข้อผิดพลาด[span_1](start_span)[span_1](end_span)[span_2](start_span)[span_2](end_span)
+The diagram shows the workflow sequence for both the happy path and unhappy path.
 
-#### Sequence 01: Happy Path ([ชื่อ Flow หลัก])
+#### Sequence 01: Happy Path ([Form Submission and Review-Time Form Locking])
 [แนบ Sequence Diagram แสดงการส่งข้อมูลระหว่าง User -> UI -> Controller/State -> Mock Data]
+
 * **Step-by-step Execution**:
-  1. ผู้ใช้ส่งคำขอผ่านหน้าจอ [ชื่อ UI]
-  2. ระบบประมวลผลและตรวจสอบความถูกต้องของข้อมูล
-  3. ระบบส่งคืนสถานะสำเร็จและอัปเดตหน้าจอ
+  1. The Grant Applicant submits the proposal through the Proposal Submission UI.
+  2. The system processes the request and validates the submitted data.
+  3. The system returns a successful status and updates the UI to display the “Under Review” status.
 
 #### Sequence 02: Unhappy Path / Error Handling ([ชื่อ Flow ข้อผิดพลาด])
 [แนบ Sequence Diagram แสดงการจัดการกรณีข้อมูลไม่ถูกต้อง หรือไม่พบข้อมูล]
+
 * **Step-by-step Execution**:
-  1. ผู้ใช้ส่งข้อมูลที่ไม่ถูกต้อง หรือค้นหารายการที่ไม่พบ
-  2. ระบบตรวจพบข้อผิดพลาดและส่งคืน Error State
-  3. หน้าจอแสดงผลข้อความแจ้งเตือน (Error Message / Empty State)
+  1. The user attempts to modify a locked form or submits an incomplete disbursement request through the relevant UI.
+  2. The system detects the error and returns an Error State.
+  3. The UI displays an appropriate Error Message, such as “Form is locked during review” or a missing required field notification.
 
 ## 3. Data Model & Database Schema
 โครงสร้างข้อมูลที่ใช้จัดเก็บเพื่อรองรับการทำงานของ Must-Have FRs[span_3](start_span)[span_3](end_span)
