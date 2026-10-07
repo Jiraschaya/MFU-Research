@@ -73,7 +73,7 @@ Data Structures Used to Store and Support Must-Have FRs[span_3](start_span)[span
 | `status` | VARCHAR(50) | - | NOT NULL | สถานะของรายการ |
 
 ## 4. UI Mapping & User Flow
-UI-to-Technical Requirements Mapping Table[span_4](start_span)[span_4](end_span)[span_5](start_span)[span_5](end_span)
+UI-to-Technical Requirements Mapping Table
 
 | UI Screen ID | Screen Name | Mapped FR | Action / Trigger | State Handled |
 | :--- | :--- | :--- | :--- | :--- |
