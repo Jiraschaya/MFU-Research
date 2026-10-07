@@ -1,10 +1,10 @@
 # MFU-Research
 ## 1. Project Overview
-ระบบบริหารจัดการงานวิจัยสำหรับมหาวิทยาลัยแม่ฟ้าหลวง (MFU Research Management System) ที่ออกแบบมาเพื่อแก้ไขปัญหาความซับซ้อนในกระบวนการยื่นขอทุนการวิจัย การติดตามสถานะ และการเบิกจ่ายงบประมาณ
+The purpose of the **MFU Research Management System** is to address the complexity of the research grant application process, status tracking, and budget disbursement.
 
-* **Problem Statement**: ขั้นตอนการตรวจสอบโครงการวิจัยและการเบิกจ่ายเงินทุนมีความล่าช้า ไม่สามารถติดตามสถานะ real-time ได้ และขาดระบบควบคุมการแก้ไขข้อมูลตามสิทธิ์ของผู้ใช้งาน
-* **Target Users**: นักวิจัย (นิสิต/อาจารย์), คณะกรรมการพิจารณาโครงการ (School Endorsement Loop), และเจ้าหน้าที่ฝ่ายการเงิน (Finance Admins)
-* **Core Solution**: ระบบจัดการ Workflow การวิจัยแบบ 2-Track Review พร้อมระบบ Form Locking เมื่ออยู่ระหว่างการพิจารณา และระบบ Admin Reassign สำหรับการจัดการคำขอเบิกจ่ายงบประมาณ
+* **Problem Statement**: The research project review and fund disbursement processes are delayed, real-time status tracking is unavailable, and there is a lack of access control for modifying data based on user permissions.
+* **Target Users**: Researchers (students/lecturers), the Project Review Committee (School Endorsement Loop), and Finance Administrators.
+* **Core Solution**: A research workflow management system with a 2-track review process, form locking during the review process, and an Admin Reassign function for managing budget disbursement requests.
 
 ---
 
