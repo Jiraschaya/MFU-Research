@@ -34,7 +34,7 @@ Sub-Committee, Executive/Research Committee]
 The diagram shows the workflow sequence for both the happy path and unhappy path.
 
 #### Sequence 01: Happy Path ([Form Submission and Review-Time Form Locking])
-[แนบ Sequence Diagram แสดงการส่งข้อมูลระหว่าง User -> UI -> Controller/State -> Mock Data]
+<img width="2750" height="1704" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/0e5f5c9d-ff6a-47ad-9a82-0664d356873a" />
 
 * **Step-by-step Execution**:
   1. The Grant Applicant submits the proposal through the Proposal Submission UI.
@@ -42,7 +42,7 @@ The diagram shows the workflow sequence for both the happy path and unhappy path
   3. The system returns a successful status and updates the UI to display the “Under Review” status.
 
 #### Sequence 02: Unhappy Path / Error Handling ([ชื่อ Flow ข้อผิดพลาด])
-[แนบ Sequence Diagram แสดงการจัดการกรณีข้อมูลไม่ถูกต้อง หรือไม่พบข้อมูล]
+<img width="2944" height="2626" alt="mermaid-diagram (1)" src="https://github.com/user-attachments/assets/6d054d5f-face-45ad-9474-9d4c67cee055" />
 
 * **Step-by-step Execution**:
   1. The user attempts to modify a locked form or submits an incomplete disbursement request through the relevant UI.
