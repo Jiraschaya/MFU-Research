@@ -41,7 +41,7 @@ The diagram shows the workflow sequence for both the happy path and unhappy path
   2. The system processes the request and validates the submitted data.
   3. The system returns a successful status and updates the UI to display the “Under Review” status.
 
-#### Sequence 02: Unhappy Path / Error Handling ([ชื่อ Flow ข้อผิดพลาด])
+#### Sequence 02: Unhappy Path / Error Handling ([Attempt to Modify a Locked Form / Disbursement Request Error])
 <img width="2944" height="2626" alt="mermaid-diagram (1)" src="https://github.com/user-attachments/assets/6d054d5f-face-45ad-9474-9d4c67cee055" />
 
 * **Step-by-step Execution**:
@@ -50,11 +50,11 @@ The diagram shows the workflow sequence for both the happy path and unhappy path
   3. The UI displays an appropriate Error Message, such as “Form is locked during review” or a missing required field notification.
 
 ## 3. Data Model & Database Schema
-โครงสร้างข้อมูลที่ใช้จัดเก็บเพื่อรองรับการทำงานของ Must-Have FRs[span_3](start_span)[span_3](end_span)
+Data Structures Used to Store and Support Must-Have FRs[span_3](start_span)[span_3](end_span)
 
 ### Entity-Relationship Summary
-* **Entity 1**: [ชื่อ Entity เช่น Users] — เก็บข้อมูลโปรไฟล์ผู้ใช้
-* **Entity 2**: [ชื่อ Entity เช่น Transactions/Items] — เก็บข้อมูลกิจกรรมหลักของระบบ
+* **Entity 1**: [ชื่อ Entity เช่น Users] — User Profile Data Storage
+* **Entity 2**: [ชื่อ Entity เช่น Transactions/Items] — Core System Activity Data Storage
 
 ### Table Specifications
 
@@ -73,7 +73,7 @@ The diagram shows the workflow sequence for both the happy path and unhappy path
 | `status` | VARCHAR(50) | - | NOT NULL | สถานะของรายการ |
 
 ## 4. UI Mapping & User Flow
-ตารางเชื่อมโยงส่วนต่อประสานผู้ใช้เข้ากับเงื่อนไขทางเทคนิค[span_4](start_span)[span_4](end_span)[span_5](start_span)[span_5](end_span)
+UI-to-Technical Requirements Mapping Table[span_4](start_span)[span_4](end_span)[span_5](start_span)[span_5](end_span)
 
 | UI Screen ID | Screen Name | Mapped FR | Action / Trigger | State Handled |
 | :--- | :--- | :--- | :--- | :--- |
