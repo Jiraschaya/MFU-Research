@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MFU Research · ขอทุนวิจัย</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#faf7f2;--card:#fff;--ink:#2a2420;--mut:#7a6f66;--line:#e6ddd2;--brand:#D2232A;--brand2:#A81B21;--lock:#f5eedd;--gold:#BC9945;--ok:#1f7a4d;--no:#8a1c20;--warn:#9a7420}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17130f;--card:#221c17;--ink:#f1e9df;--mut:#a89c90;--line:#3a3028;--brand:#ef5a60;--brand2:#D2232A;--lock:#2b241d;--gold:#d4b062;--ok:#4cc38a;--no:#ff8a85;--warn:#d4b062}}
+:root[data-theme="dark"]{--bg:#17130f;--card:#221c17;--ink:#f1e9df;--mut:#a89c90;--line:#3a3028;--brand:#ef5a60;--brand2:#D2232A;--lock:#2b241d;--gold:#d4b062;--ok:#4cc38a;--no:#ff8a85;--warn:#d4b062}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans Thai","Sarabun",system-ui,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--gold)}
+.logo{width:44px;height:44px;border-radius:12px;background:#D2232A;color:#fff;border-bottom:4px solid #BC9945;display:grid;place-items:center;font-weight:700}
+h1{font-size:20px;margin:0}header p{margin:0;color:var(--mut);font-size:13px}
+nav{display:flex;gap:6px;background:var(--lock);padding:5px;border-radius:12px;margin-bottom:18px}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:10px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+nav button.on{background:var(--card);color:var(--brand);box-shadow:inset 0 -3px 0 var(--gold),0 1px 3px rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.badge{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--lock);color:var(--mut);font-weight:600;border:1px solid var(--gold)}
+.card.locked{border-top:4px solid var(--gold)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px;font-weight:600}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0}
+.locked input,.locked textarea,input:disabled,select:disabled,textarea:disabled{background:var(--lock);color:var(--ink);cursor:not-allowed;opacity:1;border-style:dashed}
+.btn{border:0;background:var(--brand);color:#fff;padding:11px 20px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--brand2)}.btn.ghost{background:var(--lock);color:var(--ink)}
+.btn.ok{background:var(--ok)}.btn.no{background:var(--no)}.btn.sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.note{font-size:13px;color:var(--mut)}.err{color:var(--no);font-size:13px;margin-top:8px;min-height:18px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);font-weight:600}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:p 1.6s infinite}
+.live.off{color:var(--warn)}.live.off i{background:var(--warn);animation:none}
+@keyframes p{50%{opacity:.3}}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.app h3{margin:0;font-size:16px}.code{font-family:ui-monospace,monospace;font-size:12px;color:var(--mut)}
+.steps{display:flex;margin:16px 0 8px;overflow-x:auto;padding-bottom:6px}
+.st{flex:1;min-width:84px;text-align:center;position:relative;font-size:12px;color:var(--mut)}
+.st::before{content:"";position:absolute;top:13px;left:-50%;width:100%;height:3px;background:var(--line)}
+.st:first-child::before{display:none}
+.st b{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;margin:0 auto 4px;background:var(--line);color:var(--mut);font-size:13px}
+.st.done b,.st.cur b{background:var(--brand);color:#fff}.st.done::before,.st.cur::before{background:var(--brand)}
+.st.cur{color:var(--ink);font-weight:700}.st.cur b{box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 25%,transparent)}
+.st.ok b{background:var(--ok)}.st.no b{background:var(--no)}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#fff;background:var(--brand)}
+.tag.ok{background:var(--ok)}.tag.no{background:var(--no)}
+.log{margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--mut)}
+.log li{padding:3px 0}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+.search{display:flex;gap:8px;margin-bottom:14px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">MFU</div><div><h1>MFU Research · ขอทุนวิจัย</h1><p>ระบบยื่นคำขอและติดตามสถานะทุนวิจัยสำหรับอาจารย์</p></div><button class="btn ghost sm" id="lang" style="margin-left:auto" aria-label="Language">EN</button></header>
+<nav><button id="t1" class="on">แบบฟอร์มขอทุน</button><button id="t2">ติดตามสถานะ</button></nav>
+
+<section id="v1">
+  <div class="card locked">
+    <h2>ส่วนที่ 1 · รายละเอียดทุน <span class="badge">🔒 ล็อก แก้ไขไม่ได้</span></h2>
+    <p class="sub">ข้อมูลส่วนนี้กำหนดโดยหน่วยงาน ผู้ยื่นคำขอไม่สามารถแก้ไขได้</p>
+    <div class="grid" id="lockedGrid"></div>
+  </div>
+  <div class="card">
+    <h2>ส่วนที่ 2 · ข้อมูลผู้ยื่นและโครงการ <span class="badge" id="b2">กรอกได้</span></h2>
+    <p class="sub">เมื่อกดยื่นคำขอแล้ว ฟอร์มทั้งหมดจะถูกล็อกทันที</p>
+    <div class="grid" id="f2">
+      <div><label>ชื่อ-นามสกุล *</label><input id="name" placeholder="ผศ.ดร. ..."></div>
+      <div><label>อีเมลมหาวิทยาลัย *</label><input id="email" type="email" placeholder="name@mfu.ac.th"></div>
+      <div><label>สำนักวิชา / หน่วยงาน *</label><input id="dept"></div>
+      <div><label>งบประมาณที่ขอ (บาท) *</label><input id="budget" type="number" min="0"></div>
+      <div class="full"><label>ชื่อโครงการวิจัย *</label><input id="title"></div>
+      <div class="full"><label>บทคัดย่อโครงการ *</label><textarea id="abs" rows="5"></textarea></div>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="row" style="margin-top:8px"><span class="note" id="hint"></span><span><button class="btn ghost hide addBtn" id="addNew">+ เพิ่มงานวิจัย</button> <button class="btn" id="submit">ยื่นคำขอทุน</button></span></div>
+  </div>
+</section>
+
+<section id="v2" class="hide">
+  <div class="row" style="margin-bottom:12px"><button class="btn sm addBtn">+ เพิ่มงานวิจัย</button><span class="live" id="live"><i></i><span>เรียลไทม์</span></span><span class="note" id="who"></span></div>
+  <div class="search"><input id="q" placeholder="ค้นหาด้วยรหัสติดตาม / ชื่อผู้ยื่น / ชื่อโครงการ"></div>
+  <div id="list"></div>
+</section>
+</div>
+
+<script>
+// ===== ส่วนที่ล็อก: แก้ค่าตรงนี้ก่อนเผยแพร่ =====
+const LOCKED=[
+ ["ชื่อทุน","ทุนสนับสนุนงานวิจัย MFU Research"],
+ ["หน่วยงานเจ้าของทุน","มหาวิทยาลัยแม่ฟ้าหลวง"],
+ ["กลุ่มผู้มีสิทธิ์ยื่น","อาจารย์ประจำ"],
+ ["วงเงินสูงสุดต่อโครงการ","300,000 บาท"],
+ ["ระยะเวลาโครงการ","ไม่เกิน 12 เดือน"],
+ ["ช่วงเวลารับสมัคร","ตามประกาศของหน่วยงาน"],
+ ["เงื่อนไข","ผู้ยื่น 1 คนต่อ 1 โครงการ · โครงการต้องผ่านการรับรองจริยธรรมการวิจัย (ถ้ามี) · ผลการพิจารณาของคณะกรรมการถือเป็นที่สิ้นสุด",true]
+];
+const STEPS=["ยื่นคำขอ","ตรวจเอกสาร","กรรมการพิจารณา","ผลการพิจารณา","ทำสัญญา"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=t=>new Date(t).toLocaleString(lang==="en"?"en-GB":"th-TH",{dateStyle:"medium",timeStyle:"short"});
+
+let lang="th";
+const EN={
+"MFU Research · ขอทุนวิจัย":"MFU Research · Research Grant",
+"ระบบยื่นคำขอและติดตามสถานะทุนวิจัยสำหรับอาจารย์":"Research grant application and status tracking for faculty",
+"แบบฟอร์มขอทุน":"Grant Application","ติดตามสถานะ":"Status Tracker",
+"ส่วนที่ 1 · รายละเอียดทุน":"Part 1 · Grant Details","🔒 ล็อก แก้ไขไม่ได้":"🔒 Locked · read-only",
+"ข้อมูลส่วนนี้กำหนดโดยหน่วยงาน ผู้ยื่นคำขอไม่สามารถแก้ไขได้":"This section is set by the university and cannot be edited by applicants.",
+"ส่วนที่ 2 · ข้อมูลผู้ยื่นและโครงการ":"Part 2 · Applicant & Project","กรอกได้":"Editable","🔒 ล็อกแล้ว":"🔒 Locked",
+"เมื่อกดยื่นคำขอแล้ว ฟอร์มทั้งหมดจะถูกล็อกทันที":"Once submitted, the whole form is locked immediately.",
+"ชื่อ-นามสกุล *":"Full name *","อีเมลมหาวิทยาลัย *":"University email *","สำนักวิชา / หน่วยงาน *":"School / Department *",
+"งบประมาณที่ขอ (บาท) *":"Requested budget (THB) *","ชื่อโครงการวิจัย *":"Research project title *","บทคัดย่อโครงการ *":"Project abstract *",
+"ผศ.ดร. ...":"Asst. Prof. Dr. ...","ค้นหาด้วยรหัสติดตาม / ชื่อผู้ยื่น / ชื่อโครงการ":"Search by tracking code / applicant / project title",
+"ยื่นคำขอทุน":"Submit application","+ เพิ่มงานวิจัย":"+ Add research","✅ ยื่นแล้ว รหัสติดตาม:":"✅ Submitted. Tracking code:",
+"เรียลไทม์":"Live","เรียลไทม์ · อัปเดตอัตโนมัติ":"Live · updates automatically","การเชื่อมต่อขัดข้อง":"Connection problem",
+"โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)":"Offline mode (data not shared)",
+"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"Role: Admin — can advance status","สิทธิ์: ผู้ยื่นคำขอ — ดูสถานะได้":"Role: Applicant — view only",
+"ชื่อทุน":"Grant name","หน่วยงานเจ้าของทุน":"Funding body","กลุ่มผู้มีสิทธิ์ยื่น":"Eligible applicants","วงเงินสูงสุดต่อโครงการ":"Maximum per project",
+"ระยะเวลาโครงการ":"Project duration","ช่วงเวลารับสมัคร":"Application period","เงื่อนไข":"Conditions",
+"ทุนสนับสนุนงานวิจัย MFU Research":"MFU Research Grant","มหาวิทยาลัยแม่ฟ้าหลวง":"Mae Fah Luang University","อาจารย์ประจำ":"Full-time faculty",
+"300,000 บาท":"300,000 THB","ไม่เกิน 12 เดือน":"Up to 12 months","ตามประกาศของหน่วยงาน":"As announced by the university",
+"ผู้ยื่น 1 คนต่อ 1 โครงการ · โครงการต้องผ่านการรับรองจริยธรรมการวิจัย (ถ้ามี) · ผลการพิจารณาของคณะกรรมการถือเป็นที่สิ้นสุด":"One project per applicant · Research ethics approval required where applicable · The committee's decision is final",
+"ยื่นคำขอ":"Submitted","ตรวจเอกสาร":"Document check","กรรมการพิจารณา":"Committee review","ผลการพิจารณา":"Decision","ทำสัญญา":"Contract",
+"อนุมัติ":"Approved","ไม่อนุมัติ":"Rejected","เสร็จสิ้น":"Completed","เลื่อนไป:":"Move to:","อัปเดตล่าสุด":"Last updated","บาท":"THB",
+"ไม่พบรายการที่ค้นหา":"No matching results","ยังไม่มีคำขอทุน — ยื่นคำขอจากแท็บแบบฟอร์ม":"No applications yet — submit one from the Grant Application tab",
+"กรุณากรอกข้อมูลที่มี * ให้ครบ":"Please fill in all fields marked *","รูปแบบอีเมลไม่ถูกต้อง":"Invalid email format",
+"ส่งไม่สำเร็จ ลองใหม่อีกครั้ง":"Submission failed. Please try again.","อัปเดตไม่สำเร็จ":"Update failed"
+};
+const TH=Object.fromEntries(Object.entries(EN).map(([k,v])=>[v,k]));
+const T=x=>lang==="en"?(EN[x]||x):x;
+function walk(){
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const ns=[];
+  while(w.nextNode())ns.push(w.currentNode);
+  ns.forEach(n=>{const pe=n.parentElement;if(!pe||pe.closest("script,textarea,#list"))return;
+    const t=n.nodeValue.trim();if(!t)return;const base=TH[t]||t;
+    if(EN[base]||TH[t])n.nodeValue=n.nodeValue.replace(t,lang==="en"?EN[base]:base)});
+  document.querySelectorAll("[placeholder]").forEach(e=>{const t=e.placeholder,base=TH[t]||t;if(EN[base])e.placeholder=lang==="en"?EN[base]:base});
+  document.title=T("MFU Research · ขอทุนวิจัย");document.documentElement.lang=lang;$("lang").textContent=lang==="en"?"TH":"EN";
+}
+function setLang(l){lang=l;walk();renderLocked();render()}
+let db=null,user=null,coll=null,apps=[],isAdmin=false,myId=null,submitted=false;
+
+function renderLocked(){$("lockedGrid").innerHTML=LOCKED.map(([k,v,w])=>`<div class="${w?"full":""}"><label>${T(k)}</label>${w?`<textarea rows="3" disabled>${esc(T(v))}</textarea>`:`<input value="${esc(T(v))}" disabled>`}</div>`).join("")}
+renderLocked();$("lang").onclick=()=>setLang(lang==="en"?"th":"en");
+
+// tabs
+function tab(n){$("v1").classList.toggle("hide",n!=1);$("v2").classList.toggle("hide",n!=2);$("t1").classList.toggle("on",n==1);$("t2").classList.toggle("on",n==2)}
+$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);
+
+function lockForm(){submitted=true;document.querySelectorAll("#f2 input,#f2 textarea").forEach(e=>e.disabled=true);$("submit").disabled=true;$("b2").textContent=T("🔒 ล็อกแล้ว");$("addNew").classList.remove("hide");}
+
+// ===== data layer =====
+async function connect(){
+  try{
+    if(!window.claude)throw 0;
+    db=await claude.use("db");user=await claude.use("user");
+    if(!db)throw 0;
+    isAdmin=!!(user&&user.canEdit());
+    try{myId=user&&user.id?await user.id():null}catch(e){}
+    coll=db.collection("grant_apps");
+    coll.onSnapshot(s=>{apps=s.docs.map(d=>({id:d.id,...d.data()}));setLive(true);render()},()=>setLive(false));
+  }catch(e){db=null;setLive(false);$("live").lastChild.textContent=T("โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)");isAdmin=true}
+  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: ผู้ยื่นคำขอ — ดูสถานะได้");
+  render();
+}
+function setLive(on){if(!db)return;$("live").classList.toggle("off",!on);$("live").lastChild.textContent=T(on?"เรียลไทม์ · อัปเดตอัตโนมัติ":"การเชื่อมต่อขัดข้อง")}
+async function save(id,data,isNew){
+  if(db){isNew?await coll.doc(id).set(data):await coll.doc(id).update(data)}
+  else{const i=apps.findIndex(a=>a.id===id);i<0?apps.unshift({id,...data}):Object.assign(apps[i],data);render()}
+}
+
+function newApp(){
+  tab(1);
+  if(submitted){
+    ["title","abs","budget"].forEach(k=>$(k).value="");
+    document.querySelectorAll("#f2 input,#f2 textarea").forEach(e=>e.disabled=false);
+    $("submit").disabled=false;submitted=false;$("hint").textContent="";$("err").textContent="";
+    $("b2").textContent=T("กรอกได้");$("addNew").classList.add("hide");
+  }
+  $("title").focus();scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".addBtn").forEach(b=>b.onclick=newApp);
+// ===== submit =====
+$("submit").onclick=async()=>{
+  const v={name:$("name").value.trim(),email:$("email").value.trim(),dept:$("dept").value.trim(),budget:$("budget").value,title:$("title").value.trim(),abs:$("abs").value.trim()};
+  if(Object.values(v).some(x=>!x)){$("err").textContent=T("กรุณากรอกข้อมูลที่มี * ให้ครบ");return}
+  if(!/^\S+@\S+\.\S+$/.test(v.email)){$("err").textContent=T("รูปแบบอีเมลไม่ถูกต้อง");return}
+  const lim=300000;if(+v.budget<=0||+v.budget>lim){$("err").textContent=lang==="en"?"Budget must be between 1 and "+lim.toLocaleString()+" THB":"งบประมาณต้องอยู่ระหว่าง 1 – "+lim.toLocaleString()+" บาท";return}
+  const id="MFU-"+Math.floor(10000+Math.random()*90000);
+  $("submit").disabled=true;$("err").textContent="";
+  try{
+    await save(id,{...v,budget:+v.budget,step:0,result:null,owner:myId,createdAt:Date.now(),log:[{step:0,at:Date.now()}]},true);
+    lockForm();$("hint").innerHTML=T("✅ ยื่นแล้ว รหัสติดตาม:")+" <b>"+id+"</b>";
+    $("q").value=id;render();
+  }catch(e){$("submit").disabled=false;$("err").textContent=T("ส่งไม่สำเร็จ ลองใหม่อีกครั้ง")}
+};
+
+// ===== tracker =====
+async function advance(id,result){
+  const a=apps.find(x=>x.id===id);if(!a)return;
+  let step=a.step,res=a.result;
+  if(result){step=3;res=result}else step=Math.min(4,a.step+1);
+  const log=[...(a.log||[]),{step,at:Date.now(),result:res}];
+  try{await save(id,{step,result:res,log})}catch(e){alert(T("อัปเดตไม่สำเร็จ"))}
+}
+window.adv=advance;
+function render(){
+  const q=$("q").value.trim().toLowerCase(),tt=T;
+  const rows=apps.filter(a=>!q||[a.id,a.name,a.title].some(x=>String(x||"").toLowerCase().includes(q))).sort((a,b)=>b.createdAt-a.createdAt);
+  if(!rows.length){$("list").innerHTML='<div class="card empty">'+tt(apps.length?"ไม่พบรายการที่ค้นหา":"ยังไม่มีคำขอทุน — ยื่นคำขอจากแท็บแบบฟอร์ม")+"</div>";return}
+  const res=r=>tt(r==="rejected"?"ไม่อนุมัติ":"อนุมัติ");
+  $("list").innerHTML=rows.map(a=>{
+    const rej=a.result==="rejected",fin=a.step===3&&rej;
+    const st=STEPS.map((s,i)=>{
+      let c=i<a.step?"done":i===a.step?"cur":"";
+      if(i===3&&a.step>=3)c=rej?"cur no":"done ok";
+      const label=i===3&&a.step>=3?res(a.result):tt(s);
+      return `<div class="st ${c}"><b>${c.includes("done")||c.includes("ok")?"✓":c.includes("no")?"✕":i+1}</b>${label}</div>`}).join("");
+    const tag=rej?`<span class="tag no">${tt("ไม่อนุมัติ")}</span>`:a.step===4?`<span class="tag ok">${tt("เสร็จสิ้น")}</span>`:a.step===3?`<span class="tag ok">${tt("อนุมัติ")}</span>`:`<span class="tag">${tt(STEPS[a.step])}</span>`;
+    let ctl="";
+    if(isAdmin&&!fin&&a.step<4){
+      ctl=a.step===2?`<button class="btn ok sm" onclick="adv('${a.id}','approved')">${tt("อนุมัติ")}</button> <button class="btn no sm" onclick="adv('${a.id}','rejected')">${tt("ไม่อนุมัติ")}</button>`
+        :`<button class="btn sm" onclick="adv('${a.id}')">${tt("เลื่อนไป:")} ${tt(STEPS[a.step+1])} →</button>`}
+    const log=(a.log||[]).slice().reverse().map(l=>`<li>• ${fmt(l.at)} — ${l.step===3?res(l.result):tt(STEPS[l.step])}</li>`).join("");
+    return `<div class="card app"><div class="row"><div><h3>${esc(a.title)}</h3><div class="code">${a.id} · ${esc(a.name)} · ${esc(a.dept)} · ${(+a.budget).toLocaleString()} ${tt("บาท")}</div></div>${tag}</div>
+    <div class="steps">${st}</div><div class="row"><span class="note">${tt("อัปเดตล่าสุด")} ${fmt((a.log||[]).slice(-1)[0]?.at||a.createdAt)}</span><div>${ctl}</div></div><ul class="log">${log}</ul></div>`}).join("");
+}
+$("q").oninput=render;
+connect();
+</script>
+</body>
+</html>
