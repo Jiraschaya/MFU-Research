@@ -121,6 +121,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 @media(max-width:600px){.pipe{overflow-x:auto;grid-template-columns:repeat(4,minmax(78px,1fr))}}
 .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.ctl .noteIn{flex:1;min-width:160px;padding:7px 10px;font-size:14px}
 details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
+/* animated hamburger */
+#burger{width:44px;height:44px;padding:0;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden;transition:transform .3s ease 0s}
+#burger:hover{background:var(--card);transform:rotate(-90deg)}
+#burger span{display:block;width:22px;height:3px;border-radius:8px;background:var(--ink);transform-origin:left center;flex:none;margin:0}
+#burger span:first-child{transform:translate(0,-250%);transition:all .3s ease .3s}
+#burger span:nth-child(2){transition:all .3s ease .3s}
+#burger span:last-child{transform:translate(0,250%);transition:all .3s ease .3s}
+#burger:hover span:first-child{width:11px;transform:translate(0,100%) rotate(50deg);transition:all .3s ease 0s}
+#burger:hover span:nth-child(2){transform:translateX(-300%);transition:all .3s ease 0s}
+#burger:hover span:last-child{width:11px;transform:translate(0,-100%) rotate(-50deg);transition:all .3s ease 0s}
+@media (prefers-reduced-motion:reduce){#burger,#burger span{transition:none!important}}
 </style>
 </head>
 <body>
@@ -139,8 +150,8 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 <div class="bd" id="bd"></div>
 <div class="main">
  <div class="top">
-  <button class="icb" id="burger" aria-label="menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-  <div class="ttl"><b>MFU RESEARCH</b><small>ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</small></div>
+  <button class="icb" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+  <div class="ttl"><b>MFU RESEARCH</b><small>มหาวิทยาลัยแม่ฟ้าหลวง</small></div>
   <div class="sp"></div>
   <button class="btn ghost sm" id="lang" aria-label="Language">EN</button>
   <button class="icb" id="bell" aria-label="notifications"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><i class="dot hide" id="dot"></i></button>
