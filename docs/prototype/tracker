@@ -211,7 +211,7 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 const LOCKED=[
  ["ชื่อทุน","ทุนสนับสนุนงานวิจัย MFU Research"],
  ["หน่วยงานเจ้าของทุน","มหาวิทยาลัยแม่ฟ้าหลวง"],
- ["กลุ่มผู้มีสิทธิ์ยื่น","อาจารย์ประจำ"],
+ ["กลุ่มผู้มีสิทธิ์ยื่น","นักวิจัย(หัวหน้าโครงการ)"],
  ["วงเงินสูงสุดต่อโครงการ","300,000 บาท"],
  ["ระยะเวลาโครงการ","ไม่เกิน 12 เดือน"],
  ["ช่วงเวลารับสมัคร","ตามประกาศของหน่วยงาน"],
@@ -235,13 +235,13 @@ const EN={
 "งบประมาณที่ขอ (บาท) *":"Requested budget (THB) *","ชื่อโครงการวิจัย *":"Research project title *","บทคัดย่อโครงการ *":"Project abstract *",
 "ผศ.ดร. ...":"Asst. Prof. Dr. ...","ค้นหาด้วยรหัสติดตาม / ชื่อผู้ยื่น / ชื่อโครงการ":"Search by tracking code / applicant / project title",
 "ยื่นคำขอทุน":"Submit application","สิทธิ์: นักวิจัย — ดูสถานะได้":"Role: Lecturer — view only","สลับเป็นผู้ดูแล":"Switch to admin view","กลับมุมมองนักวิจัย":"Back to lecturer view","หมายเหตุ (ไม่บังคับ)":"Note (optional)","หมายเหตุจากเจ้าหน้าที่":"Note from staff","ประวัติการอัปเดต":"Update history","+ เพิ่มประกาศ":"+ Add announcement","แก้ไขประกาศ":"Edit announcement","หัวข้อประกาศ":"Announcement title","รายละเอียด":"Details","บันทึก":"Save","ลบประกาศ":"Remove","ยกเลิก":"Cancel","ความเคลื่อนไหวล่าสุด":"Recent activity","ติดตามโครงการล่าสุด":"Latest project tracking","ดูรายละเอียด":"View details","สถานะตอนนี้":"Current status","ล้างตัวกรอง":"Clear filter","อัปเดตสถานะ:":"Status update:",
-"ได้รับคำขอแล้ว รอเจ้าหน้าที่ตรวจเอกสาร":"Application received — waiting for document check","เจ้าหน้าที่กำลังตรวจความครบถ้วนของเอกสาร":"Staff are checking that your documents are complete","คณะกรรมการกำลังพิจารณาข้อเสนอโครงการ":"The committee is reviewing your proposal","โครงการได้รับอนุมัติ รอดำเนินการทำสัญญา":"Approved — contract to be arranged","ทำสัญญาเรียบร้อย เริ่มดำเนินโครงการได้":"Contract signed — you can start the project","ผลการพิจารณา: ไม่อนุมัติ":"Decision: not approved","ยังไม่มีความเคลื่อนไหว":"No activity yet","เมนูสำหรับอาจารย์":"Lecturer menu","หน้าหลัก":"Home","โครงการของฉัน":"My projects","โปรไฟล์อาจารย์":"Lecturer profile","ยื่นข้อเสนอใหม่":"New proposal","ต้องการความช่วยเหลือ?":"Need help?","ติดต่อสำนักงานบริหารงานวิจัย":"Contact the Research Administration Office","โทร. 02-123-4567":"Tel. 02-123-4567","ยินดีต้อนรับเข้าสู่ระบบ":"Welcome to the system","พื้นที่สำหรับอาจารย์":"Lecturer Workspace","ยื่นข้อเสนอโครงการ ติดตามสถานะ และจัดการข้อมูลอาจารย์ของคุณได้อย่างสะดวกในที่เดียว":"Submit proposals, track status and manage your researcher information in one place","โครงการทั้งหมด":"All projects","กำลังพิจารณา":"Under review","ประชาสัมพันธ์":"Announcement","เปิดรับข้อเสนอโครงการทุนวิจัย MFU Research":"MFU Research grant proposals are now open","ดูรายละเอียดทุนและยื่นข้อเสนอได้ที่เมนู “ยื่นข้อเสนอใหม่”":"See grant details and submit under “New proposal”","ยื่นข้อเสนอ →":"Submit a proposal →","โครงการล่าสุด":"Recent projects","ดูทั้งหมด":"View all","อาจารย์":"Lecturer","ผู้ดูแล":"Admin","ติดตามสถานะโครงการแบบเรียลไทม์":"Track project status in real time","ข้อมูลอาจารย์":"Lecturer information","ข้อมูลนี้จะถูกใช้กรอกฟอร์มให้อัตโนมัติ และเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น":"Used to pre-fill the form; stored only in your browser","ชื่อ-นามสกุล":"Full name","อีเมลมหาวิทยาลัย":"University email","สำนักวิชา / หน่วยงาน":"School / Department","บันทึกโปรไฟล์":"Save profile","บันทึกแล้ว ✓":"Saved ✓","ยังไม่มีโครงการ":"No projects yet","+ เพิ่มงานวิจัย":"+ Add research","✅ ยื่นแล้ว รหัสติดตาม:":"✅ Submitted. Tracking code:",
+"ได้รับคำขอแล้ว รอเจ้าหน้าที่ตรวจเอกสาร":"Application received — waiting for document check","เจ้าหน้าที่กำลังตรวจความครบถ้วนของเอกสาร":"Staff are checking that your documents are complete","คณะกรรมการกำลังพิจารณาข้อเสนอโครงการ":"The committee is reviewing your proposal","โครงการได้รับอนุมัติ รอดำเนินการทำสัญญา":"Approved — contract to be arranged","ทำสัญญาเรียบร้อย เริ่มดำเนินโครงการได้":"Contract signed — you can start the project","ผลการพิจารณา: ไม่อนุมัติ":"Decision: not approved","ยังไม่มีความเคลื่อนไหว":"No activity yet","เมนูสำหรับนักวิจัย":"Researcher menu","หน้าหลัก":"Home","โครงการของฉัน":"My projects","โปรไฟล์นักวิจัย":"Researcher profile","ยื่นข้อเสนอใหม่":"New proposal","ต้องการความช่วยเหลือ?":"Need help?","ติดต่อสำนักงานบริหารงานวิจัย":"Contact the Research Administration Office","โทร. 02-123-4567":"Tel. 02-123-4567","ยินดีต้อนรับเข้าสู่ระบบ":"Welcome to the system","พื้นที่สำหรับนักวิจัย":"Researcher Workspace","ยื่นข้อเสนอโครงการ ติดตามสถานะ และจัดการข้อมูลของคุณได้อย่างสะดวกในที่เดียว":"Submit proposals, track status and manage your information in one place","โครงการทั้งหมด":"All projects","กำลังพิจารณา":"Under review","ประชาสัมพันธ์":"Announcement","เปิดรับข้อเสนอโครงการทุนวิจัย MFU Research":"MFU Research grant proposals are now open","ดูรายละเอียดทุนและยื่นข้อเสนอได้ที่เมนู “ยื่นข้อเสนอใหม่”":"See grant details and submit under “New proposal”","ยื่นข้อเสนอ →":"Submit a proposal →","โครงการล่าสุด":"Recent projects","ดูทั้งหมด":"View all","นักวิจัย":"Researcher","ผู้ดูแล":"Admin","ติดตามสถานะโครงการแบบเรียลไทม์":"Track project status in real time","ข้อมูลนักวิจัย":"Researcher information","ข้อมูลนี้จะถูกใช้กรอกฟอร์มให้อัตโนมัติ และเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น":"Used to pre-fill the form; stored only in your browser","ชื่อ-นามสกุล":"Full name","อีเมลมหาวิทยาลัย":"University email","สำนักวิชา / หน่วยงาน":"School / Department","บันทึกโปรไฟล์":"Save profile","บันทึกแล้ว ✓":"Saved ✓","ยังไม่มีโครงการ":"No projects yet","+ เพิ่มงานวิจัย":"+ Add research","✅ ยื่นแล้ว รหัสติดตาม:":"✅ Submitted. Tracking code:",
 "เรียลไทม์":"Live","เรียลไทม์ · อัปเดตอัตโนมัติ":"Live · updates automatically","การเชื่อมต่อขัดข้อง":"Connection problem",
 "โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)":"Offline mode (data not shared)",
 "สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"Role: Admin — can advance status","สิทธิ์: ผู้ยื่นคำขอ — ดูสถานะได้":"Role: Applicant — view only",
 "ชื่อทุน":"Grant name","หน่วยงานเจ้าของทุน":"Funding body","กลุ่มผู้มีสิทธิ์ยื่น":"Eligible applicants","วงเงินสูงสุดต่อโครงการ":"Maximum per project",
 "ระยะเวลาโครงการ":"Project duration","ช่วงเวลารับสมัคร":"Application period","เงื่อนไข":"Conditions",
-"ทุนสนับสนุนงานวิจัย MFU Research":"MFU Research Grant","มหาวิทยาลัยแม่ฟ้าหลวง":"Mae Fah Luang University","อาจารย์ประจำ":"Full-time faculty",
+"ทุนสนับสนุนงานวิจัย MFU Research":"MFU Research Grant","มหาวิทยาลัยแม่ฟ้าหลวง":"Mae Fah Luang University","นักวิจัย(หัวหน้าโครงการ)":"Reasearcher(PI)",
 "300,000 บาท":"300,000 THB","ไม่เกิน 12 เดือน":"Up to 12 months","ตามประกาศของหน่วยงาน":"As announced by the university",
 "ผู้ยื่น 1 คนต่อ 1 โครงการ · โครงการต้องผ่านการรับรองจริยธรรมการวิจัย (ถ้ามี) · ผลการพิจารณาของคณะกรรมการถือเป็นที่สิ้นสุด":"One project per applicant · Research ethics approval required where applicable · The committee's decision is final",
 "ยื่นคำขอ":"Submitted","ตรวจเอกสาร":"Document check","กรรมการพิจารณา":"Committee review","ผลการพิจารณา":"Decision","ทำสัญญา":"Contract",
@@ -285,7 +285,7 @@ async function connect(){
     coll.onSnapshot(s=>{apps=s.docs.map(d=>norm({id:d.id,...d.data()}));setLive(true);notify();render()},()=>setLive(false));
   }catch(e){db=null;setLive(false);$("live").lastChild.textContent=T("โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)");canAdmin=true;isAdmin=false}
   setChip();
-  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: อาจารย์ — ตรวจสอบสถานะได้");
+  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: นักวิจัย — ตรวจสอบสถานะได้");
   render();
 }
 function setLive(on){if(!db)return;$("live").classList.toggle("off",!on);$("live").lastChild.textContent=T(on?"เรียลไทม์ · อัปเดตอัตโนมัติ":"การเชื่อมต่อขัดข้อง")}
@@ -398,7 +398,7 @@ $("pSave").onclick=()=>{profile={name:$("pName").value.trim(),email:$("pEmail").
   if(!submitted){["name","email","dept"].forEach(k=>$(k).value=profile[k])}
   setChip();$("pMsg").textContent=T("บันทึกแล้ว ✓")};
 function setChip(){$("uName").textContent=profile.name||"—";$("av").textContent=(profile.name||"R").trim().charAt(0).toUpperCase();
-  $("uRole").textContent=T(isAdmin?"ผู้ดูแล":"อาจารย์");
+  $("uRole").textContent=T(isAdmin?"ผู้ดูแล":"นักวิจัย");
   
   $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: นักวิจัย — ตรวจสอบสถานะได้");
   $("dot").classList.toggle("hide",!apps.some(a=>vis(a)&&a.step>=3))}
