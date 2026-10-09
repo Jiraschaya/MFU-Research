@@ -20,34 +20,15 @@ throughout the approval process.
 
 * **Scope**
 
-**In Scope**
 
-	1.Grant Call Management: Create and manage funding opportunities, budget limits, and submission deadlines.
-
-	2.Researcher Profile and Proposal Import: Store researcher profile information and import proposal content from RS-01 Word documents.
-
-	3.Budget Management and Validation: Support Form 17.2 Excel files and web-based budget forms, calculate budget totals, and validate budget limits.
-
-	4.School-Level Endorsement and Tracking: Allow School Chairs or Deans to endorse proposals or return them for revision, while School Secretaries track proposal statuses and comments.
-
-	5.Parallel Review and Revision: Support separate content and finance review tracks, lock approved information during revisions, and route revised proposals to the appropriate reviewers.
-
-	6.Committee Decisions and Award Announcements: Record committee decisions, generate official award announcements, and notify researchers of the results.
-
-	
-**Out of Scope**
-
-	1.Contract signing and project bank account recording.
-
-	2.Installment tracking and fund disbursement.
-
-	3.Progress report submissions and final report evaluations.
-
-	4.Financial voucher auditing and asset return management.
-
-	5.Post-award change requests, such as time extensions and budget transfers.
-
-	6.Numerical evaluation using a 100-point scoring rubric.
+| IN SCOPE (MVP this term) | OUT OF SCOPE (explicit promise) |
+| :--- | :--- |
+| **FR-1** Manage grant call cycles, deadlines, and tier caps. | Contract signing and project bank account recording. |
+| **FR-2** Single-source Researcher Profile & RS-01 .docx import. | Installment tracking and disbursement payouts (50/40/10). |
+| **FR-3** Budget Form 17.2 (Excel/Web) with tier & 25% sub-cap validation. | Progress report submissions and final full report evaluation. |
+| **FR-4** School-level Endorsement & Secretary tracking dashboard. | Financial voucher auditing (WJ.1–9) and asset return. |
+| **FR-5** Parallel 2-Track Review (Content/Finance) & Auto-Route Revise Loop. | Post-award change requests (time extensions, budget transfers). |
+| **FR-6** Executive Committee resolutions & Award Announcement generation. | 100-point rubric scoring (deprecated for Comment-based in Phase 1). |  
 	
 
 * **Success Metrics**
