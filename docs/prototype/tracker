@@ -63,7 +63,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 .side.collapsed{margin-left:-268px}
 .brand{display:flex;align-items:center;gap:10px;padding:2px 6px 16px;border-bottom:1px solid var(--line)}
 .logo2{width:46px;height:46px;border-radius:50%;background:#D2232A;border:3px solid #BC9945;color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px}
-.brand b{display:block;color:var(--brand);font-size:18px;letter-spacing:.3px;line-height:1.2}.brand small{color:var(--gold);font-weight:600;font-size:12px}
+.brand b{display:block;color:#8B0000;font-size:18px;letter-spacing:.3px;line-height:1.2}.brand small{color:var(--gold);font-weight:600;font-size:12px}
 .menu-l{font-size:12px;color:var(--mut);font-weight:700;margin:18px 8px 8px;letter-spacing:.5px}
 .menu{display:flex;flex-direction:column;gap:6px}
 .menu button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;padding:12px 14px;border-radius:12px;cursor:pointer;text-align:left}
@@ -126,7 +126,7 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 <body>
 <div class="app">
 <aside id="side" class="side">
- <div class="brand"><div class="logo2">R</div><div><b>MFU RESEARCH</b><small>ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</small></div></div>
+ <div class="brand"><img src="logo.png" alt="MFU Logo" style="width: 46px; height: auto;"><div><b>MFU RESEARCH</b><small>ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</small></div></div>
  <div class="menu-l">เมนูสำหรับนักวิจัย</div>
  <div class="menu">
   <button data-pg="home" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>หน้าหลัก</span></button>
