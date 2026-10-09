@@ -126,30 +126,30 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
 <body>
 <div class="app">
 <aside id="side" class="side">
- <div class="brand"><div class="logo2">R</div><div><b>MFU RESEARCH</b><small>มหาวิทยาลัยแม่ฟ้าหลวง</small></div></div>
- <div class="menu-l">เมนูสำหรับอาจารย์</div>
+ <div class="brand"><div class="logo2">R</div><div><b>MFU RESEARCH</b><small>ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</small></div></div>
+ <div class="menu-l">เมนูสำหรับนักวิจัย</div>
  <div class="menu">
   <button data-pg="home" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>หน้าหลัก</span></button>
   <button data-pg="mine"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 17h6"/></svg><span>โครงการของฉัน</span></button>
-  <button data-pg="profile"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>โปรไฟล์อาจารย์</span></button>
+  <button data-pg="profile"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>โปรไฟล์นักวิจัย</span></button>
   <button data-pg="new"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M9 13h6M9 17h6"/></svg><span>ยื่นข้อเสนอใหม่</span></button>
  </div>
- <div class="help"><b>ต้องการความช่วยเหลือ?</b><span>ติดต่อสำนักงานบริหารงานวิจัย</span><span>โทร. 02-123-4567</span></div>
+ <div class="help"><b>ต้องการความช่วยเหลือ?</b><span>ติดต่อส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</span><span>โทร. 0-5391-6387</span></div>
 </aside>
 <div class="bd" id="bd"></div>
 <div class="main">
  <div class="top">
   <button class="icb" id="burger" aria-label="menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-  <div class="ttl"><b>MFU Research</b><small>มหาวิทยาลัยแม่ฟ้าหลวง</small></div>
+  <div class="ttl"><b>MFU RESEARCH</b><small>ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</small></div>
   <div class="sp"></div>
   <button class="btn ghost sm" id="lang" aria-label="Language">EN</button>
   <button class="icb" id="bell" aria-label="notifications"><svg class="ic" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg><i class="dot hide" id="dot"></i></button>
-  <div class="chip"><div class="av" id="av">R</div><div><b id="uName">—</b><small id="uRole">อาจารย์</small></div></div>
+  <div class="chip"><div class="av" id="av">R</div><div><b id="uName">—</b><small id="uRole">นักวิจัย</small></div></div>
  </div>
  <div class="content">
 
  <section id="pg-home" class="pg on">
-  <div class="hero"><div><small>ยินดีต้อนรับเข้าสู่ระบบ</small><h2>พื้นที่สำหรับอาจารย์</h2><p>ยื่นข้อเสนอโครงการ ติดตามสถานะ และจัดการข้อมูลอาจารย์ของคุณได้อย่างสะดวกในที่เดียว</p></div><div class="heroic"><div class="ring"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 17h6"/></svg></div></div></div>
+  <div class="hero"><div><small>ยินดีต้อนรับเข้าสู่ระบบ</small><h2>พื้นที่สำหรับนักวิจัย</h2><p>ยื่นข้อเสนอโครงการ ติดตามสถานะ และจัดการข้อมูลของคุณได้อย่างสะดวกในที่เดียว</p></div><div class="heroic"><div class="ring"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 17h6"/></svg></div></div></div>
   <div class="stats">
    <div class="stat"><b id="sTotal">0</b><span>โครงการทั้งหมด</span></div>
    <div class="stat"><b id="sProg">0</b><span>กำลังพิจารณา</span></div>
@@ -170,7 +170,7 @@ details{margin-top:8px}summary{cursor:pointer;color:var(--mut);font-size:13px}
  </section>
 
  <section id="pg-profile" class="pg">
-  <div class="card"><h2>ข้อมูลอาจารย์</h2><p class="sub">ข้อมูลนี้จะถูกใช้กรอกฟอร์มให้อัตโนมัติ และเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น</p>
+  <div class="card"><h2>ข้อมูลนักวิจัย</h2><p class="sub">ข้อมูลนี้จะถูกใช้กรอกฟอร์มให้อัตโนมัติ และเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น</p>
    <div class="grid">
     <div><label>ชื่อ-นามสกุล</label><input id="pName"></div>
     <div><label>อีเมลมหาวิทยาลัย</label><input id="pEmail" type="email"></div>
@@ -225,7 +225,7 @@ const fmt=t=>new Date(t).toLocaleString(lang==="en"?"en-GB":"th-TH",{dateStyle:"
 let lang="th";
 const EN={
 "MFU Research · ขอทุนวิจัย":"MFU Research · Research Grant",
-"ระบบยื่นคำขอและติดตามสถานะทุนวิจัยสำหรับอาจารย์":"Research grant application and status tracking for faculty",
+"ระบบยื่นคำขอและติดตามสถานะทุนวิจัยสำหรับนักวิจัย":"Research grant application and status tracking for faculty",
 "แบบฟอร์มขอทุน":"Grant Application","ติดตามสถานะ":"Status Tracker",
 "ส่วนที่ 1 · รายละเอียดทุน":"Part 1 · Grant Details","🔒 ล็อก แก้ไขไม่ได้":"🔒 Locked · read-only",
 "ข้อมูลส่วนนี้กำหนดโดยหน่วยงาน ผู้ยื่นคำขอไม่สามารถแก้ไขได้":"This section is set by the university and cannot be edited by applicants.",
@@ -234,7 +234,7 @@ const EN={
 "ชื่อ-นามสกุล *":"Full name *","อีเมลมหาวิทยาลัย *":"University email *","สำนักวิชา / หน่วยงาน *":"School / Department *",
 "งบประมาณที่ขอ (บาท) *":"Requested budget (THB) *","ชื่อโครงการวิจัย *":"Research project title *","บทคัดย่อโครงการ *":"Project abstract *",
 "ผศ.ดร. ...":"Asst. Prof. Dr. ...","ค้นหาด้วยรหัสติดตาม / ชื่อผู้ยื่น / ชื่อโครงการ":"Search by tracking code / applicant / project title",
-"ยื่นคำขอทุน":"Submit application","สิทธิ์: อาจารย์ — ดูสถานะได้":"Role: Lecturer — view only","สลับเป็นผู้ดูแล":"Switch to admin view","กลับมุมมองอาจารย์":"Back to lecturer view","หมายเหตุ (ไม่บังคับ)":"Note (optional)","หมายเหตุจากเจ้าหน้าที่":"Note from staff","ประวัติการอัปเดต":"Update history","+ เพิ่มประกาศ":"+ Add announcement","แก้ไขประกาศ":"Edit announcement","หัวข้อประกาศ":"Announcement title","รายละเอียด":"Details","บันทึก":"Save","ลบประกาศ":"Remove","ยกเลิก":"Cancel","ความเคลื่อนไหวล่าสุด":"Recent activity","ติดตามโครงการล่าสุด":"Latest project tracking","ดูรายละเอียด":"View details","สถานะตอนนี้":"Current status","ล้างตัวกรอง":"Clear filter","อัปเดตสถานะ:":"Status update:",
+"ยื่นคำขอทุน":"Submit application","สิทธิ์: นักวิจัย — ดูสถานะได้":"Role: Lecturer — view only","สลับเป็นผู้ดูแล":"Switch to admin view","กลับมุมมองนักวิจัย":"Back to lecturer view","หมายเหตุ (ไม่บังคับ)":"Note (optional)","หมายเหตุจากเจ้าหน้าที่":"Note from staff","ประวัติการอัปเดต":"Update history","+ เพิ่มประกาศ":"+ Add announcement","แก้ไขประกาศ":"Edit announcement","หัวข้อประกาศ":"Announcement title","รายละเอียด":"Details","บันทึก":"Save","ลบประกาศ":"Remove","ยกเลิก":"Cancel","ความเคลื่อนไหวล่าสุด":"Recent activity","ติดตามโครงการล่าสุด":"Latest project tracking","ดูรายละเอียด":"View details","สถานะตอนนี้":"Current status","ล้างตัวกรอง":"Clear filter","อัปเดตสถานะ:":"Status update:",
 "ได้รับคำขอแล้ว รอเจ้าหน้าที่ตรวจเอกสาร":"Application received — waiting for document check","เจ้าหน้าที่กำลังตรวจความครบถ้วนของเอกสาร":"Staff are checking that your documents are complete","คณะกรรมการกำลังพิจารณาข้อเสนอโครงการ":"The committee is reviewing your proposal","โครงการได้รับอนุมัติ รอดำเนินการทำสัญญา":"Approved — contract to be arranged","ทำสัญญาเรียบร้อย เริ่มดำเนินโครงการได้":"Contract signed — you can start the project","ผลการพิจารณา: ไม่อนุมัติ":"Decision: not approved","ยังไม่มีความเคลื่อนไหว":"No activity yet","เมนูสำหรับอาจารย์":"Lecturer menu","หน้าหลัก":"Home","โครงการของฉัน":"My projects","โปรไฟล์อาจารย์":"Lecturer profile","ยื่นข้อเสนอใหม่":"New proposal","ต้องการความช่วยเหลือ?":"Need help?","ติดต่อสำนักงานบริหารงานวิจัย":"Contact the Research Administration Office","โทร. 02-123-4567":"Tel. 02-123-4567","ยินดีต้อนรับเข้าสู่ระบบ":"Welcome to the system","พื้นที่สำหรับอาจารย์":"Lecturer Workspace","ยื่นข้อเสนอโครงการ ติดตามสถานะ และจัดการข้อมูลอาจารย์ของคุณได้อย่างสะดวกในที่เดียว":"Submit proposals, track status and manage your researcher information in one place","โครงการทั้งหมด":"All projects","กำลังพิจารณา":"Under review","ประชาสัมพันธ์":"Announcement","เปิดรับข้อเสนอโครงการทุนวิจัย MFU Research":"MFU Research grant proposals are now open","ดูรายละเอียดทุนและยื่นข้อเสนอได้ที่เมนู “ยื่นข้อเสนอใหม่”":"See grant details and submit under “New proposal”","ยื่นข้อเสนอ →":"Submit a proposal →","โครงการล่าสุด":"Recent projects","ดูทั้งหมด":"View all","อาจารย์":"Lecturer","ผู้ดูแล":"Admin","ติดตามสถานะโครงการแบบเรียลไทม์":"Track project status in real time","ข้อมูลอาจารย์":"Lecturer information","ข้อมูลนี้จะถูกใช้กรอกฟอร์มให้อัตโนมัติ และเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น":"Used to pre-fill the form; stored only in your browser","ชื่อ-นามสกุล":"Full name","อีเมลมหาวิทยาลัย":"University email","สำนักวิชา / หน่วยงาน":"School / Department","บันทึกโปรไฟล์":"Save profile","บันทึกแล้ว ✓":"Saved ✓","ยังไม่มีโครงการ":"No projects yet","+ เพิ่มงานวิจัย":"+ Add research","✅ ยื่นแล้ว รหัสติดตาม:":"✅ Submitted. Tracking code:",
 "เรียลไทม์":"Live","เรียลไทม์ · อัปเดตอัตโนมัติ":"Live · updates automatically","การเชื่อมต่อขัดข้อง":"Connection problem",
 "โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)":"Offline mode (data not shared)",
@@ -285,7 +285,7 @@ async function connect(){
     coll.onSnapshot(s=>{apps=s.docs.map(d=>norm({id:d.id,...d.data()}));setLive(true);notify();render()},()=>setLive(false));
   }catch(e){db=null;setLive(false);$("live").lastChild.textContent=T("โหมดออฟไลน์ (ข้อมูลไม่ถูกแชร์)");canAdmin=true;isAdmin=false}
   setChip();
-  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: อาจารย์ — ดูสถานะได้");
+  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: อาจารย์ — ตรวจสอบสถานะได้");
   render();
 }
 function setLive(on){if(!db)return;$("live").classList.toggle("off",!on);$("live").lastChild.textContent=T(on?"เรียลไทม์ · อัปเดตอัตโนมัติ":"การเชื่อมต่อขัดข้อง")}
@@ -315,9 +315,9 @@ $("submit").onclick=async()=>{
   $("submit").disabled=true;$("err").textContent="";
   try{
     await save(id,{...v,budget:+v.budget,step:0,result:null,owner:myId,createdAt:Date.now(),log:[{step:0,at:Date.now()}]},true);
-    lockForm();$("hint").innerHTML=T("✅ ยื่นแล้ว รหัสติดตาม:")+" <b>"+id+"</b>";
+    lockForm();$("hint").innerHTML=T("✅ ยื่นข้อเสนอแล้ว รหัสติดตาม:")+" <b>"+id+"</b>";
     $("q").value=id;render();
-  }catch(e){$("submit").disabled=false;$("err").textContent=T("ส่งไม่สำเร็จ ลองใหม่อีกครั้ง")}
+  }catch(e){$("submit").disabled=false;$("err").textContent=T("ส่งไม่สำเร็จ กรุณาลองใหม่อีกครั้ง")}
 };
 
 // ===== tracker =====
@@ -400,7 +400,7 @@ $("pSave").onclick=()=>{profile={name:$("pName").value.trim(),email:$("pEmail").
 function setChip(){$("uName").textContent=profile.name||"—";$("av").textContent=(profile.name||"R").trim().charAt(0).toUpperCase();
   $("uRole").textContent=T(isAdmin?"ผู้ดูแล":"อาจารย์");
   
-  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: อาจารย์ — ดูสถานะได้");
+  $("who").textContent=T(isAdmin?"สิทธิ์: ผู้ดูแล — เลื่อนสถานะได้":"สิทธิ์: นักวิจัย — ตรวจสอบสถานะได้");
   $("dot").classList.toggle("hide",!apps.some(a=>vis(a)&&a.step>=3))}
 function go(pg){
   document.querySelectorAll(".pg").forEach(e=>e.classList.toggle("on",e.id==="pg-"+pg));
