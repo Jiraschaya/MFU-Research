@@ -25,3 +25,11 @@ We used AI tools to help draft and refine some of our documents.
 * **What AI produced:** A Markdown draft containing the design document template, Mermaid code for sequence diagrams, ERD/database table specifications, and a UI screen mapping matrix linked to requirements.
 * **What we changed / verified:** Standardized attribute names (e.g., user_id and status) across the data model and diagrams, refined the Unhappy Path sequence flow to match actual validation errors, and verified that all components directly map back to SRS requirements.
 * **What we learned:** AI accelerates writing Mermaid diagram syntax and table formatting, but manual alignment is necessary to ensure attribute names and state logic remain strictly coherent throughout the design specs.
+
+## Entry 4 : Debugging Prototype Role Switching & Updating Prototype Documentation
+- *Date:* 11 Oct 2026
+- *Tool / model:* Gemini
+- *What we asked:* Debug why the sidebar role switching dropdown and portal cards were not updating roles properly, fix the missing `RGMS.switchRole` export in `shared.js`, and update `prototype.md` to reflect the latest MVP Phase 1 design, 2-track review architecture, and Command Palette feature.
+- *What AI produced:* Root cause analysis of state and DOM mounting issues, code fixes for `shared.js` and `index.html`, and a fully generated `prototype.md` documenting the updated architecture.
+- *What we changed / verified:* Exported `switchRole` into `global.RGMS`, fixed `#role-grid` element ID binding in `index.html`, verified role-based sidebar rendering across all pages, and checked that `prototype.md` accurately matches the live prototype implementation.
+- *What we learned:* Functions referenced directly in inline HTML event handlers (`onchange`, `onclick`) must be explicitly exported to global scope objects, and `localStorage` role state must serve as the single source of truth without conflicting page-level auto-sync logic.
