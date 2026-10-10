@@ -34,16 +34,19 @@ throughout the approval process.
 * **Success Metrics**
 
 	**1. Reduce Manual Status Tracking**
-		- **Problem**: Applicants need to contact staff to find out the progress of their proposals.
-		- **How the system solves it**: Users can check their proposal statuses directly through the Dashboard.
-		- **Success Metric**: Users can view the correct proposal status without needing to contact staff for updates.
+  
+		Problem: Applicants need to contact staff to find out the progress of their proposals.
+		How the system solves it: Users can check their proposal statuses directly through the Dashboard.
+		Success Metric: Users can view the correct proposal status without needing to contact staff for updates.
 
 	**2. Reduce Errors in the Review Process**
-		- **Problem**: Manual document handling and proposal routing may cause proposals to be sent to the wrong stage of the review process.
-		- **How the system solves it**: The system manages proposal endorsement, revision requests, and resubmissions according to the defined workflow.
-		- **Success Metric**: Proposals are correctly routed to the next step in the review process.
+  
+		Problem: Manual document handling and proposal routing may cause proposals to be sent to the wrong stage of the review process.
+		How the system solves it: The system manages proposal endorsement, revision requests, and resubmissions according to the defined workflow.
+		Success Metric: Proposals are correctly routed to the next step in the review process.
 
 	**3. Reduce Rework During the Review Process**
-		- **Problem**: During revisions, information that has already been approved may be changed, or proposals may be returned to the wrong reviewers.
-		- **How the system solves it**: The system locks information in approved review tracks and routes proposals back only to the reviewers responsible for the tracks that still require revision.
-		- **Success Metric**: Approved information remains unchanged, and proposals are routed to the correct reviewers.
+  
+		Problem: During revisions, information that has already been approved may be changed, or proposals may be returned to the wrong reviewers.
+		How the system solves it: The system locks information in approved review tracks and routes proposals back only to the reviewers responsible for the tracks that still require revision.
+		Success Metric: Approved information remains unchanged, and proposals are routed to the correct reviewers.
