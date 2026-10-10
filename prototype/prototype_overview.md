@@ -18,11 +18,13 @@ Prototype เชิงสาธิต (clickable) · 2026-09-20 · v1 · **ป�
 
 ตามคำสั่ง scope ของผู้ใช้ (2026-09-22):
 1. **นักวิจัยส่งโครงการเข้ามา** ผ่านสำนักวิชาและคณบดี (endorse ในระบบ)
-2. **ส่งมาส่วนบริหารงานวิจัยตรวจ** → คณะอนุกรรมการให้ข้อคิดเห็น (comment-based ไม่ใช่คะแนน rubric) → ส่งกลับแก้ไข วนซ้ำได้
+2. **ส่งมาส่วนบริหารงานวิจัยตรวจ** → คณะอนุกรรมการและเจ้าหน้าที่การเงินให้ข้อคิดเห็น (comment-based ไม่ใช่คะแนน rubric) → ส่งกลับแก้ไข วนซ้ำได้
 3. **เมื่อแก้ไขครบถ้วนแล้ว** → คกก.ส่งเสริมมีมติ → ประกาศโครงการที่ผ่าน
 
+---
+
 ## วงจรงาน (lifecycle) — เฟส 1 เท่านั้น
-```
+```text
 draft → submitted
       → [endorse: ประธานวิจัยสำนักวิชา/คณบดี] ── ไม่ผ่าน → กลับไป draft (นักวิจัยแก้ไข)
       → ผ่าน → screening (เจ้าหน้าที่ตรวจความครบถ้วน)
@@ -38,7 +40,11 @@ draft → submitted
 สถานะเฟส 4–5 เดิม (`ongoing`/`progress`/`final`/`financial`/`closed`) ยังอยู่ใน mock data เดิมเพื่อไม่ให้ข้อมูลจำลองพัง
 แต่**ไม่มีหน้าจอ/แอ็กชันสำหรับสถานะเหล่านี้แล้ว** — `project-detail.html` แสดงข้อความ "อยู่นอกขอบเขตของ prototype นี้" แทน
 
-## บทบาทผู้ใช้ (roles)
+---
+
+## บทบาทผู้ใช้และการจัดการสิทธิ์ (Role State Management)
+
+### บทบาทหลักในระบบ (Roles)
 | บทบาท | หน้าเริ่มต้น | ทำอะไร |
 |---|---|---|
 | นักวิจัย | `researcher-home.html` | ยื่นข้อเสนอ ติดตามสถานะ ปรับแก้ตามข้อคิดเห็น (ระบบส่งเฉพาะแทร็กที่ยังไม่รับรองกลับไปตรวจซ้ำให้อัตโนมัติ) |
@@ -49,12 +55,20 @@ draft → submitted
 | **เจ้าหน้าที่การเงิน (แทร็กการเงิน)** | `finance-review-queue.html` | รับตรวจโครงการแบบ claim (คนแรกที่ claim = ผู้รับผิดชอบต่อเนื่องทุกรอบ) ตรวจงบ 17.2 ให้ข้อคิดเห็น/รับรอง — FR-82–83 |
 | ผู้บริหาร / คกก.ส่งเสริม | `staff-agenda.html` | บันทึกมติต่อโครงการที่ทั้ง 2 แทร็กรับรองครบแล้ว + ประกาศโครงการที่ผ่าน — FR-59, FR-85 |
 
-## ไฟล์
+### กลไกการสลับบทบาท (Single Source of Truth)
+- **State Storage:** บันทึกรหัสบทบาทปัจจุบันลงใน `localStorage` ภายใต้ Key `"rgms_role"`
+- **การเลือกจาก Gateway Portal (`index.html`):** ผูก Event Listener บนการ์ดเลือกสิทธิ์ (`#role-grid`) เรียกใช้ `RGMS.setRole(id)` แล้วนำทางไปยังหน้า Home ของสิทธิ์นั้น
+- **Master Role Switcher (Sidebar ซ้ายล่าง):** ทุกหน้ามี Dropdown สลับบทบาทใน `app-sidebar__footer` เรียกใช้ `RGMS.switchRole(roleId)` ซึ่งจะอัปเดต `localStorage` และเปลี่ยนหน้า Dashboard ไปยังสิทธิ์นั้นโดยอัตโนมัติ
+
+---
+
+## รายการไฟล์ในระบบ
+
 | ไฟล์ | หน้าที่ | ระยะ/บทบาท |
 |---|---|---|
-| `index.html` | เลือกบทบาท (โหมดสาธิต) | ทุกบทบาท |
-| `style.css` | design system "Analyst Console" (token เดียว) | — |
-| `shared.js` | ข้อมูลจำลอง + nav shell + helper (badge/เงิน/timeline/modal/toast/มติ/ประกาศผล) | — |
+| `index.html` | เลือกบทบาท (Gateway Portal โหมดสาธิต) | ทุกบทบาท |
+| `style.css` | design system "Analyst Console" (MFU Red & Gold Theme) | — |
+| `shared.js` | ข้อมูลจำลอง + nav shell + Command Palette + helper (badge/เงิน/timeline/modal/toast/มติ/ประกาศผล/สลับบทบาท) | — |
 | `researcher-home.html` | โครงการของฉัน + สิ่งที่ต้องทำ + การ์ดทุนที่เปิดรับ | นักวิจัย |
 | `researcher-profile.html` | โปรไฟล์นักวิจัย — RS-01 ส่วน ข (ประวัติ) กรอกครั้งเดียว ใช้ทุกข้อเสนอ — FR-80 | นักวิจัย |
 | `chair-review.html` | รับรองข้อเสนอระดับสำนักวิชา (ผ่าน/ส่งกลับแก้ไข) — FR-74 | ประธานวิจัย/คณบดี |
@@ -80,14 +94,43 @@ draft → submitted
 | `reviewer-book.html` | พิจารณาเล่มฉบับสมบูรณ์ — เฟส 5 (FR-55–57) |
 | `overview.html` | แดชบอร์ดผู้บริหาร funnel/งบ (FR-39–40) — บทบาทผู้บริหารใน MVP นี้คือบันทึกมติ+ประกาศผลที่ `staff-agenda.html` แทน |
 
+---
+
+## ฟังก์ชันและ Helper สำคัญใน `shared.js` (`global.RGMS`)
+
+- **Role & Navigation Shell:**
+  - `RGMS.renderAppNav(pageId)`: เรนเดอร์ Sidebar และ User Component ตามบทบาทปัจจุบัน
+  - `RGMS.switchRole(roleId)`: เปลี่ยนสิทธิ์ผู้ใช้, อัปเดต `localStorage`, และ Redirect ไปยังหน้า Home ของ Role
+  - `RGMS.currentRole()`, `RGMS.setRole(id)`
+- **Universal Command Palette (`Cmd + K` / `Ctrl + K`):**
+  - ระบบคีย์บอร์ดชอร์ตคัตค้นหาคำสั่ง ค้นหาหน้าจอ และวาร์ปเปลี่ยนหน้าอย่างรวดเร็วทั่วทั้งแอปพลิเคชัน
+- **Parallel 2-Track Review Management:**
+  - `RGMS.contentTrackStatus(id)`, `RGMS.setContentTrackStatus(id, st)`
+  - `RGMS.financeTrackStatus(id)`, `RGMS.setFinanceTrackStatus(id, st)`
+  - `RGMS.claimFinance(id, name)`: ผูกเจ้าหน้าที่การเงินกับโครงการแบบ claim-based
+  - `RGMS.bothTracksCleared(id)`: ตรวจสอบว่าผ่านการรับรองครบทั้ง 2 แทร็กพร้อมกันหรือไม่
+  - `RGMS.resubmitTracks(id)`: ล็อกแทร็กที่ผ่านแล้ว (`cleared`) และปลดแทร็กที่ต้องแก้กลับไป `pending` อัตโนมัติ
+- **Budget Rules & Validation:**
+  - `RGMS.calculateBudgetRules(total, travel, equipment)`: ตรวจเกณฑ์เพดานหมวดค่าเดินทางและครุภัณฑ์ไม่เกิน 25% (FR-3)
+  - `RGMS.budgetTableHTML(p)`, `RGMS.attachNeed(itemName)`
+- **System Utilities:**
+  - `RGMS.toast(msg, kind)`, `RGMS.modal(opts)`, `RGMS.resetDemoData()`
+
+---
+
 ## วิธีรัน
-prototype เป็น static HTML ล้วน แต่ต้องเปิดผ่าน HTTP (ใช้ localStorage/นำทางข้ามหน้า):
+
+Prototype เป็น static HTML ล้วน แต่ต้องเปิดผ่าน HTTP Server (เพื่อการอ่าน-เขียน `localStorage` และนำทางผ่าน query string):
+
 ```bash
 cd docs/02-design/01-prototypes/20260920-01-v1
 python3 -m http.server 8799
-# เปิด http://localhost:8799/index.html
+# เปิดเบราว์เซอร์ไปที่ http://localhost:8799/index.html
 ```
-> หมายเหตุ: อย่าใช้ `npx serve` แบบ clean-url (ตัด query string ทิ้งเวลา redirect) — ถ้าต้องใช้ Node ให้ใช้ `npx http-server -c-1` แทน
+
+> **หมายเหตุ:** อย่าใช้ `npx serve` แบบ clean-url (เพราะจะตัด query string ทิ้งเวลา redirect) — หากต้องการใช้ Node ให้ใช้ `npx http-server -c-1` แทน
+
+---
 
 ## งบประมาณ: 2 โหมด (toggle) — "อัปโหลด Excel" + "กรอกในระบบ"
 - **อัปโหลด Excel (default):** ดาวน์โหลดเทมเพลต → กรอกใน Excel → drag-drop/เลือก .xlsx → SheetJS อ่านชีท "ตาราง ข้อ 17.2" จริง → ตารางจัดกลุ่ม + งวด + subtotal + ตรวจกฎ
@@ -95,33 +138,26 @@ python3 -m http.server 8799
 - ทั้งสองโหมด map เป็น budget item shape เดียวกัน → ใช้ `budgetChecks()` ตัวเดียวตรวจ เพดาน/25%/แนบ TOR
 - `BUDGET_CATS` + `attachNeed()` ใน shared.js เป็น master 6 หมวด
 
-## การพิจารณา — 2 แทร็กคู่ขนาน เนื้อหา/การเงิน (FR-82–85) แทนที่การมองเป็นแทร็กเดียวใน FR-77 เดิม
+---
+
+## การพิจารณา — 2 แทร็กคู่ขนาน เนื้อหา/การเงิน (FR-82–85)
 ขั้น "พิจารณา" (หลัง screening) มี **ผู้ตรวจ 2 บทบาทคู่ขนาน ไม่ใช่กลุ่มเดียว**:
-1. **แทร็กเนื้อหา** (คณะอนุกรรมการ, `reviewer-list.html`/`reviewer-console.html`) — comment-based ให้ **คำวินิจฉัย**
-   (เห็นควรสนับสนุน / ให้ปรับแก้ / ไม่สนับสนุน) + **ข้อคิดเห็น/ข้อเสนอแนะ** เป็นข้อความ ไม่มีการให้คะแนน/ถ่วงน้ำหนัก
-   (`RGMS.CRITERIA` เป็นเพียง "ประเด็นประกอบการพิจารณา" ให้อ่านประกอบ)
-2. **แทร็กการเงิน** (เจ้าหน้าที่การเงิน 2–3 คน, `finance-review-queue.html`/`finance-review-console.html`) — ดูเฉพาะ
-   งบประมาณ (ตาราง 17.2) ทำงานแบบ **claim**: ใครกด "รับตรวจ" โครงการไหนก่อน จะผูกเป็นผู้รับผิดชอบแทร็กการเงินของ
-   โครงการนั้น**ต่อเนื่องทุกรอบ** (รวมรอบตรวจซ้ำหลังแก้ไข ไม่สุ่มมอบหมายใหม่)
+1. **แทร็กเนื้อหา** (คณะอนุกรรมการ, `reviewer-list.html`/`reviewer-console.html`) — comment-based ให้ **คำวินิจฉัย** (เห็นควรสนับสนุน / ให้ปรับแก้ / ไม่สนับสนุน) + **ข้อคิดเห็น/ข้อเสนอแนะ** เป็นข้อความ ไม่มีการให้คะแนน/ถ่วงน้ำหนัก (`RGMS.CRITERIA` เป็นเพียง "ประเด็นประกอบการพิจารณา" ให้อ่านประกอบ)
+2. **แทร็กการเงิน** (เจ้าหน้าที่การเงิน 2–3 คน, `finance-review-queue.html`/`finance-review-console.html`) — ดูเฉพาะงบประมาณ (ตาราง 17.2) ทำงานแบบ **claim**: ใครกด "รับตรวจ" โครงการไหนก่อน จะผูกเป็นผู้รับผิดชอบแทร็กการเงินของโครงการนั้น**ต่อเนื่องทุกรอบ** (รวมรอบตรวจซ้ำหลังแก้ไข ไม่สุ่มมอบหมายใหม่)
 
-ทั้ง 2 แทร็กทำงาน**อิสระต่อกัน คู่ขนาน ไม่รอกัน** แต่ละแทร็กมีสถานะของตัวเอง: `pending` (รอตรวจ) →
-`commented` (มีข้อคิดเห็น·ต้องแก้ไข) หรือ `cleared` (รับรองแล้ว) — เก็บผ่าน `RGMS.contentTrackStatus`/`financeTrackStatus`
-(persist ใน localStorage, ค่าเริ่มต้น seed จากสถานะเดิมของโครงการจำลอง) โครงการหนึ่งอาจเนื้อหาผ่านแต่การเงินยังไม่ผ่าน
-หรือกลับกันก็ได้ — `project-detail.html` แสดงทั้ง 2 แทร็กแยกกันในการ์ด "พิจารณา 2 แทร็กคู่ขนาน"
+ทั้ง 2 แทร็กทำงาน**อิสระต่อกัน คู่ขนาน ไม่รอกัน** แต่ละแทร็กมีสถานะของตัวเอง: `pending` (รอตรวจ) → `commented` (มีข้อคิดเห็น·ต้องแก้ไข) หรือ `cleared` (รับรองแล้ว) — เก็บผ่าน `RGMS.contentTrackStatus`/`financeTrackStatus` (persist ใน localStorage, ค่าเริ่มต้น seed จากสถานะเดิมของโครงการจำลอง) โครงการหนึ่งอาจเนื้อหาผ่านแต่การเงินยังไม่ผ่าน หรือกลับกันก็ได้ — `project-detail.html` แสดงทั้ง 2 แทร็กแยกกันในการ์ด "พิจารณา 2 แทร็กคู่ขนาน"
 
-**revise loop อัตโนมัติ (FR-84 ฉบับแก้ไข 2026-09-22):** นักวิจัย**ไม่ต้องเลือกแทร็กเอง** — เมื่อกด "ส่งฉบับปรับแก้"
-(`RGMS.resubmitTracks`) ระบบคำนวณให้อัตโนมัติ: แทร็กที่ `cleared` แล้วจะถูก **ล็อกไว้ถาวร** ไม่ส่งกลับไปตรวจซ้ำอีก
-ไม่ว่าจะแก้ไขอะไรในรอบถัดไป ส่วนแทร็กที่ยัง `commented` (ยังไม่รับรอง) จะถูกส่งกลับไป `pending` ให้ผู้ตรวจแทร็กนั้น
-ดูใหม่โดยอัตโนมัติทุกครั้งที่ส่งฉบับแก้ไข — ป้องกันงานตรวจซ้ำที่ไม่จำเป็น
+**revise loop อัตโนมัติ (FR-84 ฉบับแก้ไข 2026-09-22):** นักวิจัย**ไม่ต้องเลือกแทร็กเอง** — เมื่อกด "ส่งฉบับปรับแก้" (`RGMS.resubmitTracks`) ระบบคำนวณให้อัตโนมัติ: แทร็กที่ `cleared` แล้วจะถูก **ล็อกไว้ถาวร** ไม่ส่งกลับไปตรวจซ้ำอีก ไม่ว่าจะแก้ไขอะไรในรอบถัดไป ส่วนแทร็กที่ยัง `commented` (ยังไม่รับรอง) จะถูกส่งกลับไป `pending` ให้ผู้ตรวจแทร็กนั้นดูใหม่โดยอัตโนมัติทุกครั้งที่ส่งฉบับแก้ไข — ป้องกันงานตรวจซ้ำที่ไม่จำเป็น
 
-โครงการจะ**พร้อมเข้า คกก.ส่งเสริม** (`staff-agenda.html`) ก็ต่อเมื่อ**ทั้ง 2 แทร็กอยู่ในสถานะ `cleared` พร้อมกัน**
-(`RGMS.bothTracksCleared`, FR-85) — หน้ามติแสดงคอลัมน์สถานะทั้ง 2 แทร็ก และมีตาราง "ยังไม่พร้อมเข้า คกก.ส่งเสริม"
-แยกไว้ให้เห็นว่าโครงการติดแทร็กไหน
+โครงการจะ**พร้อมเข้า คกก.ส่งเสริม** (`staff-agenda.html`) ก็ต่อเมื่อ**ทั้ง 2 แทร็กอยู่ในสถานะ `cleared` พร้อมกัน** (`RGMS.bothTracksCleared`, FR-85) — หน้ามติแสดงคอลัมน์สถานะทั้ง 2 แทร็ก และมีตาราง "ยังไม่พร้อมเข้า คกก.ส่งเสริม" แยกไว้ให้เห็นว่าโครงการติดแทร็กไหน
+
+---
 
 ## มติ + ประกาศผล (FR-59) — persist ผ่าน localStorage (โหมดสาธิต)
 `shared.js` เพิ่ม helper: `decisionOf/setDecision` (มติ คกก.ส่งเสริมต่อโครงการ) และ `isAnnounced/announce` (ประกาศผล)
-`RGMS.effectiveStatus(p)` รวมสถานะฐานของโครงการเข้ากับมติ/การประกาศที่บันทึกภายหลัง ใช้แสดง badge/timeline ให้ตรงกันทุกหน้า
-(`project-detail.html`, `staff-agenda.html`, `staff-queue.html`, `researcher-home.html`, `secretary-home.html`)
+`RGMS.effectiveStatus(p)` รวมสถานะฐานของโครงการเข้ากับมติ/การประกาศที่บันทึกภายหลัง ใช้แสดง badge/timeline ให้ตรงกันทุกหน้า (`project-detail.html`, `staff-agenda.html`, `staff-queue.html`, `researcher-home.html`, `secretary-home.html`)
+
+---
 
 ## หมายเหตุ
 - ข้อมูลทั้งหมดเป็นข้อมูลจำลอง การกดปุ่มแสดงพฤติกรรมจริงแต่ยังไม่บันทึกถาวรในฐานข้อมูลจริง (เฉพาะ localStorage ของเบราว์เซอร์)
