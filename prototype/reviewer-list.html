@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>พิจารณาเนื้อหา — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <h1 class="text-headline">โครงการที่ได้รับมอบหมายให้พิจารณาเนื้อหา</h1>
+      <p class="text-muted" id="sub"></p>
+    </div>
+
+    <div class="notice notice--info">
+      <span class="notice__title">ความเป็นส่วนตัวและความขัดแย้งทางผลประโยชน์</span>
+      <span class="notice__body">คุณจะเห็นเฉพาะโครงการที่ได้รับมอบหมาย ระบบซ่อนชื่อผู้ประเมินท่านอื่นจนกว่าจะประเมินครบ และไม่มอบหมายโครงการที่คุณมีส่วนได้ส่วนเสีย</span>
+    </div>
+
+    <div class="grid grid-2" id="cards"></div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("reviewer-list");
+  var me = RGMS.currentRole().name; // รศ.ดร.สุเมธ ธำรงชัย
+  var assigned = RGMS.PROJECTS.filter(function (p) {
+    return (p.reviewers || []).some(function (r) { return r.name === me; });
+  });
+  if (!assigned.length) assigned = RGMS.PROJECTS.filter(function(p){ return (p.reviewers||[]).length; });
+
+  var pendingCount = assigned.filter(function (p) { return RGMS.contentTrackStatus(p.id) === "pending"; }).length;
+  document.getElementById("sub").textContent = "มอบหมายทั้งหมด " + assigned.length + " โครงการ · รอพิจารณา " + pendingCount + " โครงการ (แทร็กเนื้อหา)";
+
+  document.getElementById("cards").innerHTML = assigned.map(function (p) {
+    var contentSt = RGMS.contentTrackStatus(p.id);
+    var done = contentSt !== "pending";
+    return '<div class="card stack gap-3">' +
+      '<div class="between"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.trackBadgeHTML(contentSt) + '</div>' +
+      '<div style="font-weight:600; font-size:16px; line-height:1.4;">' + p.title + '</div>' +
+      '<div class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</div>' +
+      '<p class="text-sm text-muted">' + p.abstract + '</p>' +
+      '<a class="btn ' + (done ? 'btn-secondary' : 'btn-primary') + ' btn-md btn-block" href="reviewer-console.html?id=' + p.id + '">' +
+        (done ? 'ดู/แก้ไขความเห็น' : 'เริ่มพิจารณา →') + '</a>' +
+    '</div>';
+  }).join("");
+</script>
+</body>
+</html>
