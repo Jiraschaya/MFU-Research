@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โปรไฟล์นักวิจัย — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .grp-title { display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-3); }
+  .grp-title .num { width:26px; height:26px; border-radius:8px; background:var(--color-primary-tint); color:var(--color-primary);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:13px; }
+  .save-bar { position:sticky; bottom:0; background:var(--color-surface); border-top:1px solid var(--color-border);
+    padding:var(--space-3) 0; margin-top:var(--space-2); display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap; z-index:5; }
+</style>
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container container--narrow stack gap-5">
+
+    <div class="page-head">
+      <div class="breadcrumb"><a href="researcher-home.html">โครงการของฉัน</a> / โปรไฟล์นักวิจัย</div>
+      <h1 class="text-headline">โปรไฟล์นักวิจัย</h1>
+      <p class="text-muted">กรอกครั้งเดียว — ระบบจะดึงข้อมูลชุดนี้ (ประวัติ ส่วน ข + ข้อมูลติดต่อหัวหน้าโครงการ) ไปใส่ในทุกข้อเสนอโครงการโดยอัตโนมัติ · แก้ไข/อัปเดตเมื่อไรก็ได้</p>
+    </div>
+
+    <div class="notice notice--info">
+      <span class="notice__title">ทำไมต้องมีโปรไฟล์?</span>
+      <span class="notice__body">ในแบบ RS-01 "ส่วน ข ประวัติคณะผู้วิจัย" และข้อมูลหัวหน้าโครงการ (ข้อ 1.1) ต้องกรอกซ้ำทุกครั้งที่ยื่น — เก็บไว้ในโปรไฟล์แล้วกรอกครั้งเดียวจบ ยื่นข้อเสนอครั้งถัดไปเพียงตรวจทาน</span>
+    </div>
+
+    <form id="profile-form" class="stack gap-4">
+      <div class="card">
+        <div class="grp-title"><span class="num">1</span><h2 class="text-subhead">ข้อมูลติดต่อหัวหน้าโครงการ</h2></div>
+        <div class="grid grid-2" id="grp-identity"></div>
+      </div>
+
+      <div class="card">
+        <div class="grp-title"><span class="num">2</span><h2 class="text-subhead">ความเชี่ยวชาญและประวัติ</h2></div>
+        <div class="stack gap-3" id="grp-academic"></div>
+      </div>
+
+      <div class="card">
+        <div class="grp-title"><span class="num">3</span><h2 class="text-subhead">ผลงานและประสบการณ์วิจัย</h2></div>
+        <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">ส่วนนี้ไม่บังคับ แต่กรอกไว้จะช่วยให้ยื่นข้อเสนอได้เร็วขึ้นมาก — ผู้ทรงคุณวุฒิใช้พิจารณาประสบการณ์คณะผู้วิจัย</p>
+        <div class="stack gap-3" id="grp-portfolio"></div>
+      </div>
+
+      <div class="save-bar">
+        <button type="submit" class="btn btn-primary btn-lg">บันทึกโปรไฟล์</button>
+        <a class="btn btn-secondary btn-md" href="proposal-new.html">ไปยื่นข้อเสนอ →</a>
+        <span class="text-sm text-muted" id="saved-note"></span>
+      </div>
+    </form>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("researcher-profile");
+  var P = RGMS.getProfile();
+
+  function ctrl(f) {
+    var v = (P[f.key] == null ? "" : String(P[f.key])).replace(/"/g, "&quot;");
+    var req = f.required ? ' <span class="req">*</span>' : '';
+    var wrapStart = '<div class="field" data-key="' + f.key + '"><label class="field__label">' + f.label + req + '</label>';
+    if (f.type === "school") {
+      return wrapStart + '<select class="field__control pf" data-key="' + f.key + '">' +
+        RGMS.SCHOOLS.map(function (s) { return '<option' + (s === P[f.key] ? ' selected' : '') + '>' + s + '</option>'; }).join("") + '</select></div>';
+    }
+    if (f.type === "area") {
+      return wrapStart + '<textarea class="field__control pf" data-key="' + f.key + '" rows="3" placeholder="' + f.label + '">' + (P[f.key] || "") + '</textarea></div>';
+    }
+    return wrapStart + '<input class="field__control pf" data-key="' + f.key + '" value="' + v + '" placeholder="' + f.label + '"></div>';
+  }
+  ["identity", "academic", "portfolio"].forEach(function (g) {
+    document.getElementById("grp-" + g).innerHTML =
+      RGMS.PROFILE_FIELDS.filter(function (f) { return f.group === g; }).map(ctrl).join("");
+  });
+
+  function updatedLine() {
+    var note = document.getElementById("saved-note");
+    if (P.updatedAt) {
+      var d = new Date(P.updatedAt);
+      note.textContent = "บันทึกล่าสุด " + d.toLocaleString("th-TH");
+    } else { note.textContent = "ยังไม่เคยบันทึก — ตอนนี้เป็นค่าตัวอย่าง"; }
+  }
+  updatedLine();
+
+  document.getElementById("profile-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var patch = {};
+    document.querySelectorAll(".pf").forEach(function (el) { patch[el.getAttribute("data-key")] = el.value.trim(); });
+    // ตรวจ required
+    var missing = RGMS.PROFILE_FIELDS.filter(function (f) { return f.required && !patch[f.key]; });
+    if (missing.length) {
+      RGMS.toast("กรุณากรอก: " + missing.map(function (f) { return f.label; }).join(", "), "accent");
+      return;
+    }
+    P = RGMS.saveProfile(patch);
+    updatedLine();
+    RGMS.toast("บันทึกโปรไฟล์แล้ว — พร้อมใช้ในทุกข้อเสนอ", "ok");
+  });
+</script>
+</body>
+</html>

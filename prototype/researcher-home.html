@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>โครงการของฉัน — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <div class="between wrap">
+        <div class="stack gap-1">
+          <h1 class="text-headline">โครงการของฉัน</h1>
+          <p class="text-muted" id="greet"></p>
+        </div>
+        <a class="btn btn-primary btn-md" href="proposal-new.html">+ ยื่นข้อเสนอใหม่</a>
+      </div>
+    </div>
+
+    <div class="stack gap-3" id="open-calls"></div>
+
+    <div class="grid grid-3" id="kpis"></div>
+
+    <div class="card card--pad-sm">
+      <div class="card__header"><h2 class="text-subhead">รายการโครงการ</h2></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อโครงการ</th><th>รอบทุน</th><th class="right">งบที่ขอ</th><th>สถานะ</th><th></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("researcher-home");
+  var me = RGMS.currentRole().name;
+  document.getElementById("greet").textContent = "สวัสดี " + me + " — โครงการที่คุณเป็นหัวหน้าโครงการ";
+
+  var mine = RGMS.PROJECTS.filter(function (p) { return p.pi === me; });
+  if (!mine.length) mine = RGMS.PROJECTS.slice(0, 3); // เผื่อสลับบทบาท
+
+  // การ์ดทุนที่เปิดรับสมัคร — นักวิจัยกดยื่นได้ทันที (อ่านสถานะจาก callStatus จริง)
+  var openCalls = RGMS.CALLS.filter(function (c) { return RGMS.callStatus(c) === "open"; });
+  var ocEl = document.getElementById("open-calls");
+  if (openCalls.length) {
+    var tierChips = Object.keys(RGMS.TIERS).map(function (k) { var t = RGMS.TIERS[k]; return '<span class="tag">' + t.short + ' ≤ ' + RGMS.fmtMoney(t.cap) + '</span>'; }).join(" ");
+    ocEl.innerHTML = '<span class="text-overline">ทุนที่เปิดรับสมัคร</span>' +
+      '<div class="grid grid-auto">' + openCalls.map(function (c) {
+        return '<div class="card stack gap-2" style="border:1px solid var(--color-primary); background:var(--color-primary-tint);">' +
+          '<div class="between wrap gap-2"><span class="text-subhead">' + c.title + '</span><span class="badge badge-ok">เปิดรับ</span></div>' +
+          '<div class="text-sm text-muted">ปีงบ ' + c.fiscalYear + ' · รับข้อเสนอ <span class="num">' + c.open + '</span> – <span class="num">' + c.close + '</span></div>' +
+          '<div class="cluster gap-1 wrap">' + tierChips + '</div>' +
+          '<a class="btn btn-primary btn-md" href="proposal-new.html" style="align-self:flex-start; margin-top:4px;">ยื่นข้อเสนอโครงการ →</a>' +
+        '</div>';
+      }).join("") + '</div>';
+  } else {
+    var up = RGMS.CALLS.filter(function (c) { return RGMS.callStatus(c) === "upcoming"; })[0];
+    ocEl.innerHTML = '<div class="notice notice--wait"><span class="notice__title">ขณะนี้ยังไม่มีรอบที่เปิดรับสมัคร</span>' +
+      '<span class="notice__body">' + (up ? ('รอบถัดไป: ' + up.title + ' · เปิดรับ ' + up.open + ' ถึง ' + up.close) : 'โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย') + '</span></div>';
+  }
+
+  var active = mine.filter(function (p) { return ["ongoing","progress","final","financial"].indexOf(p.status) >= 0; }).length;
+  var inReview = mine.filter(function (p) { return ["submitted","screening","review","committee","revise"].indexOf(p.status) >= 0; }).length;
+  var totalBudget = mine.reduce(function (s, p) { return s + p.budgetReq; }, 0);
+  document.getElementById("kpis").innerHTML = [
+    ['อยู่ระหว่างพิจารณา', inReview, 'โครงการ'],
+    ['กำลังดำเนินการ', active, 'โครงการ'],
+    ['งบที่ขอรวม', RGMS.fmtMoney(totalBudget), 'บาท']
+  ].map(function (k) {
+    return '<div class="card stat"><span class="stat__value">' + k[1] + '</span>' +
+           '<span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+  }).join("");
+
+  function actionFor(p) {
+    if (p.status === "revise") return '<a class="btn btn-primary btn-sm" href="project-detail.html?id=' + p.id + '">ปรับแก้ตามมติ</a>';
+    if (p.status === "ongoing") return '<a class="btn btn-secondary btn-sm" href="project-detail.html?id=' + p.id + '">ส่งรายงานก้าวหน้า</a>';
+    if (p.status === "final") return '<a class="btn btn-secondary btn-sm" href="project-detail.html?id=' + p.id + '">ดูสถานะการเงิน</a>';
+    return '<a class="btn btn-ghost btn-sm" href="project-detail.html?id=' + p.id + '">รายละเอียด →</a>';
+  }
+
+  document.getElementById("rows").innerHTML = mine.map(function (p) {
+    return '<tr class="is-clickable" data-id="' + p.id + '">' +
+      '<td class="num">' + p.id + '</td>' +
+      '<td>' + p.title + '</td>' +
+      '<td><span class="pill-round">' + p.round + '</span></td>' +
+      '<td class="right num">' + RGMS.fmtMoney(p.budgetReq) + '</td>' +
+      '<td>' + RGMS.badgeHTML(RGMS.effectiveStatus(p)) + '</td>' +
+      '<td class="right">' + actionFor(p) + '</td>' +
+    '</tr>';
+  }).join("");
+  document.getElementById("rows").addEventListener("click", function (e) {
+    if (e.target.closest("a")) return;
+    var tr = e.target.closest("[data-id]");
+    if (tr) window.location.href = "project-detail.html?id=" + tr.getAttribute("data-id");
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>พิจารณาเนื้อหา — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-4" id="root"></div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("reviewer-list");
+  var me = RGMS.currentRole().name;
+  var id = new URLSearchParams(location.search).get("id") || "P-2568-009";
+  var p = RGMS.getProject(id);
+  var mine = (p.reviewers || []).filter(function (r) { return r.name === me; })[0] || { scores: {}, comment: "", recommend: null };
+  var scores = Object.assign({}, mine.scores);
+  var recommend = mine.recommend;
+
+  var root = document.getElementById("root");
+  root.innerHTML =
+    '<div class="page-head"><div class="breadcrumb"><a href="reviewer-list.html">← โครงการที่ได้รับมอบหมาย</a></div>' +
+      '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML(p.status) + '</div>' +
+      '<h1 class="text-title">' + p.title + '</h1>' +
+      '<p class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</p></div>' +
+    '<div class="grid" style="grid-template-columns: 1fr 380px; align-items:start;" id="grid"></div>';
+
+  // ซ้าย: เนื้อหาข้อเสนอ
+  var left =
+    '<div class="stack gap-4">' +
+      '<div class="card"><h2 class="text-subhead" style="margin-bottom:8px;">บทคัดย่อ / ที่มา</h2><p class="text-body">' + p.abstract + '</p></div>' +
+      '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">งบประมาณที่ขอ</h2>' +
+        '<div class="table-wrap" style="border-radius:6px;"><table class="table" style="min-width:auto;"><tbody>' +
+        (p.budget||[]).map(function (b) { return '<tr><td>' + b.item + '</td><td class="right num">' + RGMS.fmtMoney(b.amount) + '</td></tr>'; }).join("") +
+        '<tr><td style="font-weight:700;">รวม</td><td class="right num" style="font-weight:700;">' + RGMS.fmtMoney(RGMS.sumBudget(p)) + '</td></tr>' +
+        '</tbody></table></div></div>' +
+      '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">เอกสารประกอบ</h2><div class="stack gap-2">' +
+        ['ข้อเสนอโครงการฉบับเต็ม (PDF)','ประวัติย่อคณะผู้วิจัย (PDF)','รายละเอียดงบประมาณ (PDF)'].map(function (d) {
+          return '<div class="doc-row"><span class="doc-row__icon">PDF</span><div class="flex-1" style="font-weight:600; font-size:14px;">' + d + '</div><button class="btn btn-secondary btn-sm">เปิดดู</button></div>';
+        }).join("") +
+      '</div></div>' +
+    '</div>';
+
+  // ขวา: แบบพิจารณา (comment-based ตามเอกสารจริง — ให้ข้อคิดเห็น/รับรอง ไม่มีคะแนน/น้ำหนัก)
+  var ASPECTS = RGMS.CRITERIA.map(function (c) { return c.label; });
+  var right =
+    '<div class="card" style="position:sticky; top:16px;">' +
+      '<h2 class="text-subhead" style="margin-bottom:4px;">แบบพิจารณาข้อเสนอ (แทร็กเนื้อหา)</h2>' +
+      '<p class="text-sm text-muted" style="margin-bottom:12px;">ให้ข้อคิดเห็น/ข้อเสนอแนะ และคำวินิจฉัย (การพิจารณาเชิงคุณภาพ ไม่มีการให้คะแนน)</p>' +
+      '<span class="text-overline">ประเด็นประกอบการพิจารณา</span>' +
+      '<ul style="margin:6px 0 16px; padding-left:18px; font-size:13px; color:var(--color-text-muted); line-height:1.7;">' +
+        ASPECTS.map(function (a) { return '<li>' + a + '</li>'; }).join("") + '</ul>' +
+      '<label class="field__label">คำวินิจฉัย <span class="req">*</span></label>' +
+      '<div class="chip-group" id="rec" style="margin:6px 0 16px;">' +
+        [['approve','เห็นควรสนับสนุน'],['approve_revise','ให้ปรับแก้'],['reject','ไม่สนับสนุน']].map(function (o) {
+          return '<button class="chip" data-rec="' + o[0] + '">' + o[1] + '</button>';
+        }).join("") + '</div>' +
+      '<div class="field"><label class="field__label">ข้อคิดเห็น / ข้อเสนอแนะ <span class="req">*</span></label>' +
+        '<textarea class="field__control" id="comment" style="min-height:160px;" placeholder="ระบุจุดแข็ง จุดที่ควรปรับปรุง ความเหมาะสมของระเบียบวิธี/งบประมาณ/ระยะเวลา และเงื่อนไขการแก้ไข (ถ้ามี)">' + (mine.comment || '') + '</textarea></div>' +
+      '<button class="btn btn-primary btn-lg btn-block" id="submit" disabled>ส่งความเห็น</button>' +
+      '<p class="text-sm text-muted text-center" id="hint" style="margin-top:8px;"></p>' +
+    '</div>';
+
+  document.getElementById("grid").innerHTML = left + right;
+
+  function recompute() {
+    var hasComment = document.getElementById("comment").value.trim().length > 0;
+    var ok = recommend && hasComment;
+    document.getElementById("submit").disabled = !ok;
+    document.getElementById("hint").textContent = ok ? "พร้อมส่งความเห็น" : (!recommend ? "เลือกคำวินิจฉัย" : "กรอกข้อคิดเห็น/ข้อเสนอแนะ");
+  }
+
+  document.getElementById("rec").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rec]"); if (!b) return;
+    recommend = b.getAttribute("data-rec");
+    document.querySelectorAll("#rec .chip").forEach(function (x) { x.classList.remove("is-active"); });
+    b.classList.add("is-active");
+    recompute();
+  });
+  document.getElementById("comment").addEventListener("input", recompute);
+  if (recommend) { var rb = document.querySelector('[data-rec="' + recommend + '"]'); if (rb) rb.classList.add("is-active"); }
+  recompute();
+
+  document.getElementById("submit").addEventListener("click", function () {
+    var vmap = { approve: 'เห็นควรสนับสนุน', approve_revise: 'ให้ปรับแก้', reject: 'ไม่สนับสนุน' };
+    var trackSt = recommend === "approve" ? "cleared" : "commented";
+    RGMS.setContentTrackStatus(p.id, trackSt);
+    RGMS.setContentComment(p.id, document.getElementById("comment").value.trim());
+    RGMS.modal({
+      title: "ส่งความเห็นสำเร็จ",
+      body: '<div class="notice notice--ok"><span class="notice__title">บันทึกความเห็นแล้ว · คำวินิจฉัย: ' + (vmap[recommend] || '') + '</span>' +
+        '<span class="notice__body">แทร็กเนื้อหา: ' + RGMS.TRACK_STATUS[trackSt].label + ' — แทร็กการเงินตรวจแยกเป็นอิสระ ไม่ต้องรอกัน โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-85)</span></div>',
+      foot: '<a class="btn btn-primary btn-md" href="reviewer-list.html">กลับรายการ</a>'
+    });
+  });
+</script>
+</body>
+</html>
