@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>มติ / ประกาศผล — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <span class="text-overline">เฟส 1 · ขั้นสุดท้าย · มติ คกก.ส่งเสริม + ประกาศผล (FR-59)</span>
+      <h1 class="text-headline">บันทึกมติ / ประกาศโครงการที่ผ่าน</h1>
+      <p class="text-muted">รายชื่อโครงการที่คณะอนุกรรมการรับรองครบแล้ว (ไม่มีข้อคอมเมนต์ค้าง) — บันทึกมติของ คกก.ส่งเสริมและพัฒนางานวิจัยต่อโครงการ แล้วประกาศผลพร้อมกัน</p>
+    </div>
+
+    <div class="grid grid-3" id="kpis"></div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">รอบันทึกมติ</h2>
+        <p class="text-sm text-muted">สรุปรายชื่อจากคณะอนุกรรมการ — เลือกมติต่อโครงการแล้วบันทึก</p></div>
+        <button class="btn btn-ok btn-md" id="save-res" disabled>บันทึกมติที่เลือก</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อโครงการ / ผู้วิจัย</th><th class="right">งบที่ขอ</th><th>แทร็กเนื้อหา</th><th>แทร็กการเงิน</th><th style="min-width:220px;">มติ คกก.ส่งเสริม</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+   <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">ยังไม่พร้อมเข้า คกก.ส่งเสริม</h2>
+        <p class="text-sm text-muted">อยู่ระหว่างพิจารณา แต่ยังไม่ครบทั้ง 2 แทร็ก (FR-85)</p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>รหัส</th><th>ชื่อโครงการ / ผู้วิจัย</th><th>แทร็กเนื้อหา</th><th>แทร็กการเงิน</th></tr></thead>
+          <tbody id="not-ready-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+   <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">มีมติแล้ว · รอประกาศ</h2>
+        <p class="text-sm text-muted">เลือกโครงการที่ต้องการประกาศพร้อมกัน</p></div>
+        <button class="btn btn-primary btn-md" id="announce-btn" disabled>ประกาศผลที่เลือก (0)</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th style="width:44px;"><input type="checkbox" id="chk-all"></th><th>รหัส</th><th>ชื่อโครงการ / ผู้วิจัย</th><th>มติ</th></tr></thead>
+          <tbody id="decided-rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+   <div class="card card--featured   card--pad-sm">
+      <div class="card__header"><h2 class="text-subhead">ประกาศผลแล้ว</h2></div>
+      <div class="stack gap-2" id="announced-rows"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("staff-agenda");
+
+  function recCode(r) {
+    var subs = (r.reviewers || []).filter(function (x) { return x.submitted; });
+    if (!subs.length) return "—";
+    var recs = subs.map(function (x) { return x.recommend; });
+    if (recs.every(function (x){return x==="approve";})) return "รับรองครบ · ไม่มีข้อแก้ไข";
+    if (recs.indexOf("reject") >= 0) return "มีความเห็นไม่สนับสนุน";
+    return "รับรองแบบมีข้อเสนอแนะ";
+  }
+  function suggestedDecision(p) {
+    var c = recCode(p);
+    if (c === "มีความเห็นไม่สนับสนุน") return "reject";
+    return "approve";
+  }
+
+  function pending() {
+    // พร้อมบันทึกมติ = ทั้งแทร็กเนื้อหาและแทร็กการเงินรับรองแล้วพร้อมกัน (FR-85) และยังไม่มีมติ
+    return RGMS.PROJECTS.filter(function (p) {
+      return (RGMS.inReviewPhase(p.status) || p.status === "committee") && RGMS.bothTracksCleared(p.id) && !RGMS.decisionOf(p.id) && !RGMS.isAnnounced(p.id);
+    });
+  }
+  function notReady() {
+    // อยู่ระหว่างพิจารณาแต่ยังไม่ครบ 2 แทร็ก — แสดงให้เจ้าหน้าที่เห็นว่าติดแทร็กไหน
+    return RGMS.PROJECTS.filter(function (p) {
+      return RGMS.inReviewPhase(p.status) && !RGMS.bothTracksCleared(p.id) && !RGMS.decisionOf(p.id) && !RGMS.isAnnounced(p.id);
+    });
+  }
+  function decidedNotAnnounced() {
+    return RGMS.PROJECTS.filter(function (p) { return RGMS.decisionOf(p.id) && !RGMS.isAnnounced(p.id); });
+  }
+  function announced() {
+    return RGMS.PROJECTS.filter(function (p) { return RGMS.isAnnounced(p.id); });
+  }
+
+  var pendingChoice = {};   // id -> "approve" | "reject" (ค่าตั้งต้นตามคำแนะนำ)
+  var announceSel = {};     // id -> true/false
+
+  function renderKpis() {
+    document.getElementById("kpis").innerHTML = [
+      ['รอบันทึกมติ', pending().length, 'โครงการ'],
+      ['มีมติแล้ว · รอประกาศ', decidedNotAnnounced().length, 'โครงการ'],
+      ['ประกาศผลแล้ว', announced().length, 'โครงการ']
+    ].map(function (k) {
+     return '<div class="card stat-card stat"><span class="stat__value">' + k[1] + '</span><span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+    }).join("");
+  }
+
+  function renderPending() {
+    var list = pending();
+    document.getElementById("rows").innerHTML = list.length ? list.map(function (p) {
+      if (!(p.id in pendingChoice)) pendingChoice[p.id] = suggestedDecision(p);
+      return '<tr>' +
+        '<td class="num">' + p.id + '</td>' +
+        '<td><div style="font-weight:600;">' + p.title + '</div><div class="text-sm text-muted">' + p.pi + ' · ' + p.school + '</div></td>' +
+        '<td class="right num">' + RGMS.fmtMoney(p.budgetReq) + '</td>' +
+        '<td>' + RGMS.trackBadgeHTML(RGMS.contentTrackStatus(p.id)) + '</td>' +
+        '<td>' + RGMS.trackBadgeHTML(RGMS.financeTrackStatus(p.id)) + '</td>' +
+        '<td><select class="field__control dec-sel" data-id="' + p.id + '" style="margin:0;">' +
+          '<option value="approve"' + (pendingChoice[p.id] === "approve" ? ' selected' : '') + '>อนุมัติ</option>' +
+          '<option value="reject"' + (pendingChoice[p.id] === "reject" ? ' selected' : '') + '>ไม่อนุมัติ</option>' +
+        '</select></td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="6" class="text-center text-muted" style="padding:24px;">ไม่มีโครงการรอบันทึกมติ — ยังไม่มีโครงการที่ทั้งแทร็กเนื้อหาและแทร็กการเงินรับรองครบพร้อมกัน</td></tr>';
+    document.getElementById("save-res").disabled = list.length === 0;
+    document.querySelectorAll(".dec-sel").forEach(function (s) {
+      s.addEventListener("change", function () { pendingChoice[s.getAttribute("data-id")] = s.value; });
+    });
+  }
+
+  function renderNotReady() {
+    var list = notReady();
+    document.getElementById("not-ready-rows").innerHTML = list.length ? list.map(function (p) {
+      return '<tr>' +
+        '<td class="num">' + p.id + '</td>' +
+        '<td><div style="font-weight:600;">' + p.title + '</div><div class="text-sm text-muted">' + p.pi + ' · ' + p.school + '</div></td>' +
+        '<td>' + RGMS.trackBadgeHTML(RGMS.contentTrackStatus(p.id)) + '</td>' +
+        '<td>' + RGMS.trackBadgeHTML(RGMS.financeTrackStatus(p.id)) + '</td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="4" class="text-center text-muted" style="padding:24px;">ไม่มีโครงการค้างแทร็กใดแทร็กหนึ่ง</td></tr>';
+  }
+
+  function renderDecided() {
+    var list = decidedNotAnnounced();
+    document.getElementById("decided-rows").innerHTML = list.length ? list.map(function (p) {
+      var d = RGMS.decisionOf(p.id);
+      return '<tr>' +
+        '<td><input type="checkbox" class="ann-chk" data-id="' + p.id + '"' + (announceSel[p.id] ? ' checked' : '') + '></td>' +
+        '<td class="num">' + p.id + '</td>' +
+        '<td><div style="font-weight:600;">' + p.title + '</div><div class="text-sm text-muted">' + p.pi + ' · ' + p.school + '</div></td>' +
+        '<td>' + (d === "approve" ? '<span class="badge badge-ok">อนุมัติ</span>' : '<span class="badge badge-reject">ไม่อนุมัติ</span>') + '</td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="4" class="text-center text-muted" style="padding:24px;">ยังไม่มีโครงการที่มีมติรอประกาศ</td></tr>';
+    document.querySelectorAll(".ann-chk").forEach(function (c) {
+      c.addEventListener("change", function () { announceSel[c.getAttribute("data-id")] = c.checked; updateAnnounceBtn(); });
+    });
+    updateAnnounceBtn();
+  }
+
+  function renderAnnounced() {
+    var list = announced();
+    document.getElementById("announced-rows").innerHTML = list.length ? list.map(function (p) {
+      var d = RGMS.decisionOf(p.id);
+      return '<div class="between wrap gap-2" style="padding:8px 0; border-bottom:1px solid var(--color-divider);">' +
+        '<span class="text-sm"><span class="text-mono text-muted">' + p.id + '</span> · ' + p.title + '</span>' +
+        (d === "approve" ? '<span class="badge badge-ok">ประกาศผล: อนุมัติ</span>' : '<span class="badge badge-reject">ประกาศผล: ไม่อนุมัติ</span>') +
+      '</div>';
+    }).join("") : '<div class="text-sm text-muted">ยังไม่มีการประกาศผล</div>';
+  }
+
+  function updateAnnounceBtn() {
+    var n = Object.keys(announceSel).filter(function (k) { return announceSel[k]; }).length;
+    var b = document.getElementById("announce-btn");
+    b.textContent = "ประกาศผลที่เลือก (" + n + ")"; b.disabled = n === 0;
+  }
+
+  function refresh() { renderKpis(); renderPending(); renderNotReady(); renderDecided(); renderAnnounced(); }
+  refresh();
+
+  document.getElementById("save-res").addEventListener("click", function () {
+    var list = pending();
+    var summary = list.map(function (p) {
+      var v = pendingChoice[p.id] || "approve";
+      RGMS.setDecision(p.id, v);
+      return '<tr><td class="text-sm">' + p.id + '</td><td class="text-sm">' + p.title + '</td><td class="text-sm" style="font-weight:600;">' + (v === "approve" ? "อนุมัติ" : "ไม่อนุมัติ") + '</td></tr>';
+    }).join("");
+    RGMS.modal({
+      title: "บันทึกมติเรียบร้อย",
+      body: '<div class="notice notice--ok" style="margin-bottom:12px;"><span class="notice__title">บันทึกมติ คกก.ส่งเสริม แล้ว ' + list.length + ' โครงการ</span>' +
+        '<span class="notice__body">ขั้นถัดไป: เลือกโครงการที่ต้องการแล้วกด "ประกาศผลที่เลือก"</span></div>' +
+        '<div class="table-wrap"><table class="table" style="min-width:auto;"><thead><tr><th>รหัส</th><th>โครงการ</th><th>มติ</th></tr></thead><tbody>' + summary + '</tbody></table></div>',
+      foot: '<button class="btn btn-primary btn-md" data-close>ปิด</button>'
+    });
+    refresh();
+  });
+
+  document.getElementById("chk-all").addEventListener("change", function () {
+    decidedNotAnnounced().forEach(function (p) { announceSel[p.id] = this.checked; }, this);
+    renderDecided();
+  });
+
+ // แทนที่ Event Listener เดิมของ #announce-btn
+  document.getElementById("announce-btn").addEventListener("click", function () {
+    var ids = Object.keys(announceSel).filter(function (k) { return announceSel[k]; });
+    if (!ids.length) return;
+
+    // ดึงข้อมูลโครงการที่เลือกมาสร้างรายการพรีวิวใน Modal
+    var itemsListHtml = ids.map(function(id) {
+      var p = RGMS.getProject(id);
+      return '<div style="background-color:#F8FAFC; padding:10px; border-radius:6px; margin-top:8px;">' +
+        '<b>รหัส: ' + p.id + '</b> — ' + p.title + '<br>' +
+        '<small class="text-muted">หัวหน้าโครงการ: ' + p.pi + ' (' + p.school + ') | งบที่อนุมัติ: ' + RGMS.fmtBaht(p.budgetReq) + '</small>' +
+      '</div>';
+    }).join("");
+
+    RGMS.modal({
+      title: "ร่างประกาศผลการจัดสรรทุนวิจัย (Preview)",
+      body: 
+        '<div style="font-size:13px; line-height:1.6;">' +
+          '<h3 style="font-weight:700; text-align:center; margin-bottom:8px;">ประกาศมหาวิทยาลัยแม่ฟ้าหลวง</h3>' +
+          '<p style="text-align:center; color:var(--color-text-muted); margin-bottom:12px;">เรื่อง ผลการจัดสรรทุนอุดหนุนการวิจัย งบประมาณเงินรายได้</p>' +
+          '<p>อาศัยความตามอนุมัติคณะกรรมการส่งเสริมและบริหารงานวิจัย จึงขอประกาศผลการจัดสรรทุนวิจัย จำนวน ' + ids.length + ' โครงการ ดังนี้:</p>' +
+          itemsListHtml +
+        '</div>' +
+        '<div class="notice notice--info" style="margin-top:16px;">' +
+          '<b>ระบบแจ้งเตือนที่จะทำงานอัตโนมัติ (Automated Notification Engine):</b>' +
+          '<ul style="padding-left:18px; margin-top:6px; font-size:12px;">' +
+            '<li>ส่ง Email แจ้งผลอนุมัติจัดสรรทุนไปยังนักวิจัยหัวหน้าโครงการ</li>' +
+            '<li>สร้างรายการ งานที่ต้องทำ (To-Do) ในระบบเพื่อให้นักวิจัยยืนยันการรับทุน</li>' +
+            '<li>แจ้งเตือนเลขาสำนักวิชาเพื่อประสานงานทำสัญญา</li>' +
+          '</ul>' +
+        '</div>',
+      foot: 
+        '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button> ' +
+        '<button class="btn btn-primary btn-md" id="confirm-announce-action">อนุมัติออกประกาศ & ส่งแจ้งเตือน</button>'
+    });
+
+    // ผูกปุ่มยืนยันการออกประกาศจริง
+    setTimeout(function() {
+      var btnConfirm = document.getElementById("confirm-announce-action");
+      if (btnConfirm) {
+        btnConfirm.addEventListener("click", function() {
+          RGMS.announce(ids);
+          announceSel = {};
+          RGMS.toast("ออกประกาศผลการจัดสรรทุนและส่งแจ้งเตือนสำเร็จแล้ว", "ok");
+          location.reload();
+        });
+      }
+    }, 100);
+  });
+  // ควบคุมการปิด Modal ด้วยปุ่ม Escape และการคลิก Backdrop นอกตัว Modal
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      closeAnnouncementModal();
+    }
+  });
+
+  var modalOverlay = document.getElementById("modal-announcement");
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", function(e) {
+      if (e.target === this) {
+        closeAnnouncementModal();
+      }
+    });
+  }
+</script>
+<div class="executive-dock">
+  <div class="executive-dock__title">RGMS Executive Console</div>
+  <span class="text-sm" style="color: #9CA3AF;">เลือกมติครบแล้ว 3 โครงการ</span>
+  <button class="btn btn-primary btn-sm" onclick="confirmAnnouncementExecution()" style="background: #C59B27; border-color: #C59B27; color: #111827; font-weight: 700;">
+    อนุมัติประกาศผลทันที
+  </button>
+</div>
+</body>
+</html>
