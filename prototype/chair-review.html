@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รับรองข้อเสนอ (สำนักวิชา) — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <span class="text-overline">เฟส 1 · เปิดรับและพิจารณา · การรับรองระดับสำนักวิชา (FR-74)</span>
+      <h1 class="text-headline">รับรองข้อเสนอโครงการ (สำนักวิชา)</h1>
+      <p class="text-muted" id="sub"></p>
+    </div>
+
+    <div class="grid grid-3" id="kpis"></div>
+
+   <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">รอประธานวิจัย/คณบดี พิจารณา</h2>
+        <p class="text-sm text-muted">ข้อเสนอที่นักวิจัยยื่นเข้ามา — รับรองเพื่อส่งต่อส่วนบริหารงานวิจัย หรือส่งกลับให้แก้ไข</p></div></div>
+      <div class="stack gap-3" id="pending"></div>
+    </div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><h2 class="text-subhead">ดำเนินการแล้ว</h2></div>
+      <div class="stack gap-2" id="done"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("chair-review");
+  var role = RGMS.currentRole();
+  var school = role.school || "สำนักวิชาเทคโนโลยีสารสนเทศ";
+  document.getElementById("sub").textContent = role.name + " · " + school;
+
+  function mineEarly() {
+    return RGMS.PROJECTS.filter(function (p) { return p.school === school && ["submitted", "screening"].indexOf(p.status) >= 0; });
+  }
+
+  function render() {
+    var list = mineEarly();
+    var pending = list.filter(function (p) { return RGMS.endorseStatus(p.id) === "pending"; });
+    var done = list.filter(function (p) { return RGMS.endorseStatus(p.id) !== "pending"; });
+    var passed = done.filter(function (p) { return RGMS.endorseStatus(p.id) === "passed"; }).length;
+    var returned = done.filter(function (p) { return RGMS.endorseStatus(p.id) === "returned"; }).length;
+
+    document.getElementById("kpis").innerHTML = [
+      ['รอรับรอง', pending.length, 'โครงการ', pending.length ? 'accent' : ''],
+      ['รับรองแล้ว', passed, 'โครงการ', ''],
+      ['ส่งกลับแก้ไข', returned, 'โครงการ', '']
+    ].map(function (k) {
+      return '<div class="card stat-card stat"><span class="stat__value' + (k[3] === 'accent' ? ' text-accent' : '') + '">' + k[1] + '</span><span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+    }).join("");
+
+    document.getElementById("pending").innerHTML = pending.length ? pending.map(function (p) {
+      return '<div class="card card--alt card--pad-sm">' +
+        '<div class="between wrap gap-2"><div class="stack gap-1">' +
+          '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML(p.status) + '<span class="tag">' + RGMS.tierOf(p).short + '</span></div>' +
+          '<div style="font-weight:600;">' + p.title + '</div>' +
+          '<div class="text-sm text-muted">' + p.pi + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + '</div></div></div>' +
+        '<div class="cluster gap-2" style="margin-top:12px;">' +
+          '<a class="btn btn-secondary btn-sm" href="project-detail.html?id=' + p.id + '">ดูเอกสาร</a>' +
+          '<button class="btn btn-ok btn-sm" data-pass="' + p.id + '">รับรอง → ส่งส่วนบริหาร</button>' +
+          '<button class="btn btn-secondary btn-sm" data-return="' + p.id + '">ส่งกลับแก้ไข</button>' +
+        '</div></div>';
+    }).join("") : '<div class="text-sm text-muted text-center" style="padding:16px;">ไม่มีข้อเสนอรอรับรองในสำนักวิชานี้</div>';
+
+    document.getElementById("done").innerHTML = done.length ? done.map(function (p) {
+      var st = RGMS.endorseStatus(p.id);
+      var b = st === "passed" ? '<span class="badge badge-ok">รับรองแล้ว · ส่งส่วนบริหาร</span>' : '<span class="badge badge-revise">ส่งกลับให้แก้ไข</span>';
+      return '<div class="between wrap gap-2" style="padding:8px 0; border-bottom:1px solid var(--color-divider);">' +
+        '<span class="text-sm"><span class="text-mono text-muted">' + p.id + '</span> · ' + p.title + '</span>' + b + '</div>';
+    }).join("") : '<div class="text-sm text-muted">ยังไม่มีรายการ</div>';
+  }
+
+  document.getElementById("pending").addEventListener("click", function (e) {
+    var pass = e.target.closest("[data-pass]"), ret = e.target.closest("[data-return]");
+    if (pass) {
+      RGMS.setEndorse(pass.getAttribute("data-pass"), "passed");
+      RGMS.toast("รับรองข้อเสนอแล้ว — ส่งต่อส่วนบริหารงานวิจัย (สาธิต)", "ok"); render();
+    } else if (ret) {
+      var id = ret.getAttribute("data-return");
+      RGMS.modal({
+        title: "ส่งกลับให้นักวิจัยแก้ไข",
+        body: '<div class="field" style="margin:0;"><label class="field__label">เหตุผล / ข้อเสนอแนะให้แก้ไข</label>' +
+          '<textarea class="field__control" id="reason" placeholder="เช่น ปรับวัตถุประสงค์ให้สอดคล้องยุทธศาสตร์สำนักวิชา / งบบางรายการยังไม่ชัดเจน"></textarea></div>' +
+          '<p class="text-sm text-muted" style="margin-top:8px;">ระบบจะแจ้งเตือนนักวิจัยทางอีเมลและในระบบ (FR-78)</p>',
+        foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="do-return">ส่งกลับแก้ไข</button>',
+        onMount: function (back, close) {
+          back.querySelector("#do-return").addEventListener("click", function () {
+            RGMS.setEndorse(id, "returned"); close();
+            RGMS.toast("ส่งกลับให้นักวิจัยแก้ไข + แจ้งเตือนอีเมล/ในระบบ (สาธิต)", "accent"); render();
+          });
+        }
+      });
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RGMS · ระบบบริหารจัดการทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="section">
+  <div class="container">
+
+    <!-- Hero Header & Process Flow -->
+    <div class="portal-hero">
+      <div class="portal-hero__overline">RESEARCH GRANT MANAGEMENT SYSTEM · MVP PHASE 1</div>
+      <h1 class="portal-hero__title">ระบบบริหารจัดการทุนวิจัย<br>มหาวิทยาลัยแม่ฟ้าหลวง</h1>
+      
+      <!-- Visual Process Steps -->
+      <div class="portal-flow">
+        <div class="portal-flow__step">1. ยื่นข้อเสนอออนไลน์</div>
+        <span class="portal-flow__arrow">→</span>
+        <div class="portal-flow__step">2. รับรองระดับสำนักวิชา</div>
+        <span class="portal-flow__arrow">→</span>
+        <div class="portal-flow__step">3. ตรวจเอกสารส่วนกลาง</div>
+        <span class="portal-flow__arrow">→</span>
+        <div class="portal-flow__step">4. พิจารณาคู่ขนาน 2 แทร็ก</div>
+        <span class="portal-flow__arrow">→</span>
+        <div class="portal-flow__step">5. มติ คกก. & ประกาศผล</div>
+      </div>
+    </div>
+
+    <!-- Role Selection Grid -->
+    <div class="role-grid" id="role-grid">
+
+      <a class="role-card" href="researcher-home.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">นว</div>
+            <h2 class="role-card__title">นักวิจัย (หัวหน้าโครงการ)</h2>
+          </div>
+          <p class="role-card__desc">ยื่นข้อเสนอออนไลน์ ติดตามสถานะ ส่งรายงานความก้าวหน้า/ฉบับสมบูรณ์ และเอกสารการเงิน</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบนักวิจัย →</span>
+      </a>
+
+      <a class="role-card" href="chair-review.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">ปธ</div>
+            <h2 class="role-card__title">ประธานวิจัยสำนักวิชา / คณบดี</h2>
+          </div>
+          <p class="role-card__desc">พิจารณารับรองข้อเสนอของสำนักวิชาก่อนส่งส่วนบริหารงานวิจัย (รับรอง / ส่งกลับแก้ไข)</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบประธานวิจัย →</span>
+      </a>
+
+      <a class="role-card" href="secretary-home.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">ลข</div>
+            <h2 class="role-card__title">เลขาสำนักวิชา</h2>
+          </div>
+          <p class="role-card__desc">ติดตามเอกสาร ข้อคอมเมนต์ และสถานะโครงการของนักวิจัยในสำนักวิชาตนเอง</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบเลขาสำนักวิชา →</span>
+      </a>
+
+      <a class="role-card" href="staff-queue.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">จท</div>
+            <h2 class="role-card__title">เจ้าหน้าที่ส่วนบริหารงานวิจัย</h2>
+          </div>
+          <p class="role-card__desc">ตรวจความครบถ้วนอัตโนมัติ กล่องงานรวม ติดตามการแก้ไขตามข้อคิดเห็น และเตรียมประกาศผล</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบเจ้าหน้าที่ →</span>
+      </a>
+
+      <a class="role-card" href="reviewer-list.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">กก</div>
+            <h2 class="role-card__title">คณะอนุกรรมการ (แทร็กเนื้อหา)</h2>
+          </div>
+          <p class="role-card__desc">ให้ข้อคิดเห็น/ข้อเสนอแนะ และรับรองเนื้อหาข้อเสนอโครงการ (ไม่ใช้การให้คะแนน)</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบผู้ทรงคุณวุฒิ →</span>
+      </a>
+
+      <a class="role-card" href="finance-review-queue.html">
+        <div>
+          <div class="role-card__header">
+            <div class="role-card__avatar">กง</div>
+            <h2 class="role-card__title">เจ้าหน้าที่การเงิน (แทร็กการเงิน)</h2>
+          </div>
+          <p class="role-card__desc">รับตรวจโครงการแบบ Claim-based และเป็นผู้รับผิดชอบต่อเนื่องทุกรอบ ตรวจงบตาราง 17.2</p>
+        </div>
+        <span class="role-card__action">เข้าสู่ระบบการเงิน →</span>
+      </a>
+
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  var roles = [
+    { id: "researcher", desc: "ยื่นข้อเสนอออนไลน์ ติดตามสถานะ ส่งรายงานความก้าวหน้า/ฉบับสมบูรณ์ และเอกสารการเงิน" },
+    { id: "chair", desc: "ประธานวิจัย/คณบดี พิจารณารับรองข้อเสนอของสำนักวิชาก่อนส่งส่วนบริหารงานวิจัย (ผ่าน/ส่งกลับแก้ไข)" },
+    { id: "secretary", desc: "เลขาสำนักวิชา ติดตามเอกสาร ข้อคอมเมนต์ และสถานะของนักวิจัยในสำนักวิชาของตน" },
+    { id: "staff", desc: "ตรวจความครบถ้วนอัตโนมัติ กล่องงานรวม ติดตามการแก้ไขตามข้อคิดเห็น และเตรียมประกาศผล" },
+    { id: "reviewer", desc: "คณะอนุกรรมการ (แทร็กเนื้อหา) ให้ข้อคิดเห็น/ข้อเสนอแนะ หรือรับรองเนื้อหาข้อเสนอโครงการ (ไม่ใช่การให้คะแนน)" },
+    { id: "finance", desc: "เจ้าหน้าที่การเงิน (แทร็กการเงิน) รับตรวจโครงการแบบ claim แล้วเป็นผู้รับผิดชอบต่อเนื่องทุกรอบ ตรวจงบ 17.2" },
+    { id: "exec", desc: "ดูรายชื่อโครงการที่ผ่านการพิจารณาจากคณะอนุกรรมการ+การเงินครบทั้ง 2 แทร็ก บันทึกมติ คกก.ส่งเสริม และประกาศผล" }
+  ];
+  var grid = document.getElementById("role-grid");
+  grid.innerHTML = roles.map(function (r) {
+    var role = RGMS.ROLES[r.id];
+    return '<button class="card" style="text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:8px;" data-role="' + r.id + '">' +
+      '<div class="cluster gap-2"><span class="avatar">' + role.short + '</span>' +
+      '<span class="text-subhead">' + role.label + '</span></div>' +
+      '<span class="text-sm text-muted">' + r.desc + '</span>' +
+      '<span class="text-sm text-accent" style="font-weight:600; margin-top:4px;">เข้าใช้งาน →</span>' +
+      '</button>';
+  }).join("");
+  grid.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-role]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-role");
+    RGMS.setRole(id);
+    window.location.href = RGMS.ROLES[id].home;
+  });
+</script>
+</body>
+</html>

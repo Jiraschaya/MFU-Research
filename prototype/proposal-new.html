@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ยื่นข้อเสนอโครงการ — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<style>
+  .dropzone { border:2px dashed var(--color-border-strong); border-radius:var(--radius); background:var(--color-surface-alt);
+    padding:var(--space-6) var(--space-4); text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
+  .dropzone:hover, .dropzone.is-over { border-color:var(--color-accent); background:var(--st-wait-tint); }
+  .dropzone__icon { width:52px; height:52px; margin:0 auto var(--space-2); border-radius:12px; background:var(--color-primary-tint);
+    color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; }
+  .bud-table th, .bud-table td { font-size:13px; }
+  .bud-cat td { background:var(--color-surface-alt); font-weight:700; }
+  .bud-sub td { border-top:1px solid var(--color-border); font-weight:600; }
+  .mode-switch { display:inline-flex; border:1px solid var(--color-border-strong); border-radius:var(--radius-pill); padding:3px; background:var(--color-surface-alt); }
+  .mode-switch button { border:none; background:transparent; border-radius:var(--radius-pill); padding:7px 16px; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--color-text-muted); cursor:pointer; }
+  .mode-switch button.is-active { background:var(--color-primary); color:#fff; }
+  .bline { border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:var(--space-3); background:var(--color-surface-alt); }
+  .bline + .bline { margin-top:var(--space-3); }
+  .bline__top { display:grid; grid-template-columns: 190px 1fr auto; gap:var(--space-2); align-items:end; }
+  .bline__calc { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:var(--space-3); }
+  .bline__calc .x { color:var(--color-text-subtle); font-weight:700; }
+  .bline__calc input { min-height:38px; padding:4px 8px; margin:0; }
+  .in-price { width:92px; text-align:right; } .in-q { width:60px; text-align:right; } .in-u { width:96px; }
+  .bline__amt { margin-left:auto; text-align:right; }
+  .bline__inst { display:flex; gap:var(--space-3); margin-top:var(--space-2); font-size:12px; color:var(--color-text-muted); flex-wrap:wrap; }
+  .bline__inst b { color:var(--color-text); font-family:var(--font-mono); }
+  .cat-sum { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dashed var(--color-divider); }
+  .sec-num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:var(--color-primary-tint); color:var(--color-primary); font-family:var(--font-mono); font-weight:700; font-size:13px; margin-right:8px; }
+  .tier-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-2); }
+  .tier-opt { border:1px solid var(--color-border-strong); border-radius:var(--radius-sm); padding:var(--space-3); cursor:pointer; transition:border-color .12s, background .12s; }
+  .tier-opt:hover { border-color:var(--color-accent); }
+  .tier-opt.is-sel { border-color:var(--color-primary); background:var(--color-primary-tint); box-shadow:inset 0 0 0 1px var(--color-primary); }
+  .tier-opt__name { font-weight:700; font-size:14px; }
+  .tier-opt__cap { font-family:var(--font-mono); color:var(--color-primary); font-size:13px; }
+  .pi-card { display:flex; gap:var(--space-3); align-items:flex-start; }
+  .pi-card .avatar { flex:none; }
+  .review-row { border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:var(--space-2) var(--space-3); background:var(--color-surface-alt); }
+  .review-row + .review-row { margin-top:var(--space-2); }
+  .review-row__label { font-size:12px; font-weight:600; color:var(--color-text-muted); }
+  @media (max-width:640px){ .bline__top{ grid-template-columns:1fr; } .tier-grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <div class="breadcrumb"><a href="researcher-home.html">โครงการของฉัน</a> / ยื่นข้อเสนอใหม่</div>
+      <h1 class="text-headline">ยื่นข้อเสนอโครงการ</h1>
+      <p class="text-muted" id="round-line"></p>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr 320px; align-items:start;">
+      <div class="stack gap-4">
+
+        <!-- ============ 0. เริ่มเร็ว: อัปโหลด RS-01 แล้วดึงข้อมูล ============ -->
+        <div class="card card--featured" id="sec-0">
+          <h2 class="text-subhead" style="margin-bottom:var(--space-2);"><span class="sec-num">0</span>เริ่มให้เร็ว — มีร่างข้อเสนออยู่แล้วใช่ไหม?</h2>
+          <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">
+            อัปโหลดไฟล์ RS-01 (.docx) ที่เขียนไว้ ระบบจะ<strong>ดึงเนื้อหาไปเติมในฟอร์มให้อัตโนมัติ</strong> (ชื่อโครงการ · บทคัดย่อ · วัตถุประสงค์ · คำสำคัญ ฯลฯ) — คุณแค่ตรวจทานและเติมส่วนที่ขาด · หรือจะข้ามไปกรอกในฟอร์มด้านล่างเลยก็ได้
+          </p>
+          <div class="dropzone" id="doc-drop">
+            <div class="dropzone__icon">DOCX</div>
+            <div style="font-weight:600;">ลากไฟล์ RS-01 (.docx) มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+            <div class="text-sm text-muted" style="margin-top:4px;">ระบบอ่านไฟล์ในเครื่องของคุณเท่านั้น ไม่อัปโหลดออกนอก · ไฟล์ .doc รุ่นเก่าโปรด Save as .docx ก่อน</div>
+            <input type="file" id="doc-file" accept=".docx" style="display:none;">
+          </div>
+          <div class="text-center" style="margin-top:var(--space-2);">
+            <button class="btn btn-ghost btn-sm" id="doc-sample">หรือลองด้วยตัวอย่าง (ModernBERT วิเคราะห์รสกาแฟ)</button>
+          </div>
+          <div id="doc-parsed" style="display:none; margin-top:var(--space-3);"></div>
+        </div>
+
+        <!-- ============ 1. หัวหน้าโครงการ (จากโปรไฟล์) ============ -->
+        <div class="card card--featured" id="sec-1">
+          <div class="between wrap gap-2" style="margin-bottom:var(--space-3);">
+            <h2 class="text-subhead"><span class="sec-num">1</span>หัวหน้าโครงการวิจัย</h2>
+            <a class="btn btn-ghost btn-sm" href="researcher-profile.html">แก้ไขในโปรไฟล์</a>
+          </div>
+          <div id="pi-box"></div>
+        </div>
+
+        <!-- ============ 2. ข้อมูลโครงการ (RS-01) ============ -->
+       <div class="card card--featured" id="sec-2">
+          <div class="between wrap gap-2" style="margin-bottom:var(--space-4);">
+            <h2 class="text-subhead"><span class="sec-num">2</span>ข้อมูลโครงการ <span id="locked-badge-box"></span></h2>
+          </div>
+
+          <div class="field">
+            <label class="field__label">ประเภททุน <span class="req">*</span></label>
+            <div class="tier-grid" id="tier-grid"></div>
+          </div>
+
+          <div class="field">
+            <label class="field__label">ชื่อโครงการ (ภาษาไทย) <span class="req">*</span></label>
+            <input class="field__control" id="f-title" placeholder="เช่น การพัฒนาแบบจำลอง...">
+          </div>
+          <div class="field">
+            <label class="field__label">ชื่อโครงการ (ภาษาอังกฤษ)</label>
+            <input class="field__control" id="f-title-en" placeholder="Project title in English">
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field">
+              <label class="field__label">สำนักวิชา <span class="req">*</span></label>
+              <select class="field__control" id="f-school"></select>
+            </div>
+            <div class="field">
+              <label class="field__label">ระยะเวลาดำเนินการ <span class="req">*</span></label>
+              <select class="field__control" id="f-duration">
+                <option value="">— เลือก —</option>
+                <option>6 เดือน</option><option>12 เดือน</option><option>18 เดือน</option><option>24 เดือน</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field">
+              <label class="field__label">ประเภทของการวิจัย</label>
+              <select class="field__control" id="f-rtype"></select>
+            </div>
+            <div class="field">
+              <label class="field__label">คำสำคัญ (Keywords) — คั่นด้วยจุลภาค</label>
+              <input class="field__control" id="f-keywords" placeholder="เช่น NLP, กาแฟ, sensory lexicon">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label">ความสอดคล้องกับประเด็นยุทธศาสตร์การวิจัย มฟล.</label>
+            <select class="field__control" id="f-strategy"></select>
+          </div>
+
+          <div class="field">
+            <label class="field__label">ความสำคัญ / ที่มาของปัญหา (บทคัดย่อ) <span class="req">*</span></label>
+            <textarea class="field__control" id="f-abstract" rows="4" placeholder="อธิบายที่มา ปัญหา และกรอบแนวคิดโดยสังเขป"></textarea>
+          </div>
+          <div class="field">
+            <label class="field__label">วัตถุประสงค์ของโครงการ <span class="req">*</span></label>
+            <textarea class="field__control" id="f-objective" rows="3" placeholder="1. ...&#10;2. ..."></textarea>
+          </div>
+          <div class="grid grid-2" style="margin-bottom:0;">
+            <div class="field" style="margin-bottom:0;">
+              <label class="field__label">ขอบเขตของโครงการ</label>
+              <textarea class="field__control" id="f-scope" rows="3" placeholder="ศึกษาอะไรบ้าง เชื่อมโยงกับวัตถุประสงค์"></textarea>
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label class="field__label">ผลลัพธ์ที่คาดว่าจะได้รับ</label>
+              <textarea class="field__control" id="f-outcome" rows="3" placeholder="เช่น ตีพิมพ์ TCI กลุ่ม 1 / Proceedings / อนุสิทธิบัตร"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ 3. งบประมาณ (เลือกโหมด) ============ -->
+        <div class="card card--featured" id="sec-3">
+          <div class="between wrap gap-2" style="margin-bottom:var(--space-3);">
+            <h2 class="text-subhead"><span class="sec-num">3</span>งบประมาณ</h2>
+            <div class="cluster gap-3 wrap">
+              <div class="mode-switch" id="mode-switch">
+                <button data-mode="upload" class="is-active">อัปโหลด Excel</button>
+                <button data-mode="manual">กรอกในระบบ</button>
+              </div>
+              <span class="text-sm text-muted">เพดาน <strong id="cap-label"></strong></span>
+            </div>
+          </div>
+
+          <!-- โหมด A: อัปโหลด -->
+          <div id="mode-upload">
+            <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">
+              กรอกงบใน Excel ที่ถนัด (ตาราง ข้อ 17.2) แล้วอัปโหลดกลับมา — ระบบดูดข้อมูล ตรวจกฎ 25% / เอกสารแนบ / ยอดรวม ให้อัตโนมัติ
+            </p>
+            <div class="cluster gap-2" style="margin-bottom:var(--space-3);">
+              <button class="btn btn-secondary btn-md" id="dl-template">ดาวน์โหลดแบบฟอร์มงบ (Excel)</button>
+              <span class="text-sm text-muted">แบบฟอร์มมาตรฐาน มฟล. — มี dropdown รายการ + สูตรในตัว</span>
+            </div>
+            <div id="upload-area">
+              <div class="dropzone" id="dropzone">
+                <div class="dropzone__icon">XLSX</div>
+                <div style="font-weight:600;">ลากไฟล์ที่กรอกแล้วมาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+                <div class="text-sm text-muted" style="margin-top:4px;">รองรับ .xlsx (ตาราง ข้อ 17.2) — ระบบอ่านไฟล์จริงในเครื่อง ไม่อัปโหลดออกนอก</div>
+                <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none;">
+              </div>
+              <div class="text-center" style="margin-top:var(--space-2);">
+                <button class="btn btn-ghost btn-sm" id="use-sample">หรือใช้ไฟล์ตัวอย่าง (งบโครงการกาแฟ ModernBERT)</button>
+              </div>
+            </div>
+            <div id="parsed" style="display:none;"></div>
+          </div>
+
+          <!-- โหมด B: กรอกในระบบ -->
+          <div id="mode-manual" style="display:none;">
+            <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">
+              กด "เพิ่มรายการ" เลือกรายการมาตรฐาน + กรอกราคา/จำนวน — ระบบคูณ แบ่งงวด 50/40/10 รวมหมวด และตรวจกฎให้อัตโนมัติ
+            </p>
+            <div id="blines" class="stack"></div>
+            <button class="btn btn-secondary btn-md" id="add-line" style="margin-top:var(--space-3);">+ เพิ่มรายการงบประมาณ</button>
+            <hr class="divider">
+            <div class="grid grid-2 gap-4">
+              <div><span class="text-overline">สรุปตามหมวด</span><div id="cat-summary" style="margin-top:8px;"></div></div>
+              <div><span class="text-overline">ตรวจกฎอัตโนมัติ</span><ul class="checklist" id="rule-checks" style="font-size:13px; margin-top:8px;"></ul></div>
+            </div>
+            <div class="between" style="margin-top:var(--space-4); padding-top:var(--space-3); border-top:2px solid var(--color-primary);">
+              <span class="text-subhead">รวมทั้งสิ้น</span><span class="num text-headline" id="grand-total">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ 4. มาตรฐานการวิจัย (ข้อ 18) ============ -->
+       <div class="card card--featured" id="sec-4">
+          <h2 class="text-subhead" style="margin-bottom:var(--space-3);"><span class="sec-num">4</span>มาตรฐานการวิจัย</h2>
+          <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">เลือกให้ตรงกับลักษณะงานวิจัย — ระบบจะเพิ่มรายการเอกสารรับรองที่ต้องแนบให้อัตโนมัติ</p>
+          <div class="stack gap-2" id="std-list"></div>
+        </div>
+
+        <!-- ============ 5. เอกสารแนบ ============ -->
+        <div class="card card--featured" id="sec-5">
+          <h2 class="text-subhead" style="margin-bottom:var(--space-3);"><span class="sec-num">5</span>เอกสารแนบ</h2>
+          <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">รายการที่ระบบสร้าง/ดึงจากโปรไฟล์ให้แล้วจะติ๊กอัตโนมัติ · ที่เหลือแนบเพิ่ม (สาธิต: กดสลับสถานะได้)</p>
+          <div class="stack gap-2" id="doc-list"></div>
+        </div>
+      </div>
+
+     <div class="card card--featured" style="position:sticky; top:var(--space-4);">
+        <h3 class="text-subhead" style="margin-bottom:var(--space-3);">ตรวจความพร้อมก่อนยื่น</h3>
+        <nav class="form-stepper">
+          <span class="text-overline" style="margin-bottom:4px;">ทางลัดไปยังส่วนต่างๆ</span>
+          <a href="#sec-0" class="stepper-item">0. นำเข้าไฟล์ RS-01</a>
+          <a href="#sec-1" class="stepper-item">1. หัวหน้าโครงการ</a>
+          <a href="#sec-2" class="stepper-item">2. ข้อมูลโครงการ</a>
+          <a href="#sec-3" class="stepper-item">3. งบประมาณ</a>
+          <a href="#sec-4" class="stepper-item">4. มาตรฐานการวิจัย</a>
+          <a href="#sec-5" class="stepper-item">5. เอกสารแนบ</a>
+        </nav>
+        <div class="stack gap-3">
+          <div>
+            <div class="between text-sm"><span>ความครบถ้วน</span><span class="num" id="ready-count">0/0</span></div>
+            <div class="progress" style="margin-top:6px;"><div class="progress__fill" id="ready-bar" style="width:0%;"></div></div>
+          </div>
+          <ul class="checklist" id="ready-list" style="font-size:13px;"></ul>
+        </div>
+        <hr class="divider">
+        <button class="btn btn-primary btn-lg btn-block" id="submit-btn" disabled>ยื่นข้อเสนอ</button>
+        <p class="text-sm text-muted text-center" style="margin-top:var(--space-2);" id="submit-hint">กรอกข้อมูลให้ครบเพื่อยื่น</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("proposal-new");
+
+  /* --- gate การยื่นตามรอบที่เปิดรับ (FR-03) --- */
+  var __oc = RGMS.openCall();
+  var __callOpen = !!__oc;
+  (function () {
+    var head = document.querySelector(".page-head");
+    var b = document.createElement("div");
+    if (__oc) {
+      b.className = "notice notice--ok"; b.style.marginBottom = "var(--space-4)";
+      b.innerHTML = '<span class="notice__title">เปิดรับข้อเสนอ: ' + __oc.title + '</span><span class="notice__body">ปิดรับ ' + __oc.close + ' · เพดานงบสูงสุด ' + RGMS.fmtBaht(__oc.cap) + ' — ยื่นได้ภายในกำหนด</span>';
+    } else {
+      b.className = "notice notice--reject"; b.style.marginBottom = "var(--space-4)";
+      b.innerHTML = '<span class="notice__title">ขณะนี้ยังไม่มีรอบที่เปิดรับข้อเสนอ</span><span class="notice__body">โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย — ระบบปิดการยื่นชั่วคราว</span>';
+    }
+    if (head && head.parentNode) head.parentNode.insertBefore(b, head.nextSibling);
+  })();
+
+  var INST = RGMS.BUDGET_INSTALLMENTS, CATS = RGMS.BUDGET_CATS;
+  document.getElementById("round-line").textContent = RGMS.ROUND.label + " · ปิดรับ " + RGMS.ROUND.deadline;
+  document.getElementById("f-school").innerHTML =
+    '<option value="">— เลือก —</option>' + RGMS.SCHOOLS.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+  document.getElementById("f-rtype").innerHTML =
+    '<option value="">— เลือก —</option>' + RGMS.RESEARCH_TYPES.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+  document.getElementById("f-strategy").innerHTML =
+    '<option value="">— เลือก —</option>' + RGMS.STRATEGY_GROUPS.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+
+  /* ========== 1. หัวหน้าโครงการ จากโปรไฟล์ ========== */
+  var PROF = RGMS.getProfile();
+  (function renderPI() {
+    var saved = RGMS.profileSaved();
+    var box = document.getElementById("pi-box");
+    box.innerHTML =
+      (!saved ? '<div class="notice notice--wait" style="margin-bottom:var(--space-3);"><span class="notice__title">นี่เป็นข้อมูลตัวอย่าง</span>' +
+        '<span class="notice__body">ยังไม่ได้บันทึกโปรไฟล์ — <a href="researcher-profile.html">กรอกโปรไฟล์ครั้งเดียว</a> แล้วข้อมูลนี้จะถูกต้องและใช้ได้ทุกข้อเสนอ</span></div>' : '') +
+      '<div class="pi-card"><span class="avatar">' + RGMS.initials(PROF.nameTh) + '</span>' +
+        '<div class="stack gap-1">' +
+          '<div style="font-weight:700; font-size:16px;">' + PROF.nameTh + (PROF.position ? ' <span class="text-sm text-muted">· ' + PROF.position + '</span>' : '') + '</div>' +
+          '<div class="text-sm text-muted">' + PROF.school + '</div>' +
+          '<div class="text-sm text-muted">' + (PROF.email || '—') + ' · ' + (PROF.phone || '—') + '</div>' +
+          (PROF.expertise ? '<div class="text-sm" style="margin-top:4px;"><span class="text-overline">เชี่ยวชาญ</span> ' + PROF.expertise + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    if (PROF.school) document.getElementById("f-school").value = PROF.school;
+  })();
+
+  /* ========== 2. ประเภททุน (tier) → กำหนดเพดานงบ ========== */
+  var CAP = RGMS.TIERS.new.cap, currentTier = "new";
+  (function renderTiers() {
+    document.getElementById("tier-grid").innerHTML = Object.keys(RGMS.TIERS).map(function (k) {
+      var t = RGMS.TIERS[k];
+      return '<div class="tier-opt' + (k === currentTier ? ' is-sel' : '') + '" data-tier="' + k + '">' +
+        '<div class="tier-opt__name">' + t.label + '</div>' +
+        '<div class="tier-opt__cap">เพดาน ' + RGMS.fmtBaht(t.cap) + '</div></div>';
+    }).join("");
+  })();
+  function setCap() {
+    CAP = RGMS.TIERS[currentTier].cap;
+    document.getElementById("cap-label").textContent = RGMS.fmtBaht(CAP);
+  }
+  setCap();
+  document.getElementById("tier-grid").addEventListener("click", function (e) {
+    var el = e.target.closest("[data-tier]"); if (!el) return;
+    currentTier = el.getAttribute("data-tier");
+    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle("is-sel", c.getAttribute("data-tier") === currentTier); });
+    setCap();
+    if (mode === "upload" && budget) renderParsed("อัปเดตเพดานตามประเภททุน"); else renderManualSummary();
+    recompute();
+  });
+
+  var mode = "upload";
+  var budget = null;
+  window.__budgetRulesOk = false;
+
+  /* ====== ตรวจกฎงบ (ใช้ร่วมกันทั้งสองโหมด) ====== */
+  function budgetChecks(items) {
+    var total = items.reduce(function (s, b) { return s + b.total; }, 0);
+    var byCat = {}; items.forEach(function (b) { (byCat[b.cat] = byCat[b.cat] || []).push(b); });
+    var checks = [];
+    checks.push({ label: "ยอดรวมไม่เกินเพดาน " + RGMS.fmtMoney(CAP), ok: total > 0 && total <= CAP,
+      note: total > CAP ? "เกิน " + RGMS.fmtMoney(total - CAP) : RGMS.fmtBaht(total) });
+    CATS.forEach(function (c) {
+      if (c.cap == null) return;
+      var t = (byCat[c.id] || []).reduce(function (s, b) { return s + b.total; }, 0);
+      var pct = total ? t / total : 0;
+      checks.push({ label: c.label.replace("หมวด", "") + " ไม่เกิน " + Math.round(c.cap * 100) + "%",
+        ok: pct <= c.cap, note: Math.round(pct * 100) + "% (" + RGMS.fmtMoney(t) + ")" });
+    });
+    var needAttach = items.filter(function (b) { return RGMS.attachNeed(b.item); });
+    checks.push({ label: "เอกสารแนบตามรายการ (TOR/ใบเสนอราคา/กำหนดการ)", ok: needAttach.length === 0,
+      note: needAttach.length ? "ต้องแนบ " + needAttach.length + " รายการ" : "", soft: true });
+    return { checks: checks, total: total, byCat: byCat, rulesOk: checks.filter(function (c) { return !c.soft; }).every(function (c) { return c.ok; }) };
+  }
+  function checksHTML(checks) {
+    return checks.map(function (c) {
+      var cls = c.ok ? "checklist__item--ok" : (c.soft ? "checklist__item--warn" : "checklist__item--fail");
+      return '<li class="checklist__item ' + cls + '"><span class="mark">' + (c.ok ? '✓' : '!') + '</span>' +
+        '<span class="checklist__label">' + c.label + (c.note ? ' <span class="checklist__note">— ' + c.note + '</span>' : '') + '</span></li>';
+    }).join("");
+  }
+  function activeBudget() { return mode === "upload" ? (budget || []) : linesToBudget(); }
+
+  /* ====== สลับโหมด ====== */
+  document.getElementById("mode-switch").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mode]"); if (!b) return;
+    mode = b.getAttribute("data-mode");
+    Array.prototype.forEach.call(this.children, function (c) { c.classList.toggle("is-active", c.getAttribute("data-mode") === mode); });
+    document.getElementById("mode-upload").style.display = mode === "upload" ? "block" : "none";
+    document.getElementById("mode-manual").style.display = mode === "manual" ? "block" : "none";
+    if (mode === "manual") { renderLines(); bindLines(); renderManualSummary(); }
+    recompute();
+  });
+
+  /* ==========================================================
+     0. อัปโหลด RS-01 (.docx) → ดึงข้อมูลไปเติมฟอร์ม
+     ========================================================== */
+  var EXTRACT_MAP = [
+    { id: "f-title",     starts: ["ชื่อโครงการ", "(ภาษาไทย)"], stops: ["(ภาษาอังกฤษ)", "ระบุความสอดคล้อง", "ส่วน ก"] },
+    { id: "f-title-en",  starts: ["(ภาษาอังกฤษ)"], stops: ["ระบุความสอดคล้อง", "ส่วน ก", "คณะผู้วิจัย"] },
+    { id: "f-keywords",  starts: ["คำสำคัญ", "keywords"], stops: ["ความสำคัญ", "ที่มา", "วัตถุประสงค์", "ประเภทของการวิจัย"] },
+    { id: "f-abstract",  starts: ["ความสำคัญ", "ที่มาของปัญหา", "บทคัดย่อ"], stops: ["วัตถุประสงค์", "การทบทวนวรรณกรรม"] },
+    { id: "f-objective", starts: ["วัตถุประสงค์"], stops: ["การทบทวนวรรณกรรม", "เอกสารอ้างอิง", "กระบวนการ", "ขอบเขต"] },
+    { id: "f-scope",     starts: ["ขอบเขตของโครงการ", "ขอบเขต"], stops: ["แผนการดำเนินงาน", "ผลงานตามระยะ", "ผลลัพธ์"] },
+    { id: "f-outcome",   starts: ["ผลลัพธ์ที่คาดว่าจะได้รับ", "ผลที่คาดว่าจะได้รับ"], stops: ["การบูรณาการ", "ระดับการถ่ายทอด", "งบประมาณ"] }
+  ];
+  function cleanVal(s) {
+    return String(s || "").replace(/^[…\.\s:：]+/, "").replace(/[…\.]{3,}/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function extractField(text, starts, stops) {
+    var lower = text.toLowerCase();
+    for (var si = 0; si < starts.length; si++) {
+      var idx = lower.indexOf(starts[si].toLowerCase());
+      if (idx < 0) continue;
+      var from = idx + starts[si].length;
+      var rest = text.slice(from);
+      var end = rest.length;
+      stops.forEach(function (st) { var p = rest.toLowerCase().indexOf(st.toLowerCase()); if (p >= 0 && p < end) end = p; });
+      var val = cleanVal(rest.slice(0, end));
+      if (val.length >= 2) return val.slice(0, 1200);
+    }
+    return "";
+  }
+  function reviewExtracted(found, sourceLabel) {
+    var box = document.getElementById("doc-parsed");
+    var keys = Object.keys(found).filter(function (k) { return found[k]; });
+    if (!keys.length) {
+      box.style.display = "block";
+      box.innerHTML = '<div class="notice notice--wait"><span class="notice__title">อ่านไฟล์ได้ แต่จับหัวข้อไม่พบ</span>' +
+        '<span class="notice__body">โครงสร้างไฟล์อาจต่างจากแบบ RS-01 มาตรฐาน — กรอกในฟอร์มด้านล่างได้เลย หรือลองไฟล์ตัวอย่าง</span></div>';
+      return;
+    }
+    var labels = { "f-title": "ชื่อโครงการ (ไทย)", "f-title-en": "ชื่อโครงการ (อังกฤษ)", "f-keywords": "คำสำคัญ",
+      "f-abstract": "ความสำคัญ/ที่มา", "f-objective": "วัตถุประสงค์", "f-scope": "ขอบเขต", "f-outcome": "ผลลัพธ์ที่คาดว่าจะได้รับ" };
+    box.style.display = "block";
+    box.innerHTML =
+      '<div class="notice notice--ok" style="margin-bottom:var(--space-3);"><span class="notice__title">ดึงข้อมูลได้ ' + keys.length + ' หัวข้อ · ' + sourceLabel + '</span>' +
+        '<span class="notice__body">ตรวจทานด้านล่างแล้วกด "ใช้ข้อมูลนี้" เพื่อเติมลงฟอร์ม — แก้ได้ภายหลังทุกช่อง</span></div>' +
+      keys.map(function (k) {
+        return '<div class="review-row"><div class="review-row__label">' + (labels[k] || k) + '</div>' +
+          '<div class="text-sm" style="margin-top:2px;">' + found[k].replace(/</g, "&lt;").slice(0, 240) + (found[k].length > 240 ? "…" : "") + '</div></div>';
+      }).join("") +
+      '<div class="cluster gap-2" style="margin-top:var(--space-3);">' +
+        '<button class="btn btn-primary btn-md" id="apply-extract">ใช้ข้อมูลนี้เติมฟอร์ม</button>' +
+        '<button class="btn btn-ghost btn-sm" id="discard-extract">ยกเลิก</button></div>';
+    document.getElementById("apply-extract").addEventListener("click", function () {
+      keys.forEach(function (k) { document.getElementById(k).value = found[k]; });
+      RGMS.toast("เติมข้อมูลจากไฟล์แล้ว — โปรดตรวจทานและเติมส่วนที่ขาด", "ok");
+      box.style.display = "none";
+      document.querySelector(".card h2").scrollIntoView({ behavior: "smooth", block: "start" });
+      recompute();
+    });
+    document.getElementById("discard-extract").addEventListener("click", function () { box.style.display = "none"; });
+  }
+
+  function handleDocx(file) {
+    if (!/\.docx$/i.test(file.name)) { RGMS.toast("รองรับเฉพาะ .docx — โปรด Save as .docx ก่อน", "accent"); return; }
+    
+    var dz = document.getElementById("doc-drop");
+    if (dz) {
+      dz.innerHTML = 
+        '<div class="stack gap-2 text-center" style="padding:16px;">' +
+          '<div class="spinner" style="margin:0 auto;"></div>' +
+          '<span class="text-sm text-muted">กำลังวิเคราะห์โครงสร้างไฟล์ ' + file.name + '...</span>' +
+        '</div>';
+    }
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      mammoth.extractRawText({ arrayBuffer: e.target.result }).then(function (res) {
+        var text = res.value || "";
+        var found = {};
+        EXTRACT_MAP.forEach(function (m) { found[m.id] = extractField(text, m.starts, m.stops); });
+        reviewExtracted(found, "อัปโหลด: " + file.name);
+      }).catch(function () { RGMS.toast("อ่านไฟล์ .docx ไม่สำเร็จ", "accent"); });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function sampleDocx() {
+    reviewExtracted({
+      "f-title": "การพัฒนาแบบจำลองภาษา ModernBERT สำหรับวิเคราะห์รสสัมผัสกาแฟอาราบิกาภาคเหนือ",
+      "f-title-en": "Development of a ModernBERT Language Model for Sensory Analysis of Northern Arabica Coffee",
+      "f-keywords": "ModernBERT, sensory lexicon, topic modeling, กาแฟอาราบิกา, การประมวลผลภาษาธรรมชาติ",
+      "f-abstract": "อุตสาหกรรมกาแฟพิเศษภาคเหนือขาดชุดคำศัพท์รสสัมผัสมาตรฐานและเครื่องมือวิเคราะห์เชิงความหมายจากบทวิจารณ์ โครงการนี้จึงสร้าง sensory lexicon และแบบจำลอง ModernBERT เพื่อจัดกลุ่มหัวข้อรสชาติจากบทวิจารณ์จำนวนมากอย่างเป็นระบบ",
+      "f-objective": "1. สร้างชุดคำศัพท์รสสัมผัสกาแฟ (sensory lexicon)\n2. พัฒนาแบบจำลอง ModernBERT สำหรับจัดกลุ่มหัวข้อรสชาติ\n3. ประเมินความสอดคล้องกับผลการชิมของ Q-grader",
+      "f-scope": "ศึกษาบทวิจารณ์กาแฟอาราบิกาภาคเหนือ 22 ตัวอย่าง เปรียบเทียบผลแบบจำลองกับการชิมของผู้เชี่ยวชาญ",
+      "f-outcome": "ตีพิมพ์ในวารสารระดับนานาชาติฐานข้อมูล Scopus 1 บทความ และชุดข้อมูล sensory lexicon เปิดสาธารณะ"
+    }, "ไฟล์ตัวอย่าง: RS01-ModernBERT-Coffee.docx");
+  }
+  (function bindDocx() {
+    var dz = document.getElementById("doc-drop"), fi = document.getElementById("doc-file");
+    dz.addEventListener("click", function () { fi.click(); });
+    fi.addEventListener("change", function () { if (fi.files[0]) handleDocx(fi.files[0]); });
+    ["dragover", "dragenter"].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add("is-over"); }); });
+    ["dragleave", "drop"].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove("is-over"); }); });
+    dz.addEventListener("drop", function (e) { if (e.dataTransfer.files[0]) handleDocx(e.dataTransfer.files[0]); });
+    document.getElementById("doc-sample").addEventListener("click", sampleDocx);
+  })();
+
+  /* ==========================================================
+     3A. อัปโหลด Excel งบ (17.2)
+     ========================================================== */
+  function catOf(headerText) {
+    var s = String(headerText);
+    if (s.indexOf("เดินทาง") >= 0) return CATS.filter(function(c){return c.id==="travel";})[0];
+    if (s.indexOf("ค่าตอบแทน") >= 0) return CATS.filter(function(c){return c.id==="compensation";})[0];
+    if (s.indexOf("ครุภัณฑ์") >= 0) return CATS.filter(function(c){return c.id==="durable";})[0];
+    if (s.indexOf("สาธารณูปโภค") >= 0) return CATS.filter(function(c){return c.id==="utilities";})[0];
+    if (s.indexOf("วัสดุ") >= 0) return CATS.filter(function(c){return c.id==="material";})[0];
+    if (s.indexOf("ค่าใช้สอย") >= 0) return CATS.filter(function(c){return c.id==="generaluse";})[0];
+    return null;
+  }
+  function parseWorkbook(wb) {
+    var name = wb.SheetNames.filter(function (n) { return n.indexOf("17.2") >= 0; })[0] || wb.SheetNames[0];
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null });
+    var cur = null, items = [];
+    rows.forEach(function (r) {
+      var A = r[0], B = r[1], C = r[2], D = r[3], E = r[4], F = r[5], G = r[6];
+      var Bs = (B == null ? "" : String(B)).trim();
+      if (Bs.indexOf("หมวด") === 0) { cur = catOf(Bs); return; }
+      var As = (A == null ? "" : String(A)).trim();
+      if (As.indexOf("รวม") === 0) return;
+      var g = Number(G);
+      if (cur && Bs && !isNaN(g) && g > 0)
+        items.push({ cat: cur.id, item: Bs, breakdown: (C == null ? "" : String(C)), total: g, i1: Number(D) || 0, i2: Number(E) || 0, i3: Number(F) || 0 });
+    });
+    return items;
+  }
+  function handleFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var items = parseWorkbook(XLSX.read(new Uint8Array(e.target.result), { type: "array" }));
+        if (!items.length) { RGMS.toast("อ่านไฟล์ได้ แต่ไม่พบรายการงบในชีท 'ตาราง ข้อ 17.2'", "accent"); return; }
+        budget = items; renderParsed("อัปโหลด: " + file.name); recompute();
+      } catch (err) { RGMS.toast("อ่านไฟล์ไม่สำเร็จ — ตรวจว่าเป็น .xlsx ที่ถูกต้อง", "accent"); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function sampleBudget() {
+    return [
+      { cat:"compensation", item:"ค่าตอบแทน – นักศึกษาช่วยงานด้านวิชาการ", breakdown:"60 บาท × 50 ชม. × 1 คน × 8 เดือน", total:24000, i1:15000, i2:6000, i3:3000 },
+      { cat:"compensation", item:"ค่าตอบแทน – ผู้ให้ข้อมูล", breakdown:"ผู้ทรงคุณวุฒิ (Q Grader) 2,000 บาท × 3 คน", total:6000, i1:5000, i2:500, i3:500 },
+      { cat:"travel", item:"ค่าพาหนะในการเดินทางไปปฏิบัติงาน (รถยนต์ส่วนบุคคล)", breakdown:"200 กม. × 2 × 4 บาท/กม × 3 ครั้ง", total:4800, i1:1600, i2:3200, i3:0 },
+      { cat:"travel", item:"ค่ายานพาหนะเครื่องบินอาจารย์", breakdown:"4,250 บาท × 1 คน × 2 ครั้ง", total:8500, i1:4250, i2:0, i3:4250 },
+      { cat:"travel", item:"ค่าที่พัก", breakdown:"800 บาท × 2 คืน × 3 ครั้ง + 1,600 × 2", total:8000, i1:1600, i2:6400, i3:0 },
+      { cat:"travel", item:"ค่าเบี้ยเลี้ยง (กรณีเดินทางออกนอกพื้นที่จังหวัด)", breakdown:"350 บาท × 1 คน × 5 วัน + Taxi", total:3150, i1:2100, i2:1050, i3:0 },
+      { cat:"material", item:"ค่าวัสดุคอมพิวเตอร์", breakdown:"SanDisk Extreme Portable SSD", total:3390, i1:0, i2:3390, i3:0 },
+      { cat:"material", item:"ค่าวัสดุโปรแกรมคอมพิวเตอร์หรือค่าลิขสิทธิ์โปรแกรมคอมพิวเตอร์ (แนบ TOR)", breakdown:"Google Colab Pro+ (GPU) 1,680 × 12 เดือน", total:20160, i1:6720, i2:13440, i3:0 },
+      { cat:"material", item:"ค่าวัสดุโปรแกรมคอมพิวเตอร์หรือค่าลิขสิทธิ์โปรแกรมคอมพิวเตอร์ (แนบ TOR)", breakdown:"Overleaf Professional ($199 × 32.26)", total:6420, i1:6420, i2:0, i3:0 },
+      { cat:"material", item:"ค่าวัสดุวิทยาศาสตร์", breakdown:"Digital Scale + Kettle (cupping)", total:4300, i1:4300, i2:0, i3:0 },
+      { cat:"material", item:"ค่าวัสดุการเกษตร", breakdown:"cupping test 22 ตัวอย่าง × 300–500 บาท", total:11280, i1:3010, i2:6020, i3:2250 }
+    ];
+  }
+  function renderParsed(sourceLabel) {
+    document.getElementById("upload-area").style.display = "none";
+    var box = document.getElementById("parsed"); box.style.display = "block";
+    var res = budgetChecks(budget); window.__budgetRulesOk = res.rulesOk;
+    var rowsHTML = "";
+    CATS.forEach(function (c) {
+      var list = res.byCat[c.id]; if (!list) return;
+      var sub = list.reduce(function (s, b) { return s + b.total; }, 0);
+      rowsHTML += '<tr class="bud-cat"><td colspan="4">' + c.label + '</td></tr>';
+      list.forEach(function (b) {
+        var need = RGMS.attachNeed(b.item);
+        rowsHTML += '<tr><td>' + b.item + (need ? ' <span class="badge badge-wait" style="font-size:10px;">ต้อง' + need + '</span>' : '') +
+          (b.breakdown ? '<div class="text-sm text-muted">' + b.breakdown + '</div>' : '') + '</td>' +
+          '<td class="right num">' + RGMS.fmtMoney(b.i1) + '</td><td class="right num">' + RGMS.fmtMoney(b.i2) + '</td>' +
+          '<td class="right num">' + RGMS.fmtMoney(b.i3) + '</td><td class="right num" style="font-weight:600;">' + RGMS.fmtMoney(b.total) + '</td></tr>';
+      });
+      rowsHTML += '<tr class="bud-sub"><td>รวม' + c.label + '</td><td colspan="3"></td><td class="right num">' + RGMS.fmtMoney(sub) + '</td></tr>';
+    });
+    box.innerHTML =
+      '<div class="notice notice--ok" style="margin-bottom:var(--space-3);"><span class="notice__title">ดูดข้อมูลงบสำเร็จ · ' + budget.length + ' รายการ · รวม ' + RGMS.fmtBaht(res.total) + '</span>' +
+        '<span class="notice__body">' + sourceLabel + ' — ถ้าต้องแก้ กลับไปแก้ใน Excel แล้วอัปโหลดใหม่ได้เลย</span></div>' +
+      '<div class="table-wrap" style="margin-bottom:var(--space-3);"><table class="table bud-table" style="min-width:520px;">' +
+        '<thead><tr><th>รายการค่าใช้จ่าย</th><th class="right">งวด 1</th><th class="right">งวด 2</th><th class="right">งวด 3</th><th class="right">รวม</th></tr></thead>' +
+        '<tbody>' + rowsHTML + '</tbody>' +
+        '<tfoot><tr style="border-top:2px solid var(--color-primary);"><td style="font-weight:700;">รวมทั้งสิ้น</td><td colspan="3"></td><td class="right num" style="font-weight:700; font-size:16px;">' + RGMS.fmtMoney(res.total) + '</td></tr></tfoot>' +
+      '</table></div>' +
+      '<span class="text-overline">ตรวจกฎอัตโนมัติ</span><ul class="checklist" style="font-size:13px; margin:8px 0 var(--space-3);">' + checksHTML(res.checks) + '</ul>' +
+      '<div class="cluster gap-2"><button class="btn btn-secondary btn-sm" id="reupload">อัปโหลดไฟล์อื่น</button>' +
+        '<span class="text-sm text-muted">ระบบจะแปลงเป็นตาราง 17 + 17.2 และใส่ใน RS-01 อัตโนมัติเมื่อยื่น</span></div>';
+    document.getElementById("reupload").addEventListener("click", function () {
+      budget = null; box.style.display = "none"; document.getElementById("upload-area").style.display = "block"; recompute();
+    });
+  }
+  var dz = document.getElementById("dropzone"), fi = document.getElementById("file-input");
+  dz.addEventListener("click", function () { fi.click(); });
+  fi.addEventListener("change", function () { if (fi.files[0]) handleFile(fi.files[0]); });
+  ["dragover", "dragenter"].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add("is-over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove("is-over"); }); });
+  dz.addEventListener("drop", function (e) { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+  document.getElementById("use-sample").addEventListener("click", function () { budget = sampleBudget(); renderParsed("ไฟล์ตัวอย่าง: งบโครงการกาแฟ ModernBERT.xlsx"); recompute(); });
+  document.getElementById("dl-template").addEventListener("click", function () { RGMS.toast("ดาวน์โหลด แบบฟอร์มงบ-17.2-ทุนมฟล.xlsx (สาธิต)", "ok"); });
+
+  /* ==========================================================
+     3B. กรอกในระบบ (line-item builder)
+     ========================================================== */
+  var uid = 0, lines = [];
+  lines.push({ id: ++uid, cat: "compensation", item: "ค่าตอบแทน – นักศึกษาช่วยงานด้านวิชาการ", price: 60, factors: [{ q: 50, u: "ชม." }, { q: 1, u: "คน" }, { q: 8, u: "เดือน" }] });
+
+  function lineAmount(l) { var a = Number(l.price || 0); (l.factors || []).forEach(function (f) { a *= (f.q === "" || f.q == null ? 1 : Number(f.q)); }); return Math.round(a); }
+  function breakdown(l) { var p = [(Number(l.price || 0)).toLocaleString("th-TH") + " บาท"]; (l.factors || []).forEach(function (f) { if (f.q !== "" && f.q != null && f.u) p.push(f.q + " " + f.u); }); return p.join(" × "); }
+  function getLine(id) { return lines.filter(function (l) { return String(l.id) === String(id); })[0]; }
+  function linesToBudget() {
+    return lines.filter(function (l) { return l.item && lineAmount(l) > 0; }).map(function (l) {
+      var amt = lineAmount(l);
+      return { cat: l.cat, item: l.item, breakdown: breakdown(l), total: amt,
+        i1: Math.round(amt * INST[0].pct), i2: Math.round(amt * INST[1].pct), i3: Math.round(amt * INST[2].pct) };
+    });
+  }
+  function renderLines() {
+    document.getElementById("blines").innerHTML = lines.map(function (l) {
+      var cat = CATS.filter(function (c) { return c.id === l.cat; })[0];
+      var amt = lineAmount(l), need = RGMS.attachNeed(l.item);
+      var itemField = cat && cat.freeText
+        ? '<input class="field__control it-name" data-id="' + l.id + '" placeholder="ระบุรายการครุภัณฑ์" value="' + (l.item || '').replace(/"/g, '&quot;') + '" style="margin:0;">'
+        : '<select class="field__control it-name" data-id="' + l.id + '" style="margin:0;"><option value="">— เลือกรายการ —</option>' +
+            (cat ? cat.items.map(function (it) { return '<option' + (it === l.item ? ' selected' : '') + '>' + it + '</option>'; }).join("") : "") + '</select>';
+      var inst = INST.map(function (g) { return g.label + ' ' + Math.round(g.pct*100) + '% <b>' + RGMS.fmtMoney(Math.round(amt*g.pct)) + '</b>'; }).join(" · ");
+      return '<div class="bline" data-id="' + l.id + '"><div class="bline__top">' +
+          '<div class="field" style="margin:0;"><label class="field__label">หมวด</label><select class="field__control it-cat" data-id="' + l.id + '" style="margin:0;">' +
+            CATS.map(function (c) { return '<option value="' + c.id + '"' + (c.id === l.cat ? ' selected' : '') + '>' + c.label + '</option>'; }).join("") + '</select></div>' +
+          '<div class="field" style="margin:0;"><label class="field__label">รายการค่าใช้จ่าย</label>' + itemField + '</div>' +
+          '<button class="btn btn-ghost btn-sm del-line" data-id="' + l.id + '" style="color:var(--st-reject);">ลบ</button></div>' +
+        (need ? '<div style="margin-top:8px;"><span class="badge badge-wait">ต้อง' + need + '</span> <span class="text-sm text-muted">— ระบบจะขอไฟล์นี้ตอนแนบเอกสาร</span></div>' : '') +
+        '<div class="bline__calc"><span class="text-sm text-muted">แตกตัวคูณ:</span>' +
+          '<input type="number" min="0" class="field__control in-price f-price" data-id="' + l.id + '" value="' + (l.price || 0) + '"><span class="text-sm text-muted">บาท</span>' +
+          l.factors.map(function (f, i) { return '<span class="x">×</span>' +
+            '<input type="number" min="0" class="field__control in-q f-q" data-id="' + l.id + '" data-i="' + i + '" value="' + (f.q === 0 ? 0 : (f.q || '')) + '" placeholder="จำนวน">' +
+            '<input class="field__control in-u f-u" data-id="' + l.id + '" data-i="' + i + '" value="' + (f.u || '') + '" placeholder="หน่วย">'; }).join("") +
+          '<span class="bline__amt"><span class="text-sm text-muted">= </span><span class="num" style="font-weight:700; font-size:16px;">' + RGMS.fmtMoney(amt) + '</span> บาท</span></div>' +
+        '<div class="bline__inst"><span class="text-muted">แบ่งงวดอัตโนมัติ:</span> ' + inst + '</div></div>';
+    }).join("");
+  }
+  function renderManualSummary() {
+    var items = linesToBudget(), res = budgetChecks(items);
+    window.__budgetRulesOk = res.rulesOk;
+    document.getElementById("grand-total").textContent = RGMS.fmtMoney(res.total);
+    document.getElementById("cat-summary").innerHTML = CATS.map(function (c) {
+      var t = (res.byCat[c.id] || []).reduce(function (s, b) { return s + b.total; }, 0);
+      return t ? '<div class="cat-sum"><span>' + c.label + '</span><span class="num">' + RGMS.fmtMoney(t) + '</span></div>' : "";
+    }).join("") || '<span class="text-sm text-subtle">ยังไม่มีรายการ</span>';
+    document.getElementById("rule-checks").innerHTML = checksHTML(res.checks);
+  }
+  function bindLines() {
+    document.querySelectorAll(".it-cat").forEach(function (el) { el.addEventListener("change", function () { var l = getLine(el.getAttribute("data-id")); l.cat = el.value; l.item = ""; renderLines(); bindLines(); renderManualSummary(); recompute(); }); });
+    document.querySelectorAll(".it-name").forEach(function (el) {
+      el.addEventListener("change", function () { getLine(el.getAttribute("data-id")).item = el.value; renderLines(); bindLines(); renderManualSummary(); recompute(); });
+      el.addEventListener("input", function () { getLine(el.getAttribute("data-id")).item = el.value; });
+    });
+    document.querySelectorAll(".f-price").forEach(function (el) { el.addEventListener("input", function () { getLine(el.getAttribute("data-id")).price = el.value; liveAmt(el); }); });
+    document.querySelectorAll(".f-q").forEach(function (el) { el.addEventListener("input", function () { getLine(el.getAttribute("data-id")).factors[+el.getAttribute("data-i")].q = el.value; liveAmt(el); }); });
+    document.querySelectorAll(".f-u").forEach(function (el) { el.addEventListener("input", function () { getLine(el.getAttribute("data-id")).factors[+el.getAttribute("data-i")].u = el.value; }); });
+    document.querySelectorAll(".del-line").forEach(function (el) { el.addEventListener("click", function () { lines = lines.filter(function (l) { return String(l.id) !== el.getAttribute("data-id"); }); renderLines(); bindLines(); renderManualSummary(); recompute(); }); });
+  }
+  function liveAmt(inputEl) {
+    var box = inputEl.closest(".bline"), l = getLine(box.getAttribute("data-id")), amt = lineAmount(l);
+    box.querySelector(".bline__amt .num").textContent = RGMS.fmtMoney(amt);
+    box.querySelector(".bline__inst").innerHTML = '<span class="text-muted">แบ่งงวดอัตโนมัติ:</span> ' +
+      INST.map(function (g) { return g.label + ' ' + Math.round(g.pct*100) + '% <b>' + RGMS.fmtMoney(Math.round(amt*g.pct)) + '</b>'; }).join(" · ");
+    renderManualSummary(); recompute();
+  }
+  document.getElementById("add-line").addEventListener("click", function () {
+    lines.push({ id: ++uid, cat: "compensation", item: "", price: 0, factors: [{ q: "", u: "" }, { q: "", u: "" }, { q: "", u: "" }] });
+    renderLines(); bindLines(); renderManualSummary(); recompute();
+  });
+
+  /* ==========================================================
+     4. มาตรฐานการวิจัย (ข้อ 18) → เอกสารรับรองที่ต้องแนบ
+     ========================================================== */
+  var stdChosen = { none: true };
+  function renderStandards() {
+    document.getElementById("std-list").innerHTML = RGMS.RESEARCH_STANDARDS.map(function (s) {
+      var on = !!stdChosen[s.id];
+      return '<label class="doc-row" style="cursor:pointer;"><input type="checkbox" class="std-cb" data-id="' + s.id + '"' + (on ? ' checked' : '') + ' style="margin-right:10px;">' +
+        '<div class="flex-1"><div style="font-weight:600; font-size:14px;">' + s.label + '</div>' +
+        (s.cert ? '<div class="text-sm text-muted">ต้องแนบ: ' + s.cert + '</div>' : '<div class="text-sm text-muted">ไม่ต้องแนบใบรับรองพิเศษ</div>') + '</div></label>';
+    }).join("");
+    document.querySelectorAll(".std-cb").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var id = cb.getAttribute("data-id");
+        if (id === "none") { stdChosen = cb.checked ? { none: true } : {}; }
+        else { if (cb.checked) { stdChosen[id] = true; delete stdChosen.none; } else { delete stdChosen[id]; } if (!Object.keys(stdChosen).length) stdChosen.none = true; }
+        renderStandards(); renderDocs(); recompute();
+      });
+    });
+  }
+
+  /* ==========================================================
+     5. เอกสารแนบ + ตรวจความพร้อม
+     ========================================================== */
+  var manualDocsOn = {};
+  function docList() {
+    var list = [
+      { key: "form", label: "แบบฟอร์มข้อเสนอโครงการ (RS-01)", auto: true, note: "ระบบสร้างจากที่กรอก" },
+      { key: "cv", label: "ประวัติคณะผู้วิจัย (ส่วน ข)", auto: RGMS.profileSaved(), note: RGMS.profileSaved() ? "ดึงจากโปรไฟล์" : "กรอกโปรไฟล์ก่อน" },
+      { key: "budget", label: "ตารางงบประมาณ (17 / 17.2)", auto: activeBudget().length > 0, note: activeBudget().length ? "จากงบที่กรอก" : "ยังไม่มีงบ" },
+      { key: "endorse", label: "หนังสือนำส่ง/รับรองจากสำนักวิชา", auto: false }
+    ];
+    RGMS.RESEARCH_STANDARDS.forEach(function (s) {
+      if (s.cert && stdChosen[s.id]) list.push({ key: "cert_" + s.id, label: s.cert, auto: false });
+    });
+    return list;
+  }
+  function renderDocs() {
+    document.getElementById("doc-list").innerHTML = docList().map(function (d) {
+      var ok = d.auto || !!manualDocsOn[d.key];
+      var right = d.auto
+        ? '<span class="badge badge-ok">อัตโนมัติ</span>'
+        : '<button class="btn ' + (manualDocsOn[d.key] ? 'btn-secondary' : 'btn-primary-solid') + ' btn-sm" data-doc="' + d.key + '">' + (manualDocsOn[d.key] ? 'ลบไฟล์' : 'แนบไฟล์') + '</button>';
+      return '<div class="doc-row"><span class="doc-row__icon">' + (ok ? '✓' : 'PDF') + '</span>' +
+        '<div class="flex-1"><div style="font-weight:600; font-size:14px;">' + d.label + ' <span class="req" style="color:var(--st-reject);">*</span></div>' +
+        '<div class="text-sm text-muted">' + (ok ? (d.auto ? d.note : 'แนบแล้ว') : (d.note || 'ยังไม่ได้แนบไฟล์')) + '</div></div>' + right + '</div>';
+    }).join("");
+  }
+  document.getElementById("doc-list").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-doc]"); if (!b) return;
+    var k = b.getAttribute("data-doc"); manualDocsOn[k] = !manualDocsOn[k]; renderDocs(); recompute();
+  });
+
+  function recompute() {
+    var items = activeBudget(), hasBudget = items.length > 0;
+    var checks = [
+      { label: "เลือกประเภททุน", ok: !!currentTier },
+      { label: "กรอกชื่อโครงการ", ok: !!document.getElementById("f-title").value.trim() },
+      { label: "เลือกสำนักวิชา", ok: !!document.getElementById("f-school").value },
+      { label: "เลือกระยะเวลา", ok: !!document.getElementById("f-duration").value },
+      { label: "กรอกความสำคัญ/ที่มา", ok: document.getElementById("f-abstract").value.trim().length >= 20 },
+      { label: "กรอกวัตถุประสงค์", ok: document.getElementById("f-objective").value.trim().length >= 5 },
+      { label: mode === "upload" ? "อัปโหลดตารางงบประมาณ (17.2)" : "มีรายการงบประมาณครบถ้วน", ok: hasBudget },
+      { label: "งบผ่านกฎอัตโนมัติ (เพดาน + 25%)", ok: hasBudget && budgetChecks(items).rulesOk }
+    ];
+    docList().forEach(function (d) {
+      checks.push({ label: "แนบ: " + d.label.replace(/\s*\(.*\)/, ""), ok: d.auto || !!manualDocsOn[d.key] });
+    });
+    var pass = checks.filter(function (c) { return c.ok; }).length;
+    document.getElementById("ready-count").textContent = pass + "/" + checks.length;
+    document.getElementById("ready-bar").style.width = Math.round(pass / checks.length * 100) + "%";
+    document.getElementById("ready-bar").className = "progress__fill" + (pass === checks.length ? " progress__fill--ok" : "");
+    document.getElementById("ready-list").innerHTML = checks.map(function (c) {
+      return '<li class="checklist__item ' + (c.ok ? 'checklist__item--ok' : 'checklist__item--fail') + '"><span class="mark">' + (c.ok ? '✓' : '!') + '</span><span class="checklist__label">' + c.label + '</span></li>';
+    }).join("");
+    var allOk = pass === checks.length;
+    document.getElementById("submit-btn").disabled = !allOk || !__callOpen;
+    document.getElementById("submit-hint").textContent = !__callOpen ? "ปิดรับข้อเสนอ — ยื่นไม่ได้ในขณะนี้" : (allOk ? "พร้อมยื่น — ระบบตรวจครบถ้วนแล้ว" : "ยังขาด " + (checks.length - pass) + " รายการ");
+  }
+  ["f-title", "f-title-en", "f-school", "f-duration", "f-rtype", "f-keywords", "f-strategy", "f-abstract", "f-objective", "f-scope", "f-outcome"].forEach(function (id) {
+    var el = document.getElementById(id); el.addEventListener("input", recompute); el.addEventListener("change", recompute);
+  });
+
+  renderStandards();
+  renderDocs();
+  recompute();
+
+  /* ==========================================================
+     การส่งข้อเสนอโครงการ ( submit-btn )
+     ========================================================== */
+document.getElementById("submit-btn").addEventListener("click", function () {
+    var total = activeBudget().reduce(function (s, b) { return s + b.total; }, 0);
+    
+    RGMS.modal({
+      title: "ยื่นข้อเสนอโครงการสำเร็จ",
+      body: '<div class="notice notice--ok" style="margin-bottom:12px;">' +
+              '<span class="notice__title">ระบบรับข้อเสนอแล้ว · รหัส P-2570-001</span>' +
+              '<span class="notice__body">ประเภททุน: ' + RGMS.TIERS[currentTier].label + ' · งบประมาณรวม ' + RGMS.fmtBaht(total) + ' — ระบบประกอบ RS-01 และตาราง 17/17.2 ให้อัตโนมัติ พร้อมส่งเข้ากล่องงานเจ้าหน้าที่</span>' +
+            '</div>' +
+            '<p class="text-sm text-muted">ครั้งถัดไปที่ยื่น ข้อมูลหัวหน้าโครงการและประวัติจะถูกดึงจากโปรไฟล์ให้อัตโนมัติ — ไม่ต้องกรอกซ้ำ</p>',
+      foot: '<a class="btn btn-primary btn-md" href="researcher-home.html" style="width:100%; text-align:center;">กลับหน้าโครงการของฉัน</a>'
+    });
+  });
+
+</script>
+</body>
+</html>
