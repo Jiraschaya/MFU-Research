@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>กล่องงาน · ตรวจเอกสาร — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <h1 class="text-headline">กล่องงาน · ตรวจเอกสารและกลั่นกรอง</h1>
+      <p class="text-muted">ทุกโครงการที่รอการดำเนินการของเจ้าหน้าที่ พร้อมผลตรวจความครบถ้วนอัตโนมัติ</p>
+    </div>
+
+    <div class="between wrap" style="gap:12px;">
+      <div class="stack gap-1">
+        <span class="text-overline">ปีงบประมาณ</span>
+        <div class="chip-group" id="year"></div>
+      </div>
+      <label class="cluster gap-2 text-sm" style="cursor:pointer;">
+        <input type="checkbox" id="cross" style="width:18px;height:18px;accent-color:var(--color-primary);">
+        แสดงงานค้างข้ามปี (ต้องดำเนินการทั้งหมด)
+      </label>
+    </div>
+
+    <div class="grid grid-4" id="kpis"></div>
+
+   <div class="card card--featured card--pad-sm">
+      <div class="stack gap-3">
+        <div class="between wrap gap-3">
+          <div class="chip-group" id="filters"></div>
+          <input class="field__control" id="search" placeholder="ค้นหา รหัส / ชื่อโครงการ / หัวหน้าโครงการ / สำนักวิชา" style="max-width:380px;">
+        </div>
+        <span class="text-sm text-muted num" id="count"></span>
+      </div>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table class="table">
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อโครงการ / ผู้วิจัย</th><th>สำนักวิชา</th><th>ประเภททุน</th>
+            <th class="right">งบที่ขอ</th><th>เอกสาร</th><th>สถานะ</th><th></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("staff-queue");
+  // งานของ จนท. = ทุกสถานะที่อยู่ในขอบเขต MVP เฟส 1 (ยื่น → เอนดอร์ส/ตรวจ → พิจารณา → มติ)
+  var WORK = ["submitted","screening","review","committee","revise","approved"];
+  var base = RGMS.PROJECTS.filter(function (p) { return WORK.indexOf(p.status) >= 0; });
+
+  var years = RGMS.fiscalYears().filter(function (y) { return base.some(function (p) { return RGMS.fyOf(p) === y; }); });
+  var fy = RGMS.CURRENT_FY;                 // ค่าตั้งต้น = ปีงบปัจจุบัน
+  if (years.indexOf(fy) < 0) fy = years[0];
+  var cross = false;                        // แสดงงานค้างข้ามปี (ไม่กรองปี)
+  var active = "all";
+  var q = "";                               // คำค้นหา (FR-69)
+
+  function scoped() { return (cross || fy === "all") ? base.slice() : base.filter(function (p) { return RGMS.fyOf(p) === fy; }); }
+  function searchMatch(p) { if (!q) return true; return (p.id + " " + p.title + " " + p.pi + " " + p.school).toLowerCase().indexOf(q.toLowerCase()) >= 0; }
+  function visible() { return scoped(); }
+
+  function renderYear() {
+    var opts = [{ v: RGMS.CURRENT_FY, l: "ปีงบ " + RGMS.CURRENT_FY + " (ปัจจุบัน)" }]
+      .concat(years.filter(function (y) { return y !== RGMS.CURRENT_FY; }).map(function (y) { return { v: y, l: "ปีงบ " + y }; }))
+      .concat([{ v: "all", l: "ทุกปีงบ" }]);
+    document.getElementById("year").innerHTML = opts.map(function (o) {
+      var on = String(o.v) === String(fy) && !cross;
+      return '<button class="chip' + (on ? ' is-active' : '') + '"' + (cross ? ' disabled style="opacity:.45;"' : '') + ' data-y="' + o.v + '">' + o.l + '</button>';
+    }).join("");
+  }
+
+  function renderKpis() {
+    var list = visible();
+    var needStaff = list.filter(function (p) { return ["submitted","screening"].indexOf(p.status) >= 0; }).length;
+    var inReview = list.filter(function (p) { return ["review","committee"].indexOf(p.status) >= 0; }).length;
+    var totalReq = list.reduce(function (s, p) { return s + p.budgetReq; }, 0);
+    var scopeLabel = cross ? 'ข้ามปี' : (fy === "all" ? 'ทุกปี' : 'ปีงบ ' + fy);
+    document.getElementById("kpis").innerHTML = [
+      ['รอเจ้าหน้าที่ดำเนินการ', needStaff, 'โครงการ', 'accent'],
+      ['อยู่ระหว่างประเมิน/วาระ', inReview, 'โครงการ', ''],
+      ['ทั้งหมด · ' + scopeLabel, list.length, 'โครงการ', ''],
+      ['งบที่ขอรวม', RGMS.fmtMoney(totalReq), 'บาท', '']
+    ].map(function (k) {
+     return '<div class="card stat-card stat"><span class="stat__value' + (k[3] === 'accent' ? ' text-accent' : '') + '">' + k[1] + '</span>' +
+        '<span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+    }).join("");
+  }
+
+  var filters = [
+    { id: "all", label: "ทั้งหมด" },
+    { id: "todo", label: "ต้องดำเนินการ" },
+    { id: "submitted", label: "รอตรวจเอกสาร" },
+    { id: "screening", label: "รอมอบคณะอนุกรรมการ" },
+    { id: "review", label: "กำลังพิจารณา" },
+    { id: "revise", label: "รอผู้วิจัยแก้ไข" }
+  ];
+  function renderFilters() {
+    document.getElementById("filters").innerHTML = filters.map(function (f) {
+      return '<button class="chip' + (f.id === active ? ' is-active' : '') + '" data-f="' + f.id + '">' + f.label + '</button>';
+    }).join("");
+  }
+
+  function match(p) {
+    if (active === "all") return true;
+    if (active === "todo") return ["submitted","screening","revise"].indexOf(p.status) >= 0;
+    return p.status === active;
+  }
+
+  function docCell(p) {
+    if (!(p.checklist || []).length) return '<span class="text-sm text-muted">—</span>';
+    var c = RGMS.completeness(p);
+    if (c.allOk) return '<span class="badge badge-ok">ครบ ' + c.pass + '/' + c.total + '</span>';
+    return '<span class="badge badge-reject">ขาด ' + (c.total - c.pass) + '/' + c.total + '</span>';
+  }
+  function tierCell(p) { var t = RGMS.tierOf(p); return '<span class="tag">' + t.short + '</span>'; }
+  function actionCell(p) {
+    var map = {
+      submitted: RGMS.completeness(p).allOk ? ['รับเรื่อง','btn-ok'] : ['ตรวจ/ส่งคืน','btn-primary-solid'],
+      screening: ['มอบคณะอนุกรรมการ','btn-primary'],
+      review: ['ติดตาม','btn-secondary'],
+      committee: ['มติ/ประกาศ','btn-primary'],
+      revise: ['ติดตามการแก้','btn-secondary'],
+      approved: ['ประกาศผล','btn-primary']
+    };
+    var a = map[p.status] || ['เปิด','btn-ghost'];
+    var href = (["committee","approved"].indexOf(p.status) >= 0) ? "staff-agenda.html" : "project-detail.html?id=" + p.id;
+    return '<a class="btn ' + a[1] + ' btn-sm" href="' + href + '">' + a[0] + '</a>';
+  }
+
+  function renderRows() {
+    var list = visible().filter(match).filter(searchMatch).sort(function (a, b) { return b.id < a.id ? -1 : 1; });
+    document.getElementById("count").textContent = list.length + " รายการ" + (q ? ' · ค้นหา "' + q + '"' : "");
+    document.getElementById("rows").innerHTML = list.length ? list.map(function (p) {
+      return '<tr class="is-clickable" data-id="' + p.id + '">' +
+        '<td class="num">' + p.id + '</td>' +
+        '<td><div style="font-weight:600;">' + p.title + '</div><div class="text-sm text-muted">' + p.pi + '</div></td>' +
+        '<td class="text-sm">' + p.school + '</td>' +
+        '<td>' + tierCell(p) + '</td>' +
+        '<td class="right num">' + RGMS.fmtMoney(p.budgetReq) + '</td>' +
+        '<td>' + docCell(p) + '</td>' +
+        '<td>' + RGMS.badgeHTML(RGMS.effectiveStatus(p)) + '</td>' +
+        '<td class="right">' + actionCell(p) + '</td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">ไม่พบรายการที่ตรงกับตัวกรอง/คำค้นหา</td></tr>';
+  }
+
+  function refresh() { renderYear(); renderKpis(); renderRows(); }
+
+  document.getElementById("year").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-y]"); if (!b || cross) return;
+    var y = b.getAttribute("data-y"); fy = (y === "all") ? "all" : parseInt(y, 10);
+    refresh();
+  });
+  document.getElementById("cross").addEventListener("change", function (e) {
+    cross = e.target.checked; refresh();
+  });
+  document.getElementById("search").addEventListener("input", function (e) {
+    q = e.target.value.trim(); renderRows();
+  });
+  document.getElementById("filters").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-f]"); if (!b) return;
+    active = b.getAttribute("data-f"); renderFilters(); renderRows();
+  });
+  document.getElementById("rows").addEventListener("click", function (e) {
+    if (e.target.closest("a")) return;
+    var tr = e.target.closest("[data-id]");
+    if (tr) window.location.href = "project-detail.html?id=" + tr.getAttribute("data-id");
+  });
+
+  renderFilters();
+  refresh();
+</script>
+</body>
+</html>
