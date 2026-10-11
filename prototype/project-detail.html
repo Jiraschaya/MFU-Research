@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายละเอียดโครงการ — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5" id="root"></div>
+</main>
+
+<!-- แถบแสดงผู้รับผิดชอบปัจจุบัน (Pending Responsibility) -->
+<div class="notice notice--info" id="pending-owner-bar" style="margin-bottom: 16px;">
+  <span class="notice__title">สถานะการดำเนินการปัจจุบัน</span>
+  <span class="notice__body" id="pending-owner-text">กำลังโหลดข้อมูลผู้รับผิดชอบ...</span>
+</div>
+
+<!-- ศูนย์รวมข้อคิดเห็นที่ต้องแก้ไข (Centralized Action Panel) -->
+<div class="card card--featured card--pad-sm" id="centralized-feedback-panel" style="display:none; margin-bottom: 24px;">
+  <div class="card__header">
+    <h2 class="text-subhead text-accent">รายการข้อคิดเห็นที่ต้องแก้ไข (Action Required)</h2>
+  </div>
+  <div class="stack gap-3" id="feedback-items-root"></div>
+</div>
+
+<script>
+  // โค้ดดึงข้อมูลผู้รับผิดชอบและรวมข้อคิดเห็น 2 แทร็ก
+  function renderResponsibilityAndFeedback(p) {
+    var raw = RGMS.effectiveStatus(p);
+    var endSt = RGMS.endorseStatus(p.id);
+    var ownerText = "";
+
+    if (raw === "submitted" && endSt === "pending") {
+      ownerText = "รอการพิจารณารับรองจาก: <b>ประธานวิจัยสำนักวิชา / คณบดี (" + p.school + ")</b>";
+    } else if (raw === "screening") {
+      ownerText = "รอการตรวจความครบถ้วนจาก: <b>เจ้าหน้าที่ส่วนบริหารงานวิจัย</b>";
+    } else if (raw === "review") {
+      var cSt = RGMS.contentTrackStatus(p.id);
+      var fSt = RGMS.financeTrackStatus(p.id);
+      var fOwner = RGMS.financeOwnerOf(p.id) || "เจ้าหน้าที่การเงิน (รอ Claim)";
+      ownerText = "อยู่ระหว่างพิจารณา 2 แทร็ก:<br>" +
+                  "• แทร็กเนื้อหา: <b>คณะอนุกรรมการ</b> (" + RGMS.TRACK_STATUS[cSt].label + ")<br>" +
+                  "• แทร็กการเงิน: <b>" + fOwner + "</b> (" + RGMS.TRACK_STATUS[fSt].label + ")";
+    } else if (raw === "committee") {
+      ownerText = "รอการบันทึกมติจาก: <b>คณะกรรมการส่งเสริมและพัฒนางานวิจัย</b>";
+    } else if (raw === "announced") {
+      ownerText = "<b>ประกาศผลการจัดสรรทุนเรียบร้อยแล้ว</b>";
+    }
+    
+    document.getElementById("pending-owner-text").innerHTML = ownerText;
+
+    // รวบรวมข้อคิดเห็นที่ต้องแก้ไข
+    var cComm = RGMS.contentComment(p.id);
+    var fComm = RGMS.financeComment(p.id);
+    var feedbackRoot = document.getElementById("feedback-items-root");
+    var hasFeedback = false;
+    var html = "";
+
+    if (cComm) {
+      hasFeedback = true;
+      html += '<div class="notice notice--wait">' +
+                '<b>ข้อคิดเห็นแทร็กเนื้อหา (คณะอนุกรรมการ):</b><p style="margin-top:4px;">' + cComm + '</p>' +
+              '</div>';
+    }
+    if (fComm) {
+      hasFeedback = true;
+      html += '<div class="notice notice--wait">' +
+                '<b>ข้อคิดเห็นแทร็กการเงิน (ตาราง 17.2):</b><p style="margin-top:4px;">' + fComm + '</p>' +
+              '</div>';
+    }
+
+    if (hasFeedback) {
+      document.getElementById("centralized-feedback-panel").style.display = "block";
+      feedbackRoot.innerHTML = html;
+    }
+  }
+</script>
+  
+<script src="shared.js"></script>
+<script>
+  var role = RGMS.currentRole();
+  RGMS.renderAppNav(role.id === "staff" ? "staff-queue" : role.id === "reviewer" ? "reviewer-list" : "researcher-home");
+
+  var id = new URLSearchParams(location.search).get("id") || "P-2568-014";
+  var p = RGMS.getProject(id);
+  var root = document.getElementById("root");
+  if (!p) { root.innerHTML = '<div class="notice notice--reject">ไม่พบโครงการ ' + id + '</div>'; }
+  else render();
+
+  function backHref() {
+    if (role.id === "staff") return "staff-queue.html";
+    if (role.id === "reviewer") return "reviewer-list.html";
+    if (role.id === "exec") return "staff-agenda.html";
+    return "researcher-home.html";
+  }
+
+  function render() {
+    var comp = RGMS.completeness(p);
+    var total = RGMS.sumBudget(p) || p.budgetReq;
+    var status = RGMS.effectiveStatus(p);
+
+    var html = '';
+    html += '<div class="page-head">' +
+      '<div class="breadcrumb"><a href="' + backHref() + '">← ย้อนกลับ</a></div>' +
+      '<div class="between wrap"><div class="stack gap-1">' +
+        '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML(status) + '</div>' +
+        '<h1 class="text-headline">' + p.title + '</h1>' +
+        '<p class="text-muted">' + p.pi + ' · ' + p.school + ' · <span class="pill-round">' + p.round + '</span></p>' +
+      '</div></div></div>';
+
+    html += '<div class="grid" style="grid-template-columns: 1fr 320px; align-items:start;">';
+
+    // ---------- คอลัมน์ซ้าย ----------
+    html += '<div class="stack gap-4">';
+
+    // action panel ตามบทบาท+สถานะ
+    html += actionPanel();
+
+    // บทคัดย่อ
+    html += '<div class="card"><h2 class="text-subhead" style="margin-bottom:8px;">บทคัดย่อ</h2>' +
+      '<p class="text-body">' + (p.abstract || '-') + '</p>' +
+      '<p class="text-sm text-muted" style="margin-top:8px;">ระยะเวลา ' + (p.duration || '-') + '</p></div>';
+
+    // งบประมาณ
+    html += '<div class="card"><div class="between" style="margin-bottom:12px;"><h2 class="text-subhead">งบประมาณ</h2>' +
+      '<span class="num text-subhead">' + RGMS.fmtBaht(total) + '</span></div>' +
+      '<div class="table-wrap" style="border-radius:6px;"><table class="table" style="min-width:auto;"><tbody>' +
+      (p.budget || []).map(function (b) { return '<tr><td>' + b.item + '</td><td class="right num">' + RGMS.fmtMoney(b.amount) + '</td></tr>'; }).join("") +
+      '</tbody></table></div></div>';
+
+    // ความเห็นคณะอนุกรรมการ / ผู้ทรงคุณวุฒิ (ถ้ามี) — comment-based ตามเอกสารจริง
+    if ((p.reviewers || []).length) {
+      var subs = p.reviewers.filter(function (r) { return r.submitted; });
+      html += '<div class="card"><div class="between" style="margin-bottom:12px;"><h2 class="text-subhead">ความเห็นคณะอนุกรรมการ / ผู้ทรงคุณวุฒิ</h2>' +
+        '<span class="badge ' + (subs.length === p.reviewers.length ? 'badge-ok' : 'badge-wait') + '">ส่งความเห็นแล้ว ' + subs.length + '/' + p.reviewers.length + ' ท่าน</span></div>';
+      html += p.reviewers.map(function (r) {
+        if (!r.submitted) return '<div class="doc-row" style="margin-bottom:8px;"><span class="doc-row__icon">?</span><div class="flex-1"><div style="font-weight:600;">' + r.name + '</div><div class="text-sm text-muted">ยังไม่ส่งความเห็น</div></div><span class="badge badge-wait">รอ</span></div>';
+        var rec = { approve: ['เห็นควรสนับสนุน','badge-ok'], approve_revise: ['ให้ปรับแก้','badge-revise'], reject: ['ไม่สนับสนุน','badge-reject'] }[r.recommend] || ['-','badge-draft'];
+        return '<div class="card--alt card card--pad-sm" style="margin-bottom:8px;"><div class="between"><div style="font-weight:600;">' + r.name + '</div>' +
+          '<span class="badge ' + rec[1] + '">' + rec[0] + '</span></div>' +
+          (role.id !== "researcher" ? '<p class="text-sm text-muted" style="margin-top:6px;">“' + r.comment + '”</p>' : '') + '</div>';
+      }).join("");
+      html += '</div>';
+    }
+
+    // ประวัติ
+    html += '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">ประวัติการดำเนินการ (Audit trail)</h2>' +
+      '<div class="stack gap-2">' + (p.history || []).slice().reverse().map(function (h) {
+        return '<div class="list-row" style="display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--color-divider);">' +
+          '<div><div class="text-sm" style="font-weight:600;">' + h.action + '</div><div class="text-sm text-muted">' + h.by + '</div></div>' +
+          '<div class="text-mono text-muted" style="font-size:12px; white-space:nowrap;">' + h.at + '</div></div>';
+      }).join("") + '</div></div>';
+
+    html += '</div>'; // end left
+
+    // ---------- คอลัมน์ขวา ----------
+    html += '<div class="stack gap-4" style="position:sticky; top:16px;">';
+
+    // timeline
+    html += '<div class="card"><h3 class="text-subhead" style="margin-bottom:12px;">สถานะโครงการ</h3>' + RGMS.timelineHTML(p) + '</div>';
+
+    // พิจารณา 2 แทร็กคู่ขนาน (เนื้อหา/การเงิน) — FR-82–85
+    if (["review", "revise", "committee", "approved", "rejected", "announced"].indexOf(status) >= 0) {
+      var contentSt = RGMS.contentTrackStatus(p.id);
+      var financeSt = RGMS.financeTrackStatus(p.id);
+      var financeOwner = RGMS.financeOwnerOf(p.id);
+      var ready = RGMS.bothTracksCleared(p.id);
+      html += '<div class="card"><h3 class="text-subhead" style="margin-bottom:12px;">พิจารณา 2 แทร็กคู่ขนาน</h3>' +
+        '<div class="stack gap-3">' +
+          '<div class="between"><div><div style="font-weight:600; font-size:14px;">แทร็กเนื้อหา</div>' +
+            '<div class="text-sm text-muted">คณะอนุกรรมการ</div></div>' + RGMS.trackBadgeHTML(contentSt) + '</div>' +
+          (RGMS.contentComment(p.id) ? '<p class="text-sm text-muted" style="margin:-4px 0 0;">“' + RGMS.contentComment(p.id) + '”</p>' : '') +
+          '<div class="between"><div><div style="font-weight:600; font-size:14px;">แทร็กการเงิน</div>' +
+            '<div class="text-sm text-muted">' + (financeOwner ? 'ผู้รับผิดชอบ: ' + financeOwner : 'ยังไม่มีผู้รับตรวจ') + '</div></div>' + RGMS.trackBadgeHTML(financeSt) + '</div>' +
+          (RGMS.financeComment(p.id) ? '<p class="text-sm text-muted" style="margin:-4px 0 0;">“' + RGMS.financeComment(p.id) + '”</p>' : '') +
+        '</div>' +
+        '<div class="notice notice--' + (ready ? 'ok' : 'wait') + '" style="margin-top:12px;">' +
+          '<span class="notice__body">' + (ready ? 'ทั้ง 2 แทร็กรับรองแล้ว — พร้อมเข้า คกก.ส่งเสริม' : 'ต้องรอทั้ง 2 แทร็กรับรองพร้อมกันก่อนจึงจะเข้า คกก.ส่งเสริมได้ (FR-85)') + '</span>' +
+        '</div></div>';
+    }
+
+    // completeness (สำหรับ จนท./สถานะยื่น)
+    if ((p.checklist || []).length) {
+      html += '<div class="card"><div class="between" style="margin-bottom:8px;"><h3 class="text-subhead">ความครบถ้วนเอกสาร</h3>' +
+        '<span class="num text-sm">' + comp.pass + '/' + comp.total + '</span></div><ul class="checklist" style="font-size:13px;">' +
+        p.checklist.map(function (c) {
+          return '<li class="checklist__item ' + (c.ok ? 'checklist__item--ok' : 'checklist__item--fail') + '">' +
+            '<span class="mark">' + (c.ok ? '✓' : '!') + '</span><span class="checklist__label">' + c.label +
+            (c.note ? '<span class="checklist__note"> — ' + c.note + '</span>' : '') + '</span></li>';
+        }).join("") + '</ul></div>';
+    }
+
+    html += '</div>'; // end right
+    html += '</div>';
+    root.innerHTML = html;
+    bindActions();
+  }
+
+  /* -------- action panel: ต่างกันตามบทบาท + สถานะ (ขอบเขต MVP: ยื่น → เอนดอร์ส → ตรวจ → พิจารณา → มติ → ประกาศ) -------- */
+  function actionPanel() {
+    var status = RGMS.effectiveStatus(p);
+    // นักวิจัย
+    if (role.id === "researcher") {
+      if (["review", "revise"].indexOf(status) >= 0) {
+        var cSt = RGMS.contentTrackStatus(p.id), fSt = RGMS.financeTrackStatus(p.id);
+        var cLabel = RGMS.TRACK_STATUS[cSt].label, fLabel = RGMS.TRACK_STATUS[fSt].label;
+        var needsRevise = cSt === "commented" || fSt === "commented";
+        if (needsRevise) {
+          return '<div class="notice notice--wait"><span class="notice__title">มีข้อคิดเห็นจากผู้ตรวจ — ต้องปรับแก้</span>' +
+            '<span class="notice__body">แทร็กเนื้อหา: ' + cLabel + (RGMS.contentComment(p.id) ? ' — “' + RGMS.contentComment(p.id) + '”' : '') + '<br>' +
+            'แทร็กการเงิน: ' + fLabel + (RGMS.financeComment(p.id) ? ' — “' + RGMS.financeComment(p.id) + '”' : '') + '</span>' +
+            '<p class="text-sm text-muted" style="margin-top:8px;">เมื่อส่งฉบับปรับแก้ ระบบจะส่งเฉพาะแทร็กที่ยังไม่รับรองกลับไปตรวจซ้ำให้อัตโนมัติ ส่วนแทร็กที่รับรองแล้วจะถูกล็อกไว้ ไม่ต้องตรวจซ้ำ (FR-84)</p>' +
+            '<div style="margin-top:10px;"><button class="btn btn-primary btn-md" data-act="revise">ส่งฉบับปรับแก้</button></div></div>';
+        }
+        return '<div class="notice notice--info"><span class="notice__title">อยู่ระหว่างพิจารณา 2 แทร็กคู่ขนาน</span>' +
+          '<span class="notice__body">แทร็กเนื้อหา: ' + cLabel + ' · แทร็กการเงิน: ' + fLabel + '</span></div>';
+      }
+      if (status === "announced") {
+        return '<div class="notice notice--ok"><span class="notice__title">ประกาศผลแล้ว — โครงการผ่านการพิจารณา</span><span class="notice__body">ติดตามขั้นตอนทำสัญญา/รับทุนต่อไปนอกระบบนี้ (อยู่นอกขอบเขต MVP)</span></div>';
+      }
+      if (status === "rejected") {
+        return '<div class="notice notice--reject"><span class="notice__title">ไม่อนุมัติ</span><span class="notice__body">ดูข้อคิดเห็นของคณะอนุกรรมการประกอบการพิจารณายื่นใหม่ในรอบถัดไป</span></div>';
+      }
+      if (["submitted","screening","committee","approved"].indexOf(status) >= 0) {
+        return '<div class="notice notice--info"><span class="notice__title">อยู่ระหว่างพิจารณา</span><span class="notice__body">สถานะปัจจุบัน: ' + RGMS.stageOf(status).label + ' — ระบบจะแจ้งเตือนเมื่อมีความคืบหน้า</span></div>';
+      }
+      return '<div class="notice notice--info"><span class="notice__title">อยู่นอกขอบเขตของ prototype นี้</span><span class="notice__body">สถานะ "' + RGMS.stageOf(status).label + '" เป็นระยะดำเนินโครงการ/ปิดโครงการ ซึ่งไม่อยู่ในขอบเขต MVP เฟส 1</span></div>';
+    }
+    // เจ้าหน้าที่
+    if (role.id === "staff") {
+      if (status === "submitted") {
+        var c = RGMS.completeness(p);
+        return '<div class="card card--alt"><h2 class="text-subhead" style="margin-bottom:8px;">การตรวจรับเรื่อง</h2>' +
+          '<p class="text-sm text-muted">ระบบตรวจความครบถ้วนอัตโนมัติแล้ว: ' + (c.allOk ? 'ผ่านทุกรายการ' : 'ยังขาด ' + (c.total - c.pass) + ' รายการ (ดูแผงขวา)') + '</p>' +
+          '<div class="cluster gap-2" style="margin-top:12px;">' +
+          (c.allOk ? '<button class="btn btn-ok btn-md" data-act="accept">รับเรื่อง · ส่งกลั่นกรอง</button>' : '<button class="btn btn-primary btn-md" data-act="return">ส่งคืนให้แก้ไข</button>') +
+          '</div></div>';
+      }
+      if (status === "screening") {
+        return '<div class="card card--alt"><h2 class="text-subhead" style="margin-bottom:8px;">มอบหมายคณะอนุกรรมการ</h2>' +
+          '<p class="text-sm text-muted">เอกสารครบแล้ว มอบหมายคณะอนุกรรมการให้ข้อคิดเห็น/รับรอง</p>' +
+          '<div style="margin-top:12px;"><button class="btn btn-primary btn-md" data-act="assign">มอบหมายคณะอนุกรรมการ</button></div></div>';
+      }
+      if (status === "review" || status === "revise" || status === "committee" || status === "approved") {
+        var ready = RGMS.bothTracksCleared(p.id);
+        return '<div class="notice notice--info"><span class="notice__title">' + (ready ? "ทั้ง 2 แทร็กรับรองแล้ว — รอมติและประกาศ" : "อยู่ระหว่างพิจารณา 2 แทร็กคู่ขนาน") + '</span>' +
+          '<span class="notice__body">แทร็กเนื้อหา: ' + RGMS.TRACK_STATUS[RGMS.contentTrackStatus(p.id)].label + ' · แทร็กการเงิน: ' + RGMS.TRACK_STATUS[RGMS.financeTrackStatus(p.id)].label +
+          '<br>บันทึกมติและประกาศผลได้ที่หน้า <a href="staff-agenda.html">มติ / ประกาศผล</a> (เข้าเงื่อนไขเมื่อทั้ง 2 แทร็กรับรองแล้ว)</span></div>';
+      }
+      if (status === "announced") {
+        return '<div class="notice notice--ok"><span class="notice__title">ประกาศผลแล้ว</span></div>';
+      }
+    }
+    // คณะอนุกรรมการ (แทร็กเนื้อหา)
+    if (role.id === "reviewer" && RGMS.inReviewPhase(status)) {
+      return '<div class="card card--alt"><div class="between"><div><h2 class="text-subhead">การพิจารณาเนื้อหาของคุณ</h2><p class="text-sm text-muted">ให้ข้อคิดเห็น/ข้อเสนอแนะ และคำวินิจฉัย (แทร็กเนื้อหา)</p></div>' +
+        '<a class="btn btn-primary btn-md" href="reviewer-console.html?id=' + p.id + '">เปิดหน้าพิจารณาเนื้อหา →</a></div></div>';
+    }
+    // เจ้าหน้าที่การเงิน (แทร็กการเงิน)
+    if (role.id === "finance" && RGMS.inReviewPhase(status)) {
+      var fOwner = RGMS.financeOwnerOf(p.id);
+      var isMine = fOwner === role.name;
+      if (fOwner && !isMine) {
+        return '<div class="notice notice--wait"><span class="notice__title">แทร็กการเงินมีผู้รับผิดชอบแล้ว</span><span class="notice__body">ผู้รับผิดชอบ: ' + fOwner + '</span></div>';
+      }
+      return '<div class="card card--alt"><div class="between"><div><h2 class="text-subhead">การตรวจการเงินของคุณ</h2><p class="text-sm text-muted">' + (fOwner ? "ตรวจงบประมาณ (17.2)" : "ยังไม่มีผู้รับตรวจ — กด \"รับตรวจ\" ก่อน") + '</p></div>' +
+        '<a class="btn btn-primary btn-md" href="finance-review-console.html?id=' + p.id + '">' + (fOwner ? "เปิดหน้าตรวจการเงิน →" : "รับตรวจ / เปิดหน้าตรวจการเงิน →") + '</a></div></div>';
+    }
+    // ผู้บริหาร / คกก.ส่งเสริม
+    if (role.id === "exec" && (status === "committee" || status === "approved" || status === "rejected")) {
+      return '<div class="card card--alt"><div class="between"><div><h2 class="text-subhead">มติ คกก.ส่งเสริม / ประกาศผล</h2><p class="text-sm text-muted">บันทึกมติและประกาศผลรวมหลายโครงการได้ที่หน้าเดียว</p></div>' +
+        '<a class="btn btn-primary btn-md" href="staff-agenda.html">ไปหน้ามติ / ประกาศผล →</a></div></div>';
+    }
+    return '';
+  }
+
+  function bindActions() {
+    root.querySelectorAll("[data-act]").forEach(function (btn) {
+      btn.addEventListener("click", function () { doAct(btn.getAttribute("data-act")); });
+    });
+  }
+
+function applyTrackLocking(p) {
+  var cCleared = RGMS.contentTrackStatus(p.id) === "cleared";
+  var fCleared = RGMS.financeTrackStatus(p.id) === "cleared";
+
+  // ล็อกหมวดเนื้อหาหากแทร็กเนื้อหาผ่านการรับรองแล้ว
+  if (cCleared) {
+    var contentZone = document.getElementById("zone-proposal-content");
+    if (contentZone) {
+      contentZone.querySelectorAll("input, textarea, select").forEach(function(el) {
+        el.disabled = true;
+        el.classList.add("field-control--locked");
+      });
+      var tag = document.createElement("span");
+      tag.className = "badge-locked";
+      tag.innerHTML = "✓ ผ่านการรับรองแล้ว (ล็อกถาวร)";
+      contentZone.querySelector(".card__header")?.appendChild(tag);
+    }
+  }
+
+  // ล็อกหมวดงบประมาณตาราง 17.2 หากแทร็กการเงินผ่านการรับรองแล้ว
+  if (fCleared) {
+    var budgetZone = document.getElementById("zone-budget-table");
+    if (budgetZone) {
+      budgetZone.querySelectorAll("input, textarea, select, button").forEach(function(el) {
+        el.disabled = true;
+        el.classList.add("field-control--locked");
+      });
+      var tag = document.createElement("span");
+      tag.className = "badge-locked";
+      tag.innerHTML = "✓ ผ่านการรับรองแล้ว (ล็อกถาวร)";
+      budgetZone.querySelector(".card__header")?.appendChild(tag);
+    }
+  }
+}
+  
+  function doAct(act) {
+    if (act === "revise") {
+      // ส่งฉบับปรับแก้ — อัตโนมัติ ไม่ให้นักวิจัยเลือกแทร็กเอง (FR-84 ฉบับแก้ไข): แทร็กที่ cleared แล้วถูกล็อกไว้
+      // แทร็กที่ยังมีข้อคิดเห็นค้างจะถูกส่งกลับ pending ให้อัตโนมัติ
+      var r = RGMS.resubmitTracks(p.id);
+      var lines = [
+        ['content', 'แทร็กเนื้อหา'], ['finance', 'แทร็กการเงิน']
+      ].map(function (t) {
+        var st = r[t[0]];
+        return '<li>' + t[1] + ': ' + (st === "locked" ? "รับรองแล้วก่อนหน้านี้ — ล็อกไว้ ไม่ต้องตรวจซ้ำ" : "ส่งกลับตรวจซ้ำอัตโนมัติ (กลับสถานะ \"รอตรวจ\")") + '</li>';
+      }).join("");
+      RGMS.modal({
+        title: "ส่งฉบับปรับแก้แล้ว",
+        body: '<div class="notice notice--ok"><span class="notice__title">ระบบคำนวณแทร็กที่ต้องตรวจซ้ำให้อัตโนมัติ</span>' +
+          '<span class="notice__body">ไม่ต้องเลือกเอง — แทร็กที่รับรองแล้วจะถูกล็อกไว้ ส่วนแทร็กที่ยังมีข้อคิดเห็นค้างจะถูกส่งกลับไปตรวจซ้ำ</span></div>' +
+          '<ul style="margin:12px 0 0; padding-left:18px; font-size:14px; line-height:1.8;">' + lines + '</ul>',
+        foot: '<button class="btn btn-primary btn-md" data-close>เข้าใจแล้ว</button>',
+        onMount: function (el, close) {
+          el.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) render(); });
+        }
+      });
+      return;
+    }
+    var msgs = {
+      accept: ["รับเรื่องแล้ว", "โครงการเปลี่ยนสถานะเป็น 'เจ้าหน้าที่ตรวจเอกสาร' → ขั้นถัดไปคือมอบหมายคณะอนุกรรมการ", "ok"],
+      return: ["ส่งคืนให้แก้ไข", "ระบบแจ้งผู้วิจัยพร้อมระบุรายการที่ขาด (อีเมล + ในระบบ) ผู้วิจัยแก้แล้วส่งกลับได้ทันที", "accent"],
+      assign: ["มอบหมายคณะอนุกรรมการ", "เลือกจากทะเบียนคณะอนุกรรมการ แล้วส่งคำเชิญให้ข้อคิดเห็น/รับรอง", "accent"]
+    };
+    var m = msgs[act] || ["ดำเนินการ", "สาธิต", "accent"];
+    RGMS.modal({
+      title: m[0],
+      body: '<div class="notice notice--' + (m[2] === 'ok' ? 'ok' : 'info') + '"><span class="notice__body">' + m[1] + '</span></div>' +
+        '<p class="text-sm text-muted" style="margin-top:12px;">(สาธิต — ยังไม่บันทึกถาวรใน prototype นี้)</p>',
+      foot: '<button class="btn btn-primary btn-md" data-close>เข้าใจแล้ว</button>'
+    });
+  }
+</script>
+</body>
+</html>

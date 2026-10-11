@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตรวจการเงิน — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-4" id="root"></div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("finance-review-queue");
+  var me = RGMS.currentRole().name;
+  var id = new URLSearchParams(location.search).get("id") || "P-2569-037";
+  var p = RGMS.getProject(id);
+  var root = document.getElementById("root");
+  if (!p) { root.innerHTML = '<div class="notice notice--reject">ไม่พบโครงการ ' + id + '</div>'; }
+  else render();
+
+  function render() {
+    var owner = RGMS.financeOwnerOf(p.id);
+    var head =
+      '<div class="page-head"><div class="breadcrumb"><a href="finance-review-queue.html">← คิวตรวจการเงิน</a></div>' +
+        '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.trackBadgeHTML(RGMS.financeTrackStatus(p.id)) + '</div>' +
+        '<h1 class="text-title">' + p.title + '</h1>' +
+        '<p class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</p></div>';
+
+    // ยังไม่มีใคร claim — ต้องรับตรวจก่อนจึงจะเห็นแบบฟอร์ม
+    if (!owner) {
+      root.innerHTML = head +
+        '<div class="card card--alt stack gap-3"><h2 class="text-subhead">ยังไม่มีผู้รับผิดชอบแทร็กการเงินของโครงการนี้</h2>' +
+        '<p class="text-sm text-muted">กด "รับตรวจ" เพื่อผูกตัวเองเป็นผู้รับผิดชอบแทร็กการเงินของโครงการนี้ต่อเนื่องทุกรอบ (claim-based · FR-83)</p>' +
+        '<button class="btn btn-primary btn-md" id="claim-btn" style="align-self:flex-start;">รับตรวจโครงการนี้</button></div>';
+      document.getElementById("claim-btn").addEventListener("click", function () {
+        RGMS.claimFinance(p.id, me);
+        render();
+      });
+      return;
+    }
+
+    // มีคน claim แล้วแต่ไม่ใช่ฉัน — read-only
+    if (owner !== me) {
+      root.innerHTML = head +
+        '<div class="notice notice--wait"><span class="notice__title">โครงการนี้มีผู้รับผิดชอบแทร็กการเงินแล้ว</span>' +
+        '<span class="notice__body">ผู้รับผิดชอบ: ' + owner + ' — ท่านอื่นไม่สามารถตรวจซ้ำได้ (กันการแย่งงาน/ตรวจซ้อน)</span></div>' +
+        (RGMS.financeComment(p.id) ? '<div class="card"><h2 class="text-subhead" style="margin-bottom:8px;">ความเห็นล่าสุด</h2><p class="text-sm text-muted">“' + RGMS.financeComment(p.id) + '”</p></div>' : '');
+      return;
+    }
+
+    var curStatus = RGMS.financeTrackStatus(p.id);
+    var curComment = RGMS.financeComment(p.id);
+    var verdict = curStatus === "pending" ? null : curStatus;
+
+    var grid =
+      '<div class="grid" style="grid-template-columns: 1fr 380px; align-items:start;" id="grid"></div>';
+    root.innerHTML = head + grid;
+
+    var left =
+      '<div class="stack gap-4">' +
+        '<div class="card"><h2 class="text-subhead" style="margin-bottom:8px;">บทคัดย่อ / ที่มา</h2><p class="text-body">' + p.abstract + '</p></div>' +
+        '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">งบประมาณที่ขอ (ตาราง 17.2)</h2>' + RGMS.budgetTableHTML(p) + '</div>' +
+        '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">เอกสารประกอบด้านการเงิน</h2><div class="stack gap-2">' +
+          ['รายละเอียดงบประมาณ 17.2 (PDF)', 'ใบเสนอราคา/อัตราค่าบริการ (ถ้ามี)', 'TOR รายการจ้างเหมา (ถ้ามี)'].map(function (d) {
+            return '<div class="doc-row"><span class="doc-row__icon">PDF</span><div class="flex-1" style="font-weight:600; font-size:14px;">' + d + '</div><button class="btn btn-secondary btn-sm">เปิดดู</button></div>';
+          }).join("") +
+        '</div></div>' +
+      '</div>';
+
+    var right =
+      '<div class="card" style="position:sticky; top:16px;">' +
+        '<h2 class="text-subhead" style="margin-bottom:4px;">แบบตรวจการเงิน (แทร็กการเงิน)</h2>' +
+        '<p class="text-sm text-muted" style="margin-bottom:12px;">ผู้รับผิดชอบ: ' + owner + ' — ตรวจเพดานงบ/รายการ/การแบ่งงวด ตามตาราง 17.2</p>' +
+        '<span class="text-overline">ประเด็นตรวจการเงิน</span>' +
+        '<ul style="margin:6px 0 16px; padding-left:18px; font-size:13px; color:var(--color-text-muted); line-height:1.7;">' +
+          ['ยอดรวมไม่เกินเพดานตามประเภททุน', 'รายการที่ต้องแนบเอกสาร (TOR/ใบเสนอราคา/กำหนดการ) ครบถ้วน', 'หมวดค่าเดินทาง/ครุภัณฑ์ไม่เกิน 25% ของงบรวม', 'การแบ่งงวดถูกต้องตามเกณฑ์'].map(function (a) { return '<li>' + a + '</li>'; }).join("") + '</ul>' +
+        '<label class="field__label">ผลการตรวจ <span class="req">*</span></label>' +
+        '<div class="chip-group" id="rec" style="margin:6px 0 16px;">' +
+          [['cleared','รับรองงบประมาณ'],['commented','ให้ปรับแก้งบประมาณ']].map(function (o) {
+            return '<button class="chip" data-rec="' + o[0] + '">' + o[1] + '</button>';
+          }).join("") + '</div>' +
+        '<div class="field"><label class="field__label">ข้อคิดเห็น / ข้อเสนอแนะด้านการเงิน' + (verdict === "commented" ? ' <span class="req">*</span>' : '') + '</label>' +
+          '<textarea class="field__control" id="comment" style="min-height:140px;" placeholder="ระบุรายการที่เกินเพดาน เอกสารที่ขาด หรือการแบ่งงวดที่ต้องแก้ไข">' + (curComment || '') + '</textarea></div>' +
+        '<button class="btn btn-primary btn-lg btn-block" id="submit" disabled>บันทึกผลตรวจการเงิน</button>' +
+        '<p class="text-sm text-muted text-center" id="hint" style="margin-top:8px;"></p>' +
+      '</div>';
+
+    document.getElementById("grid").innerHTML = left + right;
+
+    function recompute() {
+      var hasComment = document.getElementById("comment").value.trim().length > 0;
+      var ok = verdict === "cleared" || (verdict === "commented" && hasComment);
+      document.getElementById("submit").disabled = !ok;
+      document.getElementById("hint").textContent = ok ? "พร้อมบันทึกผลตรวจ" : (!verdict ? "เลือกผลการตรวจ" : "กรอกข้อคิดเห็น/ข้อเสนอแนะ (บังคับเมื่อให้ปรับแก้)");
+    }
+    document.getElementById("rec").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-rec]"); if (!b) return;
+      verdict = b.getAttribute("data-rec");
+      document.querySelectorAll("#rec .chip").forEach(function (x) { x.classList.remove("is-active"); });
+      b.classList.add("is-active");
+      recompute();
+    });
+    document.getElementById("comment").addEventListener("input", recompute);
+    if (verdict) { var rb = document.querySelector('[data-rec="' + verdict + '"]'); if (rb) rb.classList.add("is-active"); }
+    recompute();
+
+    document.getElementById("submit").addEventListener("click", function () {
+      RGMS.setFinanceTrackStatus(p.id, verdict);
+      RGMS.setFinanceComment(p.id, document.getElementById("comment").value.trim());
+      var ok = verdict === "cleared";
+      RGMS.modal({
+        title: "บันทึกผลตรวจการเงินแล้ว",
+        body: '<div class="notice notice--' + (ok ? "ok" : "wait") + '"><span class="notice__title">แทร็กการเงิน: ' + (ok ? "รับรองแล้ว" : "มีข้อคิดเห็น · ต้องแก้ไข") + '</span>' +
+          '<span class="notice__body">แทร็กเนื้อหาทำงานเป็นอิสระ ไม่ต้องรอกัน — โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-85)</span></div>',
+        foot: '<a class="btn btn-primary btn-md" href="finance-review-queue.html">กลับคิวตรวจการเงิน</a>'
+      });
+      render();
+    });
+  }
+</script>
+</body>
+</html>

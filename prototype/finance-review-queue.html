@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คิวตรวจการเงิน — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <span class="text-overline">แทร็กการเงิน · claim-based (FR-83)</span>
+      <h1 class="text-headline">คิวตรวจการเงิน</h1>
+      <p class="text-muted" id="sub"></p>
+    </div>
+
+    <div class="notice notice--info">
+      <span class="notice__title">กติกาการรับตรวจ</span>
+      <span class="notice__body">ใครกด "รับตรวจ" โครงการไหนก่อน จะผูกเป็นผู้รับผิดชอบแทร็กการเงินของโครงการนั้นต่อเนื่องทุกรอบ (รวมรอบตรวจซ้ำหลังแก้ไข) — ไม่สุ่มมอบหมายใหม่ทุกครั้ง</span>
+    </div>
+
+    <div class="card card--pad-sm">
+      <div class="card__header"><h2 class="text-subhead">รอรับตรวจ (ยังไม่มีผู้รับผิดชอบ)</h2></div>
+      <div class="grid grid-2" id="unclaimed"></div>
+    </div>
+
+    <div class="card card--pad-sm">
+      <div class="card__header"><h2 class="text-subhead">งานของฉัน</h2></div>
+      <div class="grid grid-2" id="mine"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+  RGMS.renderAppNav("finance-review-queue");
+  var me = RGMS.currentRole().name;
+
+  var inPhase = RGMS.PROJECTS.filter(function (p) { return RGMS.inReviewPhase(p.status); });
+  var unclaimed = inPhase.filter(function (p) { return !RGMS.financeOwnerOf(p.id); });
+  var mine = inPhase.filter(function (p) { return RGMS.financeOwnerOf(p.id) === me; });
+
+  document.getElementById("sub").textContent =
+    "รอรับตรวจ " + unclaimed.length + " โครงการ · งานของฉัน " + mine.length + " โครงการ";
+
+  function card(p, opts) {
+    var fin = RGMS.financeTrackStatus(p.id);
+    var cont = RGMS.contentTrackStatus(p.id);
+    return '<div class="card stack gap-3">' +
+      '<div class="between"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.trackBadgeHTML(fin) + '</div>' +
+      '<div style="font-weight:600; font-size:16px; line-height:1.4;">' + p.title + '</div>' +
+      '<div class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + '</div>' +
+      '<div class="cluster gap-2 text-sm"><span class="text-muted">แทร็กเนื้อหา:</span>' + RGMS.trackBadgeHTML(cont) + '</div>' +
+      (opts.owner ? '<div class="between text-sm"><span class="text-muted">ผู้รับผิดชอบ: <b>' + opts.owner + '</b></span>' +
+        '<button class="btn btn-ghost btn-sm" data-reassign="' + p.id + '" title="เปลี่ยนผู้รับผิดชอบแทร็กการเงิน">เปลี่ยน ✎</button></div>' : '') +
+      opts.action +
+    '</div>';
+  }
+  function openReassign(pid) {
+    var p = RGMS.getProject(pid); var cur = RGMS.financeOwnerOf(pid);
+    function badge(n) { return n <= 3 ? "badge-ok" : n <= 6 ? "badge-wait" : "badge-reject"; }
+    var cards = RGMS.FINANCE_REVIEWERS.map(function (name) {
+      var load = RGMS.financeLoad(name), checked = name === cur;
+      return '<label style="display:flex; gap:12px; align-items:center; padding:12px; border:1px solid ' + (checked ? "var(--color-primary)" : "var(--color-border)") + '; border-radius:var(--radius-sm); cursor:pointer; background:var(--color-surface);">' +
+        '<input type="radio" name="finance-owner" value="' + name + '"' + (checked ? " checked" : "") + ' style="width:18px; height:18px; accent-color:var(--color-primary); flex-shrink:0;">' +
+        '<div class="flex-1" style="min-width:0;"><div style="font-weight:600;">' + name + (checked ? ' <span class="text-sm text-muted">(ปัจจุบัน)</span>' : "") + '</div></div>' +
+        '<span class="badge ' + badge(load) + '">ถือ ' + load + '</span></label>';
+    }).join("");
+    RGMS.modal({
+      title: "เปลี่ยนผู้รับผิดชอบแทร็กการเงิน",
+      body: '<div class="notice notice--info" style="margin-bottom:12px;"><span class="notice__body"><b>' + p.id + '</b> · ' + p.title + '<br>ผู้รับผิดชอบปัจจุบัน: <b>' + cur + '</b> — จนท.การเงินแลกกันเองได้ ผู้ที่รับต่อจะดูแลแทร็กนี้ต่อเนื่องทุกรอบแทน</span></div>' +
+        '<div class="stack gap-2">' + cards + '</div>',
+      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="save-finance-owner">บันทึกการมอบหมาย</button>',
+      onMount: function (back, close) {
+        back.querySelector("#save-finance-owner").addEventListener("click", function () {
+          var sel = back.querySelector('input[name="finance-owner"]:checked'); if (!sel) return;
+          var name = sel.value; close();
+          if (name !== cur) { RGMS.setFinanceOwner(pid, name); RGMS.toast("เปลี่ยนผู้รับผิดชอบแทร็กการเงิน " + pid + ": " + cur + " → " + name, "accent"); }
+          render();
+        });
+      }
+    });
+  }
+
+  function render() {
+    inPhase = RGMS.PROJECTS.filter(function (p) { return RGMS.inReviewPhase(p.status); });
+    unclaimed = inPhase.filter(function (p) { return !RGMS.financeOwnerOf(p.id); });
+    mine = inPhase.filter(function (p) { return RGMS.financeOwnerOf(p.id) === me; });
+    document.getElementById("sub").textContent =
+      "รอรับตรวจ " + unclaimed.length + " โครงการ · งานของฉัน " + mine.length + " โครงการ";
+
+    document.getElementById("unclaimed").innerHTML = unclaimed.length ? unclaimed.map(function (p) {
+      return card(p, { action: '<button class="btn btn-primary btn-md btn-block" data-claim="' + p.id + '">รับตรวจ →</button>' });
+    }).join("") : '<p class="text-sm text-muted">ไม่มีโครงการรอรับตรวจในขณะนี้</p>';
+
+    document.getElementById("mine").innerHTML = mine.length ? mine.map(function (p) {
+      var fin = RGMS.financeTrackStatus(p.id);
+      var label = fin === "pending" ? "เริ่มตรวจการเงิน →" : "ดู/แก้ไขผลตรวจ →";
+      return card(p, { owner: me, action: '<a class="btn btn-secondary btn-md btn-block" href="finance-review-console.html?id=' + p.id + '">' + label + '</a>' });
+    }).join("") : '<p class="text-sm text-muted">คุณยังไม่ได้รับตรวจโครงการใด</p>';
+
+    document.querySelectorAll("[data-claim]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-claim");
+        RGMS.claimFinance(id, me);
+        render();
+        window.location.href = "finance-review-console.html?id=" + id;
+      });
+    });
+    document.querySelectorAll("[data-reassign]").forEach(function (btn) {
+      btn.addEventListener("click", function () { openReassign(btn.getAttribute("data-reassign")); });
+    });
+  }
+  render();
+</script>
+</body>
+</html>
