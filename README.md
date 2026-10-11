@@ -111,6 +111,7 @@ draft → submitted
 ## วิธีรัน
 
 ## (https://mfuresearch.vercel.app/)
+## หรือดาวโหลดไฟล์Prototypeแล้วเปิดตัว index
 
 ---
 
