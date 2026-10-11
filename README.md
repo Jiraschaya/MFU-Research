@@ -110,7 +110,7 @@ draft → submitted
 
 ## วิธีรัน
 
->รอเพิ่มprototype
+(https://mfuresearch.vercel.app/)
 
 ---
 
