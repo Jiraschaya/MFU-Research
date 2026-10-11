@@ -1,0 +1,1074 @@
+/* =========================================================================
+   style.css — ระบบบริหารจัดการทุนวิจัย มหาวิทยาลัยแม่ฟ้าหลวง (RGMS)
+   Research Grant Management System — prototype v1
+   Design language: "Analyst Console" — MFU Red & Gold Theme (Fixed Layout)
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* -------------------------------------------------------------------------
+   1. Design tokens — MFU Brand & Spacing System
+   ------------------------------------------------------------------------- */
+:root {
+  /* Brand & Accent — MFU Red & Gold Palette */
+  --color-primary: #851419;        /* MFU Deep Crimson — สีหลักองค์กร */
+  --color-primary-strong: #680E12; /* MFU Crimson Dark — เมื่อ Hover หรือกด */
+  --color-primary-tint: #FDF2F2;   /* MFU Crimson Soft Tint — พื้นหลังเลือก/Active */
+
+  --color-accent: #C59B27;         /* MFU Warm Gold — สีเน้นองค์กร */
+  --color-accent-strong: #8A670B;  /* MFU Gold Dark — ใช้กับตัวหนังสือสีทองบนพื้นสว่าง */
+  --color-accent-tint: #FCF8EC;    /* MFU Gold Soft Tint — พื้นหลังไฮไลต์พิเศษ */
+
+  /* Surfaces — Instrument Cool Greys */
+  --color-bg: #F5F6F8;             /* พื้นหลังหน้าเว็บ */
+  --color-surface: #FFFFFF;        /* พื้นหลังการ์ด/กล่องข้อมูล */
+  --color-surface-alt: #F8F9FA;    /* พื้นหลังหัวตาราง */
+  --color-surface-raised: #EAEBEC; /* พื้นหลังส่วนลึกลงไป */
+
+  /* Content & Typography */
+  --color-text-strong: #111827;    /* หัวข้อหลัก */
+  --color-text: #1F2937;           /* เนื้อหาทั่วไป */
+  --color-text-muted: #4B5563;     /* ข้อความอธิบาย */
+  --color-text-subtle: #6B7280;    /* ตัวหนังสือสีจาง */
+  --color-border: #E5E7EB;         /* เส้นขอบบาง hairline */
+  --color-border-strong: #D1D5DB;  /* เส้นขอบกรอบอินพุต */
+  --color-divider: #F3F4F6;        /* เส้นแบ่งเนื้อหา */
+
+  /* Spacing System (8px Grid) — [แก้จุดเบี้ยว: เพิ่มตัวแปรที่ขาด] */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* Semantic Status Tones */
+  --st-draft: #4B5563;      --st-draft-tint: #F3F4F6;   /* ฉบับร่าง */
+  --st-wait: #92400E;       --st-wait-tint: #FEF3C7;    /* รอดำเนินการ / เตือน */
+  --st-review: #851419;     --st-review-tint: #FDF2F2;  /* อยู่ระหว่างพิจารณา */
+  --st-ok: #065F46;         --st-ok-tint: #D1FAE5;      /* ผ่าน / อนุมัติ */
+  --st-revise: #B45309;     --st-revise-tint: #FFEDD5;  /* ให้ปรับแก้ */
+  --st-reject: #991B1B;     --st-reject-tint: #FEE2E2;  /* ไม่อนุมัติ / ข้อผิดพลาด */
+  --st-info: #1E40AF;       --st-info-tint: #DBEAFE;    /* ข้อมูลทั่วไป */
+
+  /* Elevation & Effects */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-pill: 9999px;
+  --border-w: 1px;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --ring-focus: 0 0 0 3px rgba(133, 20, 25, 0.2);
+
+  --font-head: 'IBM Plex Sans', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --sidebar-w: 244px;
+  --touch-min: 42px;
+}
+
+/* -------------------------------------------------------------------------
+   Reset
+   ------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; }
+a { color: var(--color-primary); }
+a:hover { color: var(--color-primary-strong); }
+table { border-collapse: collapse; width: 100%; }
+h1, h2, h3, h4, p, ul, ol { margin: 0; }
+input, select, textarea { font-family: inherit; }
+:focus-visible { outline: none; box-shadow: var(--ring-focus); border-radius: var(--radius-sm); }
+
+/* -------------------------------------------------------------------------
+   Typography
+   ------------------------------------------------------------------------- */
+.text-display { font-family: var(--font-head); font-weight: 600; font-size: 34px; line-height: 1.15; letter-spacing: -0.02em; color: var(--color-text-strong); }
+.text-headline { font-family: var(--font-head); font-weight: 600; font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; color: var(--color-text-strong); }
+.text-title { font-family: var(--font-head); font-weight: 600; font-size: 20px; line-height: 1.3; color: var(--color-text-strong); }
+.text-subhead { font-family: var(--font-head); font-weight: 600; font-size: 16px; line-height: 1.4; color: var(--color-text-strong); }
+.text-body-lg { font-size: 17px; line-height: 1.65; }
+.text-body { font-size: 15px; line-height: 1.6; }
+.text-sm { font-size: 13px; line-height: 1.55; }
+.text-overline { font-family: var(--font-head); font-weight: 600; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-subtle); }
+.text-mono { font-family: var(--font-mono); font-size: 13px; }
+.text-muted { color: var(--color-text-muted); }
+.text-subtle { color: var(--color-text-subtle); }
+.text-accent { color: var(--color-accent-strong); }
+.text-center { text-align: center; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* -------------------------------------------------------------------------
+   Layout utilities
+   ------------------------------------------------------------------------- */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-5); }
+.container--narrow { max-width: 860px; }
+.stack { display: flex; flex-direction: column; }
+.cluster { display: flex; flex-wrap: wrap; align-items: center; }
+.between { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.gap-1 { gap: var(--space-1); } .gap-2 { gap: var(--space-2); } .gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); } .gap-5 { gap: var(--space-5); } .gap-6 { gap: var(--space-6); }
+.grid { display: grid; gap: var(--space-4); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-auto { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+@media (max-width: 980px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+.section { padding: var(--space-6) 0 var(--space-8); }
+.divider { border: none; border-top: var(--border-w) solid var(--color-divider); margin: var(--space-4) 0; }
+.flex-1 { flex: 1; }
+.wrap { flex-wrap: wrap; }
+.ml-auto { margin-left: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 640px) { .hide-sm { display: none !important; } }
+
+/* -------------------------------------------------------------------------
+   App shell — Sidebar & Topbar
+   ------------------------------------------------------------------------- */
+.app-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--color-surface); color: var(--color-text);
+  border-right: var(--border-w) solid var(--color-border);
+  display: flex; flex-direction: column; z-index: 40; overflow-y: auto;
+}
+.app-sidebar__brand {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--space-4);
+  border-bottom: var(--border-w) solid var(--color-divider);
+  text-decoration: none;
+  border-top: 3px solid var(--color-accent); /* ขอบสีทอง มฟล. */
+}
+.app-sidebar__brand-name { font-family: var(--font-head); font-weight: 600; font-size: 17px; letter-spacing: -0.02em; color: var(--color-primary); }
+.app-sidebar__brand-sub { font-size: 11px; color: var(--color-text-subtle); letter-spacing: 0.02em; }
+.app-sidebar__group { padding: var(--space-3) var(--space-2) var(--space-1); }
+.app-sidebar__group-label { font-size: 10px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-subtle); padding: 0 var(--space-3); }
+.app-sidebar__nav { display: flex; flex-direction: column; flex: 1; padding: var(--space-2); gap: 2px; }
+.app-sidebar__link {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-weight: 500; font-size: 14px; color: var(--color-text); text-decoration: none;
+  padding: 10px var(--space-3); min-height: var(--touch-min);
+  border-radius: var(--radius-sm); transition: background .12s, color .12s;
+}
+.app-sidebar__link:hover { background: var(--color-bg); color: var(--color-text-strong); }
+.app-sidebar__link.is-active { background: var(--color-primary-tint); color: var(--color-primary-strong); font-weight: 600; border-left: 3px solid var(--color-primary); }
+.app-sidebar__link .tag-count {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  background: var(--color-surface-raised); color: var(--color-text-muted); border-radius: var(--radius-pill);
+  padding: 1px 8px; min-width: 22px; text-align: center;
+}
+.app-sidebar__link.is-active .tag-count { background: var(--color-primary-tint); color: var(--color-primary-strong); }
+.app-sidebar__footer { border-top: var(--border-w) solid var(--color-divider); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.app-sidebar__user { display: flex; align-items: center; gap: var(--space-2); }
+.app-sidebar__user-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.app-sidebar__user-name { font-size: 13px; font-weight: 600; color: var(--color-text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-sidebar__user-role { font-size: 11px; color: var(--color-text-subtle); }
+
+body.has-sidebar { padding-left: var(--sidebar-w); }
+
+@media (max-width: 860px) {
+  .app-sidebar {
+    position: sticky; top: 0; left: 0; width: 100%; height: auto; bottom: auto;
+    flex-direction: row; align-items: center; overflow-x: auto; z-index: 50;
+    border-right: none; border-bottom: var(--border-w) solid var(--color-border);
+  }
+  .app-sidebar__brand { border-bottom: none; border-right: var(--border-w) solid var(--color-divider); white-space: nowrap; }
+  .app-sidebar__group, .app-sidebar__group-label { display: none; }
+  .app-sidebar__nav { flex-direction: row; flex: 1; padding: var(--space-2); gap: var(--space-1); }
+  .app-sidebar__link { white-space: nowrap; }
+  .app-sidebar__link .tag-count { margin-left: var(--space-1); }
+  .app-sidebar__footer { display: none; }
+  body.has-sidebar { padding-left: 0; }
+}
+
+/* -------------------------------------------------------------------------
+   Page Header & Cards
+   ------------------------------------------------------------------------- */
+.page-head { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-5); }
+.breadcrumb { font-size: 13px; color: var(--color-text-muted); }
+.breadcrumb a { text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+.card {
+  background: var(--color-surface); border: var(--border-w) solid var(--color-border);
+  border-radius: var(--radius); padding: var(--space-5); box-shadow: var(--shadow-sm);
+}
+.card--flat { box-shadow: none; }
+.card--alt { background: var(--color-bg); }
+.card--pad-sm { padding: var(--space-4); }
+.card__header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-4); }
+
+.stat { display: flex; flex-direction: column; gap: var(--space-1); }
+.stat__value { font-family: var(--font-mono); font-weight: 600; font-size: 30px; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-text-strong); }
+.stat__label { font-size: 13px; color: var(--color-text-muted); }
+
+/* -------------------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  font-family: var(--font-body); font-weight: 500; letter-spacing: 0.01em;
+  border-radius: var(--radius-sm); border: var(--border-w) solid transparent;
+  text-decoration: none; white-space: nowrap; transition: background .12s, border-color .12s, box-shadow .12s;
+}
+.btn-lg { min-height: 48px; padding: 0 var(--space-5); font-size: 15px; }
+.btn-md { min-height: var(--touch-min); padding: 0 var(--space-4); font-size: 14px; }
+.btn-sm { min-height: 32px; padding: 0 var(--space-3); font-size: 13px; }
+.btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-strong); border-color: var(--color-primary-strong); }
+.btn-secondary { background: var(--color-surface); border-color: var(--color-border-strong); color: var(--color-primary-strong); }
+.btn-secondary:hover { background: var(--color-primary-tint); border-color: var(--color-primary); }
+.btn-primary-solid { background: var(--color-primary-strong); border-color: var(--color-primary-strong); color: #fff; }
+.btn-primary-solid:hover { background: var(--color-primary); }
+.btn-ghost { background: transparent; color: var(--color-primary-strong); }
+.btn-ghost:hover { background: var(--color-primary-tint); }
+.btn-danger { background: var(--st-reject); border-color: var(--st-reject); color: #fff; }
+.btn-ok { background: var(--st-ok); border-color: var(--st-ok); color: #fff; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-block { width: 100%; }
+
+/* -------------------------------------------------------------------------
+   Forms
+   ------------------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+.field__label { font-weight: 600; font-size: 13px; color: var(--color-text-strong); }
+.field__label .req { color: var(--st-reject); }
+.field__control {
+  font-size: 15px; padding: 9px var(--space-3); min-height: var(--touch-min);
+  border: var(--border-w) solid var(--color-border-strong); border-radius: var(--radius-sm);
+  background: var(--color-surface); color: var(--color-text); width: 100%;
+  box-shadow: inset 0 1px 1px rgba(23, 23, 29, 0.04); transition: border-color .12s, box-shadow .12s;
+}
+textarea.field__control { min-height: 90px; resize: vertical; }
+.field__control:focus { outline: none; box-shadow: var(--ring-focus); border-color: var(--color-primary); }
+
+/* -------------------------------------------------------------------------
+   Status Badges & Tables
+   ------------------------------------------------------------------------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 600; font-size: 12px; letter-spacing: 0.01em;
+  padding: 3px 10px; border-radius: var(--radius-pill); border: var(--border-w) solid transparent;
+  white-space: nowrap;
+}
+.badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.badge-draft { color: var(--st-draft); background: var(--st-draft-tint); }
+.badge-wait { color: var(--st-wait); background: var(--st-wait-tint); }
+.badge-review { color: var(--st-review); background: var(--st-review-tint); }
+.badge-ok { color: var(--st-ok); background: var(--st-ok-tint); }
+.badge-revise { color: var(--st-revise); background: var(--st-revise-tint); }
+.badge-reject { color: var(--st-reject); background: var(--st-reject-tint); }
+
+.table-wrap { overflow-x: auto; border: var(--border-w) solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
+.table { min-width: 640px; }
+.table th, .table td { text-align: left; padding: var(--space-3); border-bottom: var(--border-w) solid var(--color-divider); font-size: 14px; vertical-align: middle; }
+.table thead th { background: var(--color-surface-alt); font-family: var(--font-head); font-weight: 600; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-subtle); position: sticky; top: 0; }
+.table tbody tr.is-clickable:hover { background: var(--color-primary-tint); }
+.table td.right, .table th.right { text-align: right; }
+.table td:last-child, .table th:last-child { position: sticky; right: 0; background: var(--color-surface); box-shadow: -6px 0 8px -6px rgba(15, 23, 42, 0.12); }
+
+/* Checklist, Notices, Avatars */
+.checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.checklist__item { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); }
+.checklist__item .mark { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.checklist__item--ok { background: var(--st-ok-tint); } .checklist__item--ok .mark { background: var(--st-ok); color: #fff; }
+.checklist__item--fail { background: var(--st-reject-tint); } .checklist__item--fail .mark { background: var(--st-reject); color: #fff; }
+
+.notice { border: var(--border-w) solid var(--color-border); border-left: 4px solid var(--color-primary); background: var(--color-surface); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: 2px; }
+.notice--info { border-left-color: var(--st-info); background: var(--st-info-tint); }
+.notice--ok { border-left-color: var(--st-ok); background: var(--st-ok-tint); }
+
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--color-primary-tint); color: var(--color-primary-strong); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 600; font-size: 13px; flex-shrink: 0; }
+
+/* -------------------------------------------------------------------------
+   Field Locking & System Modals
+   ------------------------------------------------------------------------- */
+.field-control--locked {
+  background-color: #F3F4F6 !important;
+  border-color: #E5E7EB !important;
+  color: #6B7280 !important;
+  cursor: not-allowed !important;
+}
+
+.badge-locked {
+  display: inline-flex; align-items: center; gap: 6px;
+  background-color: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+}
+
+.role-bar {
+  background-color: #851419; color: #FFFFFF; padding: 8px 24px; font-size: 13px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid #C59B27; position: sticky; top: 0; z-index: 1000;
+}
+.role-bar__select { background-color: #680E12; color: #FFFFFF; border: 1px solid #C59B27; border-radius: 4px; padding: 4px 12px; font-size: 12px; outline: none; cursor: pointer; }
+
+.budget-ratio-info { font-size: 11px; font-weight: 600; margin-top: 4px; display: block; }
+.budget-ratio-info--pass { color: #059669; }
+.budget-ratio-info--fail { color: #DC2626; }
+
+.modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.modal-container { background: #FFFFFF; border-radius: 8px; box-shadow: var(--shadow-lg); width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid #E2E8F0; }
+form-stepper {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stepper-item {
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.stepper-item:hover, .stepper-item.is-active {
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-primary-tint);
+}
+
+/* Dual-Track Visual Badges */
+.badge-track-content {
+  background-color: var(--color-primary-tint);
+  color: var(--color-primary-strong);
+  border: 1px solid var(--color-primary);
+}
+
+.badge-track-finance {
+  background-color: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+
+/* Micro-Interaction Spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
+/* ==========================================================================
+   MFU RGMS — Signature Executive Theme Overlay
+   ========================================================================== */
+
+/* 1. Signature Card (การ์ดไฮไลต์พิเศษเน้นเอกลักษณ์ มฟล.) */
+.card--featured {
+  position: relative;
+  background: linear-gradient(145deg, #FFFFFF 0%, #FCF8EC 100%) !important;
+  border: 1px solid rgba(197, 155, 39, 0.4) !important;
+  box-shadow: 0 10px 25px -5px rgba(133, 20, 25, 0.08), 0 8px 10px -6px rgba(133, 20, 25, 0.05) !important;
+  overflow: hidden;
+}
+
+.card--featured::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #851419 0%, #C59B27 50%, #851419 100%);
+}
+
+/* 2. Living Status Badges (ป้ายสถานะแบบมีแสงเรืองรอง) */
+.badge {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(4px);
+}
+
+.badge-review::before {
+  box-shadow: 0 0 8px #851419;
+  animation: pulse-glow 2s infinite;
+}
+
+.badge-ok::before {
+  box-shadow: 0 0 6px #065F46;
+}
+
+@keyframes pulse-glow {
+  0% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0.4; transform: scale(0.95); }
+}
+
+/* 3. Floating Executive Dock (แถบควบคุมลอยตัวด้านล่าง) */
+.executive-dock {
+  position: fixed;
+  bottom: 24px;
+  left: calc(var(--sidebar-w) + (100% - var(--sidebar-w)) / 2);
+  transform: translateX(-50%);
+  background: rgba(23, 25, 35, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(197, 155, 39, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1500;
+  transition: all 0.2s ease;
+}
+
+.executive-dock__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F3F4F6;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  padding-right: 12px;
+}
+
+/* 4. High-Density Console Table (ปรับตารางให้ตอบสนองนุ่มนวล) */
+.table thead th {
+  background: var(--color-surface-alt) !important;
+  border-bottom: 2px solid var(--color-accent) !important;
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em;
+}
+
+.table tbody tr {
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-primary-tint) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(133, 20, 25, 0.06);
+}
+
+/* 5. Custom Scrollbar & Selection Design */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+/* การ์ดไฮไลต์พิเศษ (มีแถบสีแดง-ทอง มฟล.) */
+.card--featured {
+  position: relative;
+  background: linear-gradient(145deg, #FFFFFF 0%, #FCF8EC 100%) !important;
+  border: 1px solid rgba(197, 155, 39, 0.4) !important;
+  box-shadow: 0 10px 25px -5px rgba(133, 20, 25, 0.08) !important;
+  overflow: hidden;
+}
+
+.card--featured::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #851419 0%, #C59B27 50%, #851419 100%);
+}
+
+/* การ์ดแสดงตัวเลขสถิติ (มีขอบบนสีแดง มฟล.) */
+.stat-card {
+  border-top: 3px solid #851419 !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%) !important;
+}
+/* ==========================================================================
+   MFU RGMS — Refined Executive Slate Theme (Harmonious & Low-Glare)
+   ========================================================================== */
+
+:root {
+  /* พื้นหลังเทา Slate นุ่มสายตา สว่างกำลังดี ไม่จ้าและไม่หมอง */
+  --color-bg: #F0F2F5;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-divider: #EDF2F7;
+}
+
+/* Sidebar โทนแดงเข้ม MFU Deep Burgundy (หรูหรา และกลมกลืนกับแบรนด์) */
+.app-sidebar {
+  background: linear-gradient(180deg, #4A080B 0%, #320507 100%) !important;
+  color: #F8FAFC !important;
+  border-right: 1px solid #5C0E12 !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.app-sidebar__brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 3px solid #C59B27 !important; /* MFU Warm Gold */
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.app-sidebar__brand-name { 
+  color: #FFFFFF !important; 
+  font-weight: 700;
+}
+
+.app-sidebar__brand-sub { 
+  color: #E2E8F0 !important; 
+  opacity: 0.85; 
+}
+
+.app-sidebar__link {
+  color: #E2E8F0 !important;
+  transition: all 0.15s ease;
+}
+
+.app-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.app-sidebar__link.is-active {
+  background: #851419 !important; /* MFU Crimson Primary */
+  color: #FFFFFF !important;
+  border-left: 3px solid #C59B27 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.app-sidebar__link .tag-count {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #F8FAFC !important;
+}
+
+.app-sidebar__link.is-active .tag-count {
+  background: #C59B27 !important; /* สีทอง มฟล. เด่นชัด */
+  color: #111827 !important;
+  font-weight: 700;
+}
+
+.app-sidebar__group-label { color: #A0AEC0 !important; }
+.app-sidebar__footer { 
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important; 
+  background: rgba(0, 0, 0, 0.15); 
+}
+.app-sidebar__user-name { color: #FFFFFF !important; }
+.app-sidebar__user-role { color: #CBD5E1 !important; }
+
+/* ==========================================================================
+   MFU RGMS — Executive World-Class Polish (Depth & Micro-Typography Overlay)
+   ========================================================================== */
+
+/* 1. Multi-Layer Shadows & Tactile Elevation สำหรับการ์ดทุกใบ */
+.card {
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 
+    0 1px 2px 0 rgba(15, 23, 42, 0.03),
+    0 4px 12px -2px rgba(15, 23, 42, 0.05) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card:hover {
+  box-shadow: 
+    0 4px 6px -1px rgba(15, 23, 42, 0.04),
+    0 12px 24px -4px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* 2. Enhanced Featured Card & Stat Card (สไตล์กล่องควบคุมระดับสูง) */
+.card--featured {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FCFBF7 100%) !important;
+  border: 1px solid rgba(197, 155, 39, 0.35) !important;
+  box-shadow: 
+    0 1px 3px 0 rgba(133, 20, 25, 0.04),
+    0 10px 30px -5px rgba(133, 20, 25, 0.08) !important;
+}
+
+.stat-card {
+  position: relative;
+  border-top: none !important;
+  background: #FFFFFF !important;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #851419 0%, #C59B27 100%);
+}
+
+/* 3. Tactile Button Refinement (เพิ่มความนูนและสะท้อนแสง) */
+.btn-primary {
+  background: linear-gradient(180deg, #96181F 0%, #851419 100%) !important;
+  border: 1px solid #680E12 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 
+              0 2px 4px rgba(133, 20, 25, 0.2) !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, #A81B22 0%, #96181F 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 
+              0 4px 10px rgba(133, 20, 25, 0.3) !important;
+}
+
+.btn-secondary {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.btn-secondary:hover {
+  background: #F1F5F9 !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-strong) !important;
+}
+
+/* 4. High-Precision Micro-Typography (ตารางข้อมูลความคมชัดสูง) */
+.table thead th {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+  padding: 12px 16px !important;
+}
+
+.table tbody td {
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #EDF2F7 !important;
+  font-size: 14px;
+}
+
+.table tbody tr {
+  transition: background-color 0.12s ease !important;
+}
+
+.table tbody tr:hover {
+  background-color: #F8FAF9 !important; /* เขียวหมอกบางสุดๆ เมื่อ Hover */
+}
+
+/* 5. Custom Form Controls Enhancement */
+.field__control {
+  border-color: #CBD5E1 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.field__control:focus {
+  border-color: #851419 !important;
+  box-shadow: 0 0 0 3px rgba(133, 20, 25, 0.15) !important;
+  background-color: #FFFFFF !important;
+}
+/* ==========================================================================
+   Command Palette Overlay (Cmd + K Universal Navigation)
+   ========================================================================== */
+.cmd-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 3000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+
+.cmd-palette {
+  background: #FFFFFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  border: 1px solid rgba(197, 155, 39, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: cmd-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cmd-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.cmd-palette__input-wrap {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  background: #FAFAFA;
+}
+
+.cmd-palette__input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  width: 100%;
+  color: #111827;
+  font-family: var(--font-body);
+}
+
+.cmd-palette__list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-palette__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.cmd-palette__item:hover, .cmd-palette__item.is-selected {
+  background: #851419;
+  color: #FFFFFF;
+}
+
+.cmd-palette__item:hover .text-muted, .cmd-palette__item.is-selected .text-muted {
+  color: #E2E8F0;
+}
+
+.cmd-key-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  color: #475569;
+}
+/* ==========================================================================
+   MFU RGMS — Executive Gateway Portal Overlay (index.html)
+   ========================================================================== */
+
+/* 1. Portal Hero Header Section */
+.portal-hero {
+  text-align: center;
+  padding: 40px 20px 24px;
+  position: relative;
+}
+
+.portal-hero__overline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #C59B27; /* MFU Warm Gold */
+  background: rgba(197, 155, 39, 0.1);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(197, 155, 39, 0.25);
+  margin-bottom: 16px;
+}
+
+.portal-hero__title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+
+/* 2. Visual Process Flow Bar (เปลี่ยนข้อความยาวเป็นขั้นตอนทางลัด) */
+.portal-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px auto 36px;
+  max-width: 920px;
+}
+
+.portal-flow__step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.portal-flow__arrow {
+  color: #94A3B8;
+  font-size: 11px;
+}
+
+/* 3. Executive Role Cards Grid */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.role-card {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+  text-decoration: none;
+  color: inherit;
+}
+
+.role-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  transition: background 0.2s ease;
+}
+
+.role-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(197, 155, 39, 0.5);
+  box-shadow: 0 12px 24px -4px rgba(133, 20, 25, 0.08), 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.role-card:hover::before {
+  background: linear-gradient(90deg, #851419 0%, #C59B27 100%);
+}
+
+.role-card__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.role-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #851419 0%, #5C0E12 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(133, 20, 25, 0.25);
+  flex-shrink: 0;
+}
+
+.role-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.role-card__desc {
+  font-size: 13px;
+  color: #64748B;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.role-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #851419;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.role-card:hover .role-card__action {
+  color: #C59B27;
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .role-grid { grid-template-columns: 1fr; }
+}
+
+/* Form Locking & Field States */
+.field-control--locked {
+  background-color: #F3F4F6 !important;
+  border-color: #E5E7EB !important;
+  color: #6B7280 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.badge-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Toast Notification Container — กำหนดตำแหน่งมุมขวาล่าง */
+.toast-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+/* Toast Card Style & Animation */
+.toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 380px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #1A1A24;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  border-left: 4px solid #3B82F6; /* สีฟ้าตั้งต้น */
+  
+  /* Animation เด้งมาจากขวาล่าง */
+  animation: toastSlideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ประเภทของ Toast แยกตามสีแถบข้าง */
+.toast--ok {
+  border-left-color: #10B981; /* สีเขียว สำเร็จ */
+}
+
+.toast--wait {
+  border-left-color: #F59E0B; /* สีส้ม เตือน/รอ */
+}
+
+.toast--reject {
+  border-left-color: #EF4444; /* สีแดง ข้อผิดพลาด */
+}
+
+/* Keyframes สำหรับเอฟเฟกต์สไลด์เด้งเข้า */
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ฉากหลังมืดแบบลอยทับทั้งหน้าจอ (Modal Backdrop) */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 15, 20, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* กล่อง Popup ตรงกลาง */
+.modal {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 520px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal__body {
+  margin-bottom: 20px;
+}
+
+.modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPopIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
