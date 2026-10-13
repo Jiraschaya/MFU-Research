@@ -919,7 +919,7 @@ function renderAppNav(pageId) {
     var html = '<aside class="app-sidebar">';
     html += '<a class="app-sidebar__brand" href="' + role.home + '">' +
               '<span class="app-sidebar__brand-name">RGMS · ทุนวิจัย มฟล.</span>' +
-              '<span class="app-sidebar__brand-sub">ระบบบริหารจัดการทุนงบมหาวิทยาลัย</span>' +
+              '<span class="app-sidebar__brand-sub">ระบบบริหารจัดการทุนวิจัย <br>มหาวิทยาลัยแม่ฟ้าหลวง</span>' +
             '</a>';
     html += '<nav class="app-sidebar__nav">';
     groups.forEach(function (g) {
@@ -941,7 +941,7 @@ function renderAppNav(pageId) {
               '</div>' +
               '<div style="margin-top:10px;">' +
                 '<label style="display:block; font-size:11px; color:#A0AEC0; margin-bottom:4px;">สลับบทบาททดสอบ:</label>' +
-                '<select class="field__control" style="width:100%; font-size:12px; padding:6px; background:#2A2A34; color:#FFFFFF; border:1px solid #3F3F4E; border-radius:6px;" onchange="RGMS.switchRole(this.value)">' +
+                '<select class="field__control" style="width:100%; font-size:12px; padding:6px; background:#FFFFFF; color:#000000; border:1px solid #D1D5DB; border-radius:6px;" onchange="RGMS.switchRole(this.value)">' +
                   Object.keys(ROLES).map(function(k) {
                     return '<option value="' + k + '"' + (k === role.id ? ' selected' : '') + '>' + ROLES[k].label + '</option>';
                   }).join('') +

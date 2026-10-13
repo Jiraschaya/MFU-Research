@@ -520,9 +520,8 @@ form-stepper {
 
 /* Sidebar โทนแดงเข้ม MFU Deep Burgundy (หรูหรา และกลมกลืนกับแบรนด์) */
 .app-sidebar {
-  background: linear-gradient(180deg, #4A080B 0%, #320507 100%) !important;
+  background: linear-gradient(180deg, #f26262 0%, #851419 100%) !important;
   color: #F8FAFC !important;
-  border-right: 1px solid #5C0E12 !important;
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
 }
 
@@ -553,9 +552,9 @@ form-stepper {
 }
 
 .app-sidebar__link.is-active {
-  background: #851419 !important; /* MFU Crimson Primary */
-  color: #FFFFFF !important;
-  border-left: 3px solid #C59B27 !important;
+  background: #FFFFFF !important; /* MFU Crimson Primary */
+  color: #990000 !important;
+  border-left: 3px solid #FFFFFF !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
