@@ -150,7 +150,6 @@ input, select, textarea { font-family: inherit; }
 .app-sidebar__brand {
   display: flex; flex-direction: column; gap: 2px;
   padding: var(--space-4);
-  border-bottom: var(--border-w) solid var(--color-divider);
   text-decoration: none;
   border-top: 3px solid var(--color-accent); /* ขอบสีทอง มฟล. */
 }
@@ -526,36 +525,95 @@ form-stepper {
 }
 
 .app-sidebar__brand {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-top: 3px solid #C59B27 !important; /* MFU Warm Gold */
-  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  padding: var(--space-4);
+  background: #ffffff;
+  border-top: 3px solid #ffffff !important;
+  border-right: 0;
+  border-bottom: 2px solid #e04b52;
+  text-decoration: none;
 }
 
-.app-sidebar__brand-name { 
-  color: #FFFFFF !important; 
+.app-sidebar__brand-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-sidebar__brand-logo {
+  width: 52px;
+  height: 64px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.app-sidebar__brand-name {
+  color: #990000 !important;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
 }
 
 .app-sidebar__brand-sub { 
-  color: #E2E8F0 !important; 
+  color: #111827 !important; 
+  font-weight: 645;
   opacity: 0.85; 
 }
 
 .app-sidebar__link {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   color: #E2E8F0 !important;
-  transition: all 0.15s ease;
+  transition: color 0.35s ease;
 }
 
-.app-sidebar__link:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #FFFFFF !important;
+.app-sidebar__link::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  background: #FFFFFF;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-sidebar__link:hover::before,
+.app-sidebar__link:focus-visible::before {
+  width: 100%;
+}
+
+.app-sidebar__link:hover,
+.app-sidebar__link:focus-visible {
+  background: transparent !important;
+  color: #990000 !important;
 }
 
 .app-sidebar__link.is-active {
-  background: #FFFFFF !important; /* MFU Crimson Primary */
+  background: transparent !important;
   color: #990000 !important;
   border-left: 3px solid #FFFFFF !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.app-sidebar__link.is-active::before {
+  width: 100%;
+}
+
+.app-sidebar__link-label,
+.app-sidebar__link .tag-count {
+  position: relative;
+  z-index: 1;
 }
 
 .app-sidebar__link .tag-count {
@@ -569,13 +627,222 @@ form-stepper {
   font-weight: 700;
 }
 
-.app-sidebar__group-label { color: #A0AEC0 !important; }
+.app-sidebar__group-label { color: hsl(240, 14%, 99%) !important; }
 .app-sidebar__footer { 
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important; 
   background: rgba(0, 0, 0, 0.15); 
 }
 .app-sidebar__user-name { color: #FFFFFF !important; }
 .app-sidebar__user-role { color: #CBD5E1 !important; }
+
+/* Sample Role Switcher */ 
+
+.role-switch {
+  margin-top: 10px;
+}
+
+.role-switch__label {
+  display: block;
+  margin-bottom: 6px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.role-switch__control {
+  position: relative;
+  width: 100%;
+  border-radius: 8px;
+  background: #ffffff;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease;
+}
+
+.role-switch__control.is-open {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.role-switch__select {
+  width: 100%;
+  padding: 9px 38px 9px 12px;
+  color: #111827;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.role-switch__select:focus {
+  border-color: #c59b27;
+}
+
+.role-switch__arrow {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  border-right: 2px solid #4b5563;
+  border-bottom: 2px solid #4b5563;
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.25s ease;
+}
+
+.role-switch__control.is-open .role-switch__arrow {
+  transform: translateY(-20%) rotate(225deg);
+}
+
+/* Sidebar Brand Divider (แถบแบ่งสีแดง-ทอง มฟล.) */ 
+
+.app-sidebar__brand-divider {
+  width: 3px;
+  height: 72px;
+  flex: 0 0 3px;
+  margin-left: 4px;
+  margin-right: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    #990000 0%,
+    #990000 42%,
+    #c59b27 100%
+  );
+}
+
+/* =========================================================
+   Collapsible Sidebar & Non-overlapping Control Bar
+   ========================================================= */
+
+body.has-sidebar {
+  padding-left: var(--sidebar-w);
+  transition: padding-left 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.has-sidebar.sidebar-entering {
+  padding-left: 0;
+}
+
+.app-sidebar {
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+}
+
+body.sidebar-collapsed {
+  padding-left: 0;
+}
+
+body.sidebar-collapsed .app-sidebar {
+  pointer-events: none;
+  transform: translateX(-105%);
+  box-shadow: none;
+}
+
+.sidebar-controlbar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+.sidebar-controlbar__label {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sidebar-toggle {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.sidebar-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.sidebar-toggle span {
+  width: 20px;
+  height: 2px;
+  background: #990000;
+  border-radius: 999px;
+  transition:
+    width 0.25s ease,
+    opacity 0.2s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* เมื่อ Sidebar ปิด: เรียงเป็น Hamburger */
+.sidebar-toggle:not(.is-open):hover span:first-child {
+  width: 13px;
+  transform: translateX(-3px);
+}
+
+.sidebar-toggle:not(.is-open):hover span:last-child {
+  width: 13px;
+  transform: translateX(3px);
+}
+
+/* เมื่อ Sidebar เปิด: เปลี่ยนเป็นเครื่องหมายปิด */
+.sidebar-toggle.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.sidebar-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.sidebar-toggle.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (max-width: 860px) {
+  body.has-sidebar,
+  body.has-sidebar.sidebar-collapsed {
+    padding-left: 0;
+  }
+
+  .sidebar-controlbar {
+    min-height: 58px;
+    padding: 8px 14px;
+  }
+
+  body.sidebar-collapsed .app-sidebar {
+    position: fixed;
+    transform: translateX(-105%);
+  }
+}
 
 /* ==========================================================================
    MFU RGMS — Executive World-Class Polish (Depth & Micro-Typography Overlay)

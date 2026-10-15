@@ -917,17 +917,24 @@ function renderAppNav(pageId) {
 
     // 2. วาด Sidebar ตาม Role ปัจจุบัน
     var html = '<aside class="app-sidebar">';
-    html += '<a class="app-sidebar__brand" href="' + role.home + '">' +
-              '<span class="app-sidebar__brand-name">RGMS · ทุนวิจัย มฟล.</span>' +
-              '<span class="app-sidebar__brand-sub">ระบบบริหารจัดการทุนวิจัย <br>มหาวิทยาลัยแม่ฟ้าหลวง</span>' +
-            '</a>';
+html += '<a class="app-sidebar__brand" href="' + role.home + '">' +
+            '<img class="app-sidebar__brand-logo" src="assets/logo.png" alt="ตราสัญลักษณ์มหาวิทยาลัยแม่ฟ้าหลวง">' +
+            '<span class="app-sidebar__brand-divider" aria-hidden="true"></span>' +
+            '<span class="app-sidebar__brand-copy">' +
+            '<span class="app-sidebar__brand-name">RGMS · ทุนวิจัย มฟล.</span>' +
+            '<span class="app-sidebar__brand-sub">ระบบบริหารจัดการทุนวิจัย<br>มหาวิทยาลัยแม่ฟ้าหลวง</span>' +
+          '</span>' +
+        '</a>';
     html += '<nav class="app-sidebar__nav">';
     groups.forEach(function (g) {
       html += '<div class="app-sidebar__group"><span class="app-sidebar__group-label">' + g.group + '</span></div>';
       g.items.forEach(function (it) {
         var active = it.id === pageId ? " is-active" : "";
         var count = it.count ? '<span class="tag-count">' + it.count + '</span>' : "";
-        html += '<a class="app-sidebar__link' + active + '" href="' + it.href + '">' + it.label + count + '</a>';
+       html += '<a class="app-sidebar__link' + active + '" href="' + it.href + '">' +
+          '<span class="app-sidebar__link-label">' + it.label + '</span>' +
+          count +
+        '</a>';
       });
     });
     html += '</nav>';
@@ -939,19 +946,69 @@ function renderAppNav(pageId) {
                   '<span class="app-sidebar__user-role">' + role.label + '</span>' +
                 '</span>' +
               '</div>' +
-              '<div style="margin-top:10px;">' +
-                '<label style="display:block; font-size:11px; color:#A0AEC0; margin-bottom:4px;">สลับบทบาททดสอบ:</label>' +
-                '<select class="field__control" style="width:100%; font-size:12px; padding:6px; background:#FFFFFF; color:#000000; border:1px solid #D1D5DB; border-radius:6px;" onchange="RGMS.switchRole(this.value)">' +
-                  Object.keys(ROLES).map(function(k) {
-                    return '<option value="' + k + '"' + (k === role.id ? ' selected' : '') + '>' + ROLES[k].label + '</option>';
-                  }).join('') +
-                '</select>' +
+              '<div class="role-switch">' +
+               '<label class="role-switch__label" for="role-switch-select">สลับบทบาททดสอบ:</label>' +
+               '<div class="role-switch__control">' +
+              '<select id="role-switch-select" class="role-switch__select"' +
+            ' onmousedown="this.parentElement.classList.add(\'is-open\')"' +
+          ' onfocus="this.parentElement.classList.add(\'is-open\')"' +
+        ' onblur="this.parentElement.classList.remove(\'is-open\')"' +
+      ' onkeydown="if(event.key === \'Escape\') this.parentElement.classList.remove(\'is-open\')"' +
+      ' onchange="this.parentElement.classList.remove(\'is-open\'); RGMS.switchRole(this.value)">' +
+      Object.keys(ROLES).map(function(k) {
+        return '<option value="' + k + '"' +
+          (k === role.id ? ' selected' : '') + '>' +
+          ROLES[k].label +
+        '</option>';
+      }).join('') +
+    '</select>' +
+    '<span class="role-switch__arrow" aria-hidden="true"></span>' +
+  '</div>' +
               '</div>' +
             '</div>';
-    html += '</aside>';
+html += '</aside>';
 
-    mount.innerHTML = html;
-    document.body.classList.add("has-sidebar");
+html += '<div class="sidebar-controlbar">' +
+          '<button class="sidebar-toggle is-open" id="sidebar-toggle"' +
+            ' type="button"' +
+            ' aria-label="พับแถบเมนู"' +
+            ' aria-expanded="true">' +
+            '<span></span>' +
+            '<span></span>' +
+            '<span></span>' +
+          '</button>' +
+          '<span class="sidebar-controlbar__label">พับเมนูหลัก</span>' +
+        '</div>';
+
+  mount.innerHTML = html;
+  document.body.classList.add("has-sidebar", "sidebar-entering");
+
+requestAnimationFrame(function () {
+  requestAnimationFrame(function () {
+    document.body.classList.remove("sidebar-entering");
+  });
+});
+
+var sidebarToggle = document.getElementById("sidebar-toggle");
+var controlLabel = document.querySelector(".sidebar-controlbar__label");
+
+sidebarToggle.addEventListener("click", function () {
+  var collapsed = document.body.classList.toggle("sidebar-collapsed");
+
+  sidebarToggle.classList.toggle("is-open", !collapsed);
+  sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+  sidebarToggle.setAttribute(
+    "aria-label",
+    collapsed ? "เปิดแถบเมนู" : "พับแถบเมนู"
+  );
+
+  if (controlLabel) {
+    controlLabel.textContent = collapsed
+      ? "เปิดเมนูหลัก"
+      : "พับเมนูหลัก";
+  }
+});
+
   }
   /* -------- toast -------- */
   function toast(msg, kind) {
