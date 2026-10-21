@@ -531,8 +531,8 @@ form-stepper {
   justify-content: flex-start;
   gap: 0;
   padding: var(--space-4);
-  background: #ffffff;
-  border-top: 3px solid #ffffff !important;
+  background: #f9f9f9;
+  border-top: 3px solid #f9f9f9 !important;
   border-right: 0;
   border-bottom: 2px solid #e04b52;
   text-decoration: none;

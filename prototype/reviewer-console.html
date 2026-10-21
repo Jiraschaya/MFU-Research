@@ -40,7 +40,7 @@
         '<tr><td style="font-weight:700;">รวม</td><td class="right num" style="font-weight:700;">' + RGMS.fmtMoney(RGMS.sumBudget(p)) + '</td></tr>' +
         '</tbody></table></div></div>' +
       '<div class="card"><h2 class="text-subhead" style="margin-bottom:12px;">เอกสารประกอบ</h2><div class="stack gap-2">' +
-        ['ข้อเสนอโครงการฉบับเต็ม (PDF)','ประวัติย่อคณะผู้วิจัย (PDF)','รายละเอียดงบประมาณ (PDF)'].map(function (d) {
+        ['ข้อเสนอโครงการฉบับเต็ม (PDF)','ประวัติคณะผู้วิจัย (PDF)','รายละเอียดงบประมาณ (PDF)'].map(function (d) {
           return '<div class="doc-row"><span class="doc-row__icon">PDF</span><div class="flex-1" style="font-weight:600; font-size:14px;">' + d + '</div><button class="btn btn-secondary btn-sm">เปิดดู</button></div>';
         }).join("") +
       '</div></div>' +
@@ -50,7 +50,7 @@
   var ASPECTS = RGMS.CRITERIA.map(function (c) { return c.label; });
   var right =
     '<div class="card" style="position:sticky; top:16px;">' +
-      '<h2 class="text-subhead" style="margin-bottom:4px;">แบบพิจารณาข้อเสนอ (แทร็กเนื้อหา)</h2>' +
+      '<h2 class="text-subhead" style="margin-bottom:4px;">แบบพิจารณาข้อเสนอ (comment-based)</h2>' +
       '<p class="text-sm text-muted" style="margin-bottom:12px;">ให้ข้อคิดเห็น/ข้อเสนอแนะ และคำวินิจฉัย (การพิจารณาเชิงคุณภาพ ไม่มีการให้คะแนน)</p>' +
       '<span class="text-overline">ประเด็นประกอบการพิจารณา</span>' +
       '<ul style="margin:6px 0 16px; padding-left:18px; font-size:13px; color:var(--color-text-muted); line-height:1.7;">' +

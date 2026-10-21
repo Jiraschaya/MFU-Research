@@ -12,13 +12,13 @@
   <div class="container stack gap-5">
 
     <div class="page-head">
-      <h1 class="text-headline">โครงการที่ได้รับมอบหมายให้พิจารณาเนื้อหา</h1>
+      <h1 class="text-headline">โครงการที่ได้รับมอบหมายให้พิจารณา</h1>
       <p class="text-muted" id="sub"></p>
     </div>
 
     <div class="notice notice--info">
-      <span class="notice__title">ความเป็นส่วนตัวและความขัดแย้งทางผลประโยชน์</span>
-      <span class="notice__body">คุณจะเห็นเฉพาะโครงการที่ได้รับมอบหมาย ระบบซ่อนชื่อผู้ประเมินท่านอื่นจนกว่าจะประเมินครบ และไม่มอบหมายโครงการที่คุณมีส่วนได้ส่วนเสีย</span>
+      <span class="notice__title">หมายเหตุ:</span>
+      <span class="notice__body">คุณจะเห็นเฉพาะโครงการที่ได้รับมอบหมาย ระบบจะซ่อนชื่อผู้ประเมินท่านอื่นจนกว่าจะประเมินครบ และไม่มอบหมายโครงการที่คุณมีส่วนได้ส่วนเสีย</span>
     </div>
 
     <div class="grid grid-2" id="cards"></div>
@@ -47,7 +47,7 @@
       '<div class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</div>' +
       '<p class="text-sm text-muted">' + p.abstract + '</p>' +
       '<a class="btn ' + (done ? 'btn-secondary' : 'btn-primary') + ' btn-md btn-block" href="reviewer-console.html?id=' + p.id + '">' +
-        (done ? 'ดู/แก้ไขความเห็น' : 'เริ่มพิจารณา →') + '</a>' +
+        (done ? 'ตรวจสอบความเห็น' : 'เริ่มพิจารณา →') + '</a>' +
     '</div>';
   }).join("");
 </script>

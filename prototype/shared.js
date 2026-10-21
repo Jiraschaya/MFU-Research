@@ -103,7 +103,7 @@
     { id: "c2", label: "ระเบียบวิธีวิจัยและความเป็นไปได้", max: 30 },
     { id: "c3", label: "ผลผลิต/ผลลัพธ์และการนำไปใช้ประโยชน์", max: 25 },
     { id: "c4", label: "ความเหมาะสมของงบประมาณและระยะเวลา", max: 15 },
-    { id: "c5", label: "ประสบการณ์คณะผู้วิจัย", max: 10 }
+    { id: "c5", label: "ประสบการณ์ของคณะผู้วิจัย", max: 10 }
   ];
 
   /* -----------------------------------------------------------------------
@@ -847,43 +847,43 @@
      ======================================================================= */
   var NAV = {
     researcher: [
-      { group: "งานของฉัน", items: [
+      { group: "DASHBOARD", items: [
         { id: "researcher-home", href: "researcher-home.html", label: "หน้าหลัก / โครงการของฉัน" },
         { id: "proposal-new", href: "proposal-new.html", label: "ยื่นข้อเสนอใหม่" },
         { id: "researcher-profile", href: "researcher-profile.html", label: "โปรไฟล์นักวิจัย" }
       ]}
     ],
     chair: [
-      { group: "สำนักวิชา", items: [
+      { group: "DASHBOARD", items: [
         { id: "chair-review", href: "chair-review.html", label: "รับรองข้อเสนอ (สำนักวิชา)", count: 2 }
       ]}
     ],
     secretary: [
-      { group: "สำนักวิชา", items: [
+      { group: "DASHBOARD", items: [
         { id: "secretary-home", href: "secretary-home.html", label: "ภาพรวมสำนักวิชา" }
       ]}
     ],
     staff: [
-      { group: "ดำเนินการ", items: [
+      { group: "DASHBOARD", items: [
         { id: "staff-queue", href: "staff-queue.html", label: "กล่องงาน · ตรวจเอกสาร", count: 2 },
         { id: "staff-agenda", href: "staff-agenda.html", label: "มติ / ประกาศผล", count: 2 }
       ]},
-      { group: "จัดการ", items: [
+      { group: "DASHBOARD", items: [
         { id: "staff-calls", href: "staff-calls.html", label: "เปิดรับทุน / รอบทุน" }
       ]}
     ],
     reviewer: [
-      { group: "การประเมิน", items: [
-        { id: "reviewer-list", href: "reviewer-list.html", label: "พิจารณาเนื้อหา (แทร็กเนื้อหา)", count: 1 }
+      { group: "DASHBOARD", items: [
+        { id: "reviewer-list", href: "reviewer-list.html", label: "พิจารณาข้อเสนอ (แทร็กเนื้อหา)", count: 1 }
       ]}
     ],
     finance: [
-      { group: "แทร็กการเงิน", items: [
+      { group: "DASHBOARD", items: [
         { id: "finance-review-queue", href: "finance-review-queue.html", label: "คิวตรวจการเงิน / รับตรวจ" }
       ]}
     ],
     exec: [
-      { group: "คกก.ส่งเสริม", items: [
+      { group: "DASHBOARD", items: [
         { id: "staff-agenda", href: "staff-agenda.html", label: "มติ / ประกาศผล" }
       ]}
     ]
