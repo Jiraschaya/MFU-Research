@@ -5,20 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>พิจารณาเนื้อหา — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* จุดสถานะ: เขียว = ประเมินแล้ว / เหลือง = รอประเมิน + กระพริบ */
+  .status-badge::before { animation: status-blink 1.2s ease-in-out infinite; }
+  .status-badge--done::before { background: #10B981; box-shadow: 0 0 8px 2px rgba(16, 185, 129, .65); }
+  .status-badge--wait::before { background: #F5B301; box-shadow: 0 0 8px 2px rgba(245, 179, 1, .75); }
+  @keyframes status-blink {
+    0%, 100% { opacity: 1;   transform: scale(1.1); }
+    50%      { opacity: .25; transform: scale(.8); }
+  }
+  @media (prefers-reduced-motion: reduce) { .status-badge::before { animation: none; } }
+
+  /* นำขอบสีแดงเข้มตอนชี้เมาส์ที่ปุ่มออก */
+  .btn-secondary:hover { border-color: #CBD5E1 !important; color: var(--color-primary-strong) !important; }
+  .btn-primary:hover   { border-color: #680E12 !important; }
+
+  /* ชิดหัวข้อกับกล่องหมายเหตุ */
+  .page-head { margin-bottom: 0; }
+
+  /* PROTOTYPE: ปุ่มรีเซ็ตวงกลม (ลูกศรตามเข็มนาฬิกา) มุมล่างขวา */
+  .reset-fab {
+    position: fixed; right: 24px; bottom: 24px; z-index: 40;
+    width: 52px; height: 52px; border-radius: 50%; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #96181F 0%, #851419 100%);
+    border: 1px solid #680E12; color: #fff; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(133, 20, 25, .35);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .reset-fab:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(133, 20, 25, .4); color: #fff; }
+  .reset-fab svg { width: 24px; height: 24px; transition: transform .5s; }
+  .reset-fab:hover svg, .reset-fab.is-spinning svg { transform: rotate(360deg); }
+</style>
 </head>
 <body>
 <div id="app-nav-root"></div>
 <main class="section">
   <div class="container stack gap-5">
 
-    <div class="page-head">
-      <h1 class="text-headline">โครงการที่ได้รับมอบหมายให้พิจารณา</h1>
-      <p class="text-muted" id="sub"></p>
+    <!-- หัวข้อ + กล่องหมายเหตุ (ชิดกัน) -->
+    <div class="stack gap-3">
+      <div class="page-head">
+        <h1 class="text-headline">โครงการที่ได้รับมอบหมายให้พิจารณา</h1>
+      </div>
+
+      <div class="notice notice--info">
+        <span class="notice__title">หมายเหตุ:</span>
+        <span class="notice__body">คุณจะเห็นเฉพาะโครงการที่ได้รับมอบหมาย ระบบจะซ่อนชื่อผู้ประเมินท่านอื่นจนกว่าจะประเมินครบ และไม่มอบหมายโครงการที่คุณมีส่วนได้ส่วนเสีย</span>
+      </div>
     </div>
 
-    <div class="notice notice--info">
-      <span class="notice__title">หมายเหตุ:</span>
-      <span class="notice__body">คุณจะเห็นเฉพาะโครงการที่ได้รับมอบหมาย ระบบจะซ่อนชื่อผู้ประเมินท่านอื่นจนกว่าจะประเมินครบ และไม่มอบหมายโครงการที่คุณมีส่วนได้ส่วนเสีย</span>
+    <!-- การ์ดสรุป 3 ใบ -->
+    <div class="grid grid-3">
+      <div class="card"><div class="stat"><div class="stat__value" id="stat-total">0</div><div class="stat__label">มอบหมาย · โครงการ</div></div></div>
+      <div class="card"><div class="stat"><div class="stat__value" id="stat-pending">0</div><div class="stat__label">รอพิจารณา · โครงการ</div></div></div>
+      <div class="card"><div class="stat"><div class="stat__value" id="stat-done">0</div><div class="stat__label">พิจารณาแล้ว · โครงการ</div></div></div>
     </div>
 
     <div class="grid grid-2" id="cards"></div>
@@ -26,30 +67,66 @@
   </div>
 </main>
 
+<!-- PROTOTYPE ONLY: รีเซ็ตเพื่อทดสอบระบบซ้ำ -->
+<button type="button" class="reset-fab" id="reset-fab" title="รีเซ็ตเพื่อทดสอบใหม่ (คำวินิจฉัย / ข้อคิดเห็น / สถานะ)" aria-label="รีเซ็ตเพื่อทดสอบใหม่">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+</button>
+
 <script src="shared.js"></script>
 <script>
   RGMS.renderAppNav("reviewer-list");
-  var me = RGMS.currentRole().name; // รศ.ดร.สุเมธ ธำรงชัย
-  var assigned = RGMS.PROJECTS.filter(function (p) {
-    return (p.reviewers || []).some(function (r) { return r.name === me; });
+
+  /* ประเมินแล้ว = สถานะแทร็กเนื้อหาไม่ใช่ "pending" (ถูกตั้งเมื่อกด "ส่งความเห็น" ในหน้า reviewer-console) */
+  function isEvaluated(p) { return RGMS.contentTrackStatus(p.id) !== "pending"; }
+
+  function statusBadgeHTML(done) {
+    return done
+      ? '<span class="badge badge-ok status-badge status-badge--done">ประเมินแล้ว</span>'
+      : '<span class="badge badge-wait status-badge status-badge--wait">รอประเมิน</span>';
+  }
+
+  function render() {
+    var assigned = RGMS.reviewerAssigned();
+
+    // เรียงใหม่: ยังไม่ประเมินขึ้นก่อน (ซ้าย→ขวา) ประเมินแล้วถอยไปท้าย — ลำดับเดิมในกลุ่มเดียวกันคงไว้
+    var sorted = assigned
+      .map(function (p, i) { return { p: p, i: i, done: isEvaluated(p) }; })
+      .sort(function (a, b) { return (a.done - b.done) || (a.i - b.i); });
+
+    var doneCount = sorted.filter(function (x) { return x.done; }).length;
+    document.getElementById("stat-total").textContent   = assigned.length;
+    document.getElementById("stat-pending").textContent = assigned.length - doneCount;
+    document.getElementById("stat-done").textContent    = doneCount;
+
+    document.getElementById("cards").innerHTML = sorted.map(function (x) {
+      var p = x.p, done = x.done;
+      return '<div class="card stack gap-3">' +
+        '<div class="between"><span class="text-mono text-muted">' + p.id + '</span>' + statusBadgeHTML(done) + '</div>' +
+        '<div style="font-weight:600; font-size:16px; line-height:1.4;">' + p.title + '</div>' +
+        '<div class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</div>' +
+        '<p class="text-sm text-muted">' + p.abstract + '</p>' +
+        '<a class="btn ' + (done ? 'btn-secondary' : 'btn-primary') + ' btn-md btn-block" href="reviewer-console.html?id=' + p.id + '">' +
+          (done ? 'ตรวจสอบความเห็น' : 'เริ่มพิจารณา →') + '</a>' +
+      '</div>';
+    }).join("");
+
+    RGMS.refreshNavCounts();   // อัปเดตเลขใน sidebar ให้ตรงกับจำนวนที่รอพิจารณา
+  }
+
+  render();
+
+  // PROTOTYPE ONLY: รีเซ็ตคำวินิจฉัย + ข้อคิดเห็น + สถานะ ของทุกโครงการ → รอประเมิน
+  document.getElementById("reset-fab").addEventListener("click", function () {
+    var b = this; b.classList.add("is-spinning");
+    RGMS.resetReviewerContent();
+    render();
+    setTimeout(function () { b.classList.remove("is-spinning"); }, 600);
   });
-  if (!assigned.length) assigned = RGMS.PROJECTS.filter(function(p){ return (p.reviewers||[]).length; });
 
-  var pendingCount = assigned.filter(function (p) { return RGMS.contentTrackStatus(p.id) === "pending"; }).length;
-  document.getElementById("sub").textContent = "มอบหมายทั้งหมด " + assigned.length + " โครงการ · รอพิจารณา " + pendingCount + " โครงการ (แทร็กเนื้อหา)";
-
-  document.getElementById("cards").innerHTML = assigned.map(function (p) {
-    var contentSt = RGMS.contentTrackStatus(p.id);
-    var done = contentSt !== "pending";
-    return '<div class="card stack gap-3">' +
-      '<div class="between"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.trackBadgeHTML(contentSt) + '</div>' +
-      '<div style="font-weight:600; font-size:16px; line-height:1.4;">' + p.title + '</div>' +
-      '<div class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</div>' +
-      '<p class="text-sm text-muted">' + p.abstract + '</p>' +
-      '<a class="btn ' + (done ? 'btn-secondary' : 'btn-primary') + ' btn-md btn-block" href="reviewer-console.html?id=' + p.id + '">' +
-        (done ? 'ตรวจสอบความเห็น' : 'เริ่มพิจารณา →') + '</a>' +
-    '</div>';
-  }).join("");
+  // กลับมาจากหน้า reviewer-console (ปุ่ม Back / bfcache) หรือสถานะเปลี่ยนจากแท็บอื่น → วาดใหม่
+  window.addEventListener("pageshow", function (e) { if (e.persisted) render(); });
+  window.addEventListener("focus", render);
+  window.addEventListener("storage", render);
 </script>
 </body>
 </html>

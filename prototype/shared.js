@@ -634,13 +634,13 @@
   }
   /* -----------------------------------------------------------------------
      พิจารณา 2 แทร็กคู่ขนาน — เนื้อหา (คณะอนุกรรมการ) / การเงิน (จนท.การเงิน, claim-based) — FR-82–85
-     แต่ละแทร็กมีสถานะอิสระ: pending (รอตรวจ) / commented (มีข้อคิดเห็น-ต้องแก้) / cleared (รับรองแล้ว)
+     แต่ละแทร็กมีสถานะอิสระ: pending (รอตรวจ) / commented (มีข้อคิดเห็น-ส่งกลับแก้ไข) / cleared (ประเมินแล้ว)
      seed ค่าเริ่มต้นจากสถานะเดิม/ข้อมูลจำลอง แล้วเก็บ override ลง localStorage เมื่อมีการพิจารณา/ส่งกลับแก้ไขจริง
      ----------------------------------------------------------------------- */
   var TRACK_STATUS = {
     pending:   { id: "pending",   label: "รอตรวจ",                    badge: "badge-wait" },
-    commented: { id: "commented", label: "มีข้อคิดเห็น · ต้องแก้ไข", badge: "badge-revise" },
-    cleared:   { id: "cleared",   label: "รับรองแล้ว",                badge: "badge-ok" }
+    commented: { id: "commented", label: "มีข้อคิดเห็น · ส่งกลับแก้ไข", badge: "badge-revise" },
+    cleared:   { id: "cleared",   label: "ประเมินแล้ว",                badge: "badge-ok" }
   };
   function trackBadgeHTML(st) { var s = TRACK_STATUS[st] || TRACK_STATUS.pending; return '<span class="badge ' + s.badge + '">' + s.label + '</span>'; }
   /* โครงการอยู่ในช่วงพิจารณา 2 แทร็ก (รวม revise loop ที่ยังวนอยู่ในขั้นเดียวกัน) */
@@ -845,6 +845,45 @@
   /* =======================================================================
      App navigation shell (role-based)
      ======================================================================= */
+  /* ---- โครงการที่มอบหมายให้ผู้พิจารณา (แทร็กเนื้อหา) + จำนวนที่ยังรอพิจารณา ---- */
+  function reviewerAssigned() {
+    var me = ROLES.reviewer.name;
+    var list = PROJECTS.filter(function (p) {
+      return (p.reviewers || []).some(function (r) { return r.name === me; });
+    });
+    if (!list.length) list = PROJECTS.filter(function (p) { return (p.reviewers || []).length; });
+    return list;
+  }
+  function reviewerPendingCount() {
+    return reviewerAssigned().filter(function (p) { return contentTrackStatus(p.id) === "pending"; }).length;
+  }
+  /* คำวินิจฉัยที่ผู้พิจารณาเลือกไว้ (เก็บแยกจากข้อคิดเห็น) */
+  var _CONTENT_REC_KEY = "rgms_content_recommend";
+  function contentRecommend(id) { return _store(_CONTENT_REC_KEY)[id] || null; }
+  function setContentRecommend(id, v) { var o = _store(_CONTENT_REC_KEY); if (v) o[id] = v; else delete o[id]; _persist(_CONTENT_REC_KEY, o); }
+  /* PROTOTYPE ONLY: รีเซ็ตทุกโครงการที่มอบหมาย → รอประเมิน + ล้างคำวินิจฉัย/ข้อคิดเห็น เพื่อทดสอบระบบซ้ำ */
+  function resetReviewerContent() {
+    reviewerAssigned().forEach(function (p) {
+      setContentTrackStatus(p.id, "pending");
+      setContentComment(p.id, "");
+      setContentRecommend(p.id, null);
+    });
+  }
+  /* อัปเดตตัวเลขแจ้งเตือนใน sidebar โดยไม่ต้องวาด sidebar ใหม่ */
+  function refreshNavCounts() {
+    var role = currentRole();
+    (NAV[role.id] || []).forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (it.count == null) return;
+        var el = document.querySelector('[data-nav-count="' + it.id + '"]');
+        if (!el) return;
+        var n = typeof it.count === "function" ? it.count() : it.count;
+        el.textContent = n;
+        el.style.display = n ? "" : "none";
+      });
+    });
+  }
+
   var NAV = {
     researcher: [
       { group: "DASHBOARD", items: [
@@ -874,7 +913,7 @@
     ],
     reviewer: [
       { group: "DASHBOARD", items: [
-        { id: "reviewer-list", href: "reviewer-list.html", label: "พิจารณาข้อเสนอ (แทร็กเนื้อหา)", count: 1 }
+        { id: "reviewer-list", href: "reviewer-list.html", label: "พิจารณาข้อเสนอ (แทร็กเนื้อหา)", count: function () { return reviewerPendingCount(); } }
       ]}
     ],
     finance: [
@@ -930,7 +969,10 @@ html += '<a class="app-sidebar__brand" href="' + role.home + '">' +
       html += '<div class="app-sidebar__group"><span class="app-sidebar__group-label">' + g.group + '</span></div>';
       g.items.forEach(function (it) {
         var active = it.id === pageId ? " is-active" : "";
-        var count = it.count ? '<span class="tag-count">' + it.count + '</span>' : "";
+        var n = typeof it.count === "function" ? it.count() : it.count;
+        var count = (it.count != null)
+          ? '<span class="tag-count" data-nav-count="' + it.id + '"' + (n ? '' : ' style="display:none"') + '>' + n + '</span>'
+          : "";
        html += '<a class="app-sidebar__link' + active + '" href="' + it.href + '">' +
           '<span class="app-sidebar__link-label">' + it.label + '</span>' +
           count +
@@ -1146,6 +1188,8 @@ function switchRole(roleId) {
     financeOwnerOf: financeOwnerOf, claimFinance: claimFinance, setFinanceOwner: setFinanceOwner, financeLoad: financeLoad,
     bothTracksCleared: bothTracksCleared, resubmitTracks: resubmitTracks,
    currentRole: currentRole, setRole: setRole, switchRole: switchRole, renderAppNav: renderAppNav,
+    reviewerAssigned: reviewerAssigned, reviewerPendingCount: reviewerPendingCount, refreshNavCounts: refreshNavCounts,
+    contentRecommend: contentRecommend, setContentRecommend: setContentRecommend, resetReviewerContent: resetReviewerContent,
     toast: toast, modal: modal, timelineHTML: timelineHTML,
     resetDemoData: resetDemoData, calculateBudgetRules: calculateBudgetRules
   };

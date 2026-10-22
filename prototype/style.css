@@ -890,6 +890,7 @@ body.sidebar-collapsed .app-sidebar {
 
 /* 3. Tactile Button Refinement (เพิ่มความนูนและสะท้อนแสง) */
 .btn-primary {
+  color: #fff !important;
   background: linear-gradient(180deg, #96181F 0%, #851419 100%) !important;
   border: 1px solid #680E12 !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 
@@ -898,6 +899,7 @@ body.sidebar-collapsed .app-sidebar {
 }
 
 .btn-primary:hover {
+  color: #fff !important;   /* คงตัวอักษรสีขาว (กัน a:hover ทำให้เป็นสีแดงเข้ม) */
   background: linear-gradient(180deg, #A81B22 0%, #96181F 100%) !important;
   transform: translateY(-1px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 
@@ -1338,3 +1340,7 @@ body.sidebar-collapsed .app-sidebar {
   from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ปุ่มสีแดงเข้มอื่น ๆ ที่เป็นลิงก์ <a> — ตัวอักษรขาวตลอดแม้ชี้เมาส์ */
+a.btn-primary, a.btn-primary:hover, a.btn-primary:focus, a.btn-primary:active,
+a.btn-primary-solid, a.btn-primary-solid:hover, a.btn-danger, a.btn-danger:hover { color: #fff !important; }

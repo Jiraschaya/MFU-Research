@@ -5,6 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>พิจารณาเนื้อหา — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* ปุ่มคำวินิจฉัย 3 สี (โทนนุ่ม ไม่สดเกินไป) */
+  .rec-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rec-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 40px; padding: 0 16px; border-radius: 8px;
+    border: 1px solid transparent; font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; opacity: .6;                         /* ยังไม่เลือก = จางลงเล็กน้อย */
+    transition: opacity .15s, box-shadow .15s, transform .15s;
+  }
+  .rec-btn:hover { opacity: .85; transform: translateY(-1px); }
+  .rec-btn--ok   { background: #3F8F6B; border-color: #2F7556; color: #fff; }
+  .rec-btn--warn { background: #E0B04A; border-color: #C79A36; color: #3B2A00; }
+  .rec-btn--bad  { background: #B8484B; border-color: #9A3639; color: #fff; }
+  .rec-btn.is-active { opacity: 1; transform: none; box-shadow: 0 2px 8px rgba(15, 23, 42, .22); }
+  .rec-btn.is-active::before { content: "\2713"; font-weight: 700; }     /* ติ๊กถูกหน้าข้อความ */
+  /* ล็อกหลังส่งความเห็น */
+  .rec-btn:disabled { cursor: not-allowed; }
+  .rec-btn:disabled:not(.is-active):hover { opacity: .6; transform: none; }
+  .field__control[readonly] { background: #F1F5F9; color: #475569; cursor: not-allowed; resize: none; }
+  .lock-note { display: none; margin-bottom: 12px; }
+  .is-locked .lock-note { display: flex; }
+</style>
 </head>
 <body>
 <div id="app-nav-root"></div>
@@ -20,12 +43,15 @@
   var p = RGMS.getProject(id);
   var mine = (p.reviewers || []).filter(function (r) { return r.name === me; })[0] || { scores: {}, comment: "", recommend: null };
   var scores = Object.assign({}, mine.scores);
-  var recommend = mine.recommend;
+  /* ถ้าส่งความเห็นแล้ว (สถานะไม่ใช่ pending) → แสดงของเดิมและล็อกฟอร์ม; ถ้ายัง → ฟอร์มว่าง */
+  var locked = RGMS.contentTrackStatus(p.id) !== "pending";
+  var recommend = locked ? (RGMS.contentRecommend(p.id) || mine.recommend) : null;
+  var savedComment = locked ? (RGMS.contentComment(p.id) || mine.comment || "") : "";
 
   var root = document.getElementById("root");
   root.innerHTML =
     '<div class="page-head"><div class="breadcrumb"><a href="reviewer-list.html">← โครงการที่ได้รับมอบหมาย</a></div>' +
-      '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML(p.status) + '</div>' +
+      '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML("review") + '</div>' +
       '<h1 class="text-title">' + p.title + '</h1>' +
       '<p class="text-sm text-muted">' + p.school + ' · งบที่ขอ ' + RGMS.fmtBaht(p.budgetReq) + ' · ' + p.duration + '</p></div>' +
     '<div class="grid" style="grid-template-columns: 1fr 380px; align-items:start;" id="grid"></div>';
@@ -49,26 +75,38 @@
   // ขวา: แบบพิจารณา (comment-based ตามเอกสารจริง — ให้ข้อคิดเห็น/รับรอง ไม่มีคะแนน/น้ำหนัก)
   var ASPECTS = RGMS.CRITERIA.map(function (c) { return c.label; });
   var right =
-    '<div class="card" style="position:sticky; top:16px;">' +
+    '<div class="card" id="form-card" style="position:sticky; top:16px;">' +
+      '<div class="notice notice--ok lock-note"><span class="notice__title">ส่งความเห็นแล้ว</span><span class="notice__body">คำวินิจฉัยและข้อคิดเห็นถูกล็อก <br>ไม่สามารถแก้ไขได้</span></div>' +
       '<h2 class="text-subhead" style="margin-bottom:4px;">แบบพิจารณาข้อเสนอ (comment-based)</h2>' +
       '<p class="text-sm text-muted" style="margin-bottom:12px;">ให้ข้อคิดเห็น/ข้อเสนอแนะ และคำวินิจฉัย (การพิจารณาเชิงคุณภาพ ไม่มีการให้คะแนน)</p>' +
       '<span class="text-overline">ประเด็นประกอบการพิจารณา</span>' +
       '<ul style="margin:6px 0 16px; padding-left:18px; font-size:13px; color:var(--color-text-muted); line-height:1.7;">' +
         ASPECTS.map(function (a) { return '<li>' + a + '</li>'; }).join("") + '</ul>' +
       '<label class="field__label">คำวินิจฉัย <span class="req">*</span></label>' +
-      '<div class="chip-group" id="rec" style="margin:6px 0 16px;">' +
-        [['approve','เห็นควรสนับสนุน'],['approve_revise','ให้ปรับแก้'],['reject','ไม่สนับสนุน']].map(function (o) {
-          return '<button class="chip" data-rec="' + o[0] + '">' + o[1] + '</button>';
+      '<div class="rec-group" id="rec" style="margin:6px 0 16px;">' +
+        [['approve','เห็นควรสนับสนุน','rec-btn--ok'],['approve_revise','ให้ปรับแก้','rec-btn--warn'],['reject','ไม่สนับสนุน','rec-btn--bad']].map(function (o) {
+          return '<button type="button" class="rec-btn ' + o[2] + '" data-rec="' + o[0] + '">' + o[1] + '</button>';
         }).join("") + '</div>' +
       '<div class="field"><label class="field__label">ข้อคิดเห็น / ข้อเสนอแนะ <span class="req">*</span></label>' +
-        '<textarea class="field__control" id="comment" style="min-height:160px;" placeholder="ระบุจุดแข็ง จุดที่ควรปรับปรุง ความเหมาะสมของระเบียบวิธี/งบประมาณ/ระยะเวลา และเงื่อนไขการแก้ไข (ถ้ามี)">' + (mine.comment || '') + '</textarea></div>' +
+        '<textarea class="field__control" id="comment" style="min-height:160px;" placeholder="ระบุจุดแข็ง จุดที่ควรปรับปรุง ความเหมาะสมของระเบียบวิธี/งบประมาณ/ระยะเวลา และเงื่อนไขการแก้ไข (ถ้ามี)">' + savedComment + '</textarea></div>' +
       '<button class="btn btn-primary btn-lg btn-block" id="submit" disabled>ส่งความเห็น</button>' +
       '<p class="text-sm text-muted text-center" id="hint" style="margin-top:8px;"></p>' +
     '</div>';
 
   document.getElementById("grid").innerHTML = left + right;
 
+  function lockForm() {
+    locked = true;
+    document.getElementById("form-card").classList.add("is-locked");
+    document.getElementById("comment").readOnly = true;
+    document.querySelectorAll("#rec .rec-btn").forEach(function (x) { x.disabled = true; });
+    var sb = document.getElementById("submit");
+    sb.disabled = true; sb.textContent = "ส่งความเห็นแล้ว";
+    document.getElementById("hint").textContent = "ล็อกแล้ว — ทดสอบใหม่ได้โดยกดปุ่มรีเซ็ตที่หน้ารายการโครงการ";
+  }
+
   function recompute() {
+    if (locked) return;
     var hasComment = document.getElementById("comment").value.trim().length > 0;
     var ok = recommend && hasComment;
     document.getElementById("submit").disabled = !ok;
@@ -76,25 +114,30 @@
   }
 
   document.getElementById("rec").addEventListener("click", function (e) {
+    if (locked) return;
     var b = e.target.closest("[data-rec]"); if (!b) return;
     recommend = b.getAttribute("data-rec");
-    document.querySelectorAll("#rec .chip").forEach(function (x) { x.classList.remove("is-active"); });
+    document.querySelectorAll("#rec .rec-btn").forEach(function (x) { x.classList.remove("is-active"); });
     b.classList.add("is-active");
     recompute();
   });
   document.getElementById("comment").addEventListener("input", recompute);
   if (recommend) { var rb = document.querySelector('[data-rec="' + recommend + '"]'); if (rb) rb.classList.add("is-active"); }
   recompute();
+  if (locked) lockForm();
 
   document.getElementById("submit").addEventListener("click", function () {
     var vmap = { approve: 'เห็นควรสนับสนุน', approve_revise: 'ให้ปรับแก้', reject: 'ไม่สนับสนุน' };
     var trackSt = recommend === "approve" ? "cleared" : "commented";
     RGMS.setContentTrackStatus(p.id, trackSt);
     RGMS.setContentComment(p.id, document.getElementById("comment").value.trim());
+    RGMS.setContentRecommend(p.id, recommend);
+    RGMS.refreshNavCounts();   // ลดเลขแจ้งเตือนใน sidebar ทันที
+    lockForm();                // ล็อกคำวินิจฉัย + ข้อคิดเห็น
     RGMS.modal({
       title: "ส่งความเห็นสำเร็จ",
       body: '<div class="notice notice--ok"><span class="notice__title">บันทึกความเห็นแล้ว · คำวินิจฉัย: ' + (vmap[recommend] || '') + '</span>' +
-        '<span class="notice__body">แทร็กเนื้อหา: ' + RGMS.TRACK_STATUS[trackSt].label + ' — แทร็กการเงินตรวจแยกเป็นอิสระ ไม่ต้องรอกัน โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-85)</span></div>',
+        '<span class="notice__body">แทร็กเนื้อหา: ' + RGMS.TRACK_STATUS[trackSt].label + ' — แทร็กการเงินตรวจแยกเป็นอิสระ ไม่ต้องรอกัน โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-5)</span></div>',
       foot: '<a class="btn btn-primary btn-md" href="reviewer-list.html">กลับรายการ</a>'
     });
   });
