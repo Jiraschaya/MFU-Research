@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ภาพรวมพอร์ตทุน — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="exec.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+
+    <div class="page-head">
+      <span class="text-overline">แดชบอร์ดผู้บริหาร · ภาพรวมพอร์ตทุน (FR-39, FR-40)</span>
+      <h1 class="text-headline">ภาพรวมพอร์ตทุนวิจัย</h1>
+      <p class="text-muted">ดูจำนวนโครงการแต่ละขั้น งบที่ขอ/อนุมัติ แยกตามประเภททุนและสำนักวิชา กรองตามปีงบประมาณ และเจาะรายสำนักวิชา</p>
+    </div>
+
+    <div class="card card--pad-sm">
+      <div class="ex-filters">
+        <div class="field"><label class="field__label" for="f-fy">ปีงบประมาณ</label>
+          <select class="field__control" id="f-fy"></select></div>
+        <div class="field"><label class="field__label" for="f-school">สำนักวิชา</label>
+          <select class="field__control" id="f-school"></select></div>
+        <button class="btn btn-secondary btn-md" id="f-reset">ล้างตัวกรอง</button>
+      </div>
+    </div>
+
+    <div class="card card--featured card--pad-sm" id="action-card"></div>
+
+    <div class="grid grid-4" id="kpis"></div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">Funnel ตามขั้นการพิจารณา</h2>
+        <p class="text-sm text-muted">จำนวนโครงการที่ผ่านถึงแต่ละขั้น (สะสม) และที่อยู่ในขั้นนั้นขณะนี้</p></div></div>
+      <div class="ex-funnel" id="funnel"></div>
+    </div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">งบประมาณแยกตามประเภททุน</h2>
+        <p class="text-sm text-muted">งบที่ขอเทียบงบที่อนุมัติ (เพดาน 100k / 200k / 300k)</p></div>
+        <div class="ex-legend"><span><i style="background:var(--color-accent)"></i>งบที่ขอ</span><span><i style="background:var(--color-primary)"></i>งบที่อนุมัติ</span></div></div>
+      <div id="tiers"></div>
+    </div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">แยกตามสำนักวิชา</h2>
+        <p class="text-sm text-muted">คลิกแถวเพื่อกรองรายสำนักวิชา · คลิกอีกครั้งเพื่อยกเลิก</p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>สำนักวิชา</th><th class="right">โครงการ</th><th class="right">รอมติ</th><th class="right">งบที่ขอ</th><th class="right">งบที่อนุมัติ</th><th class="right">อัตราอนุมัติ</th></tr></thead>
+          <tbody id="schools"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card--featured card--pad-sm">
+      <div class="card__header"><div><h2 class="text-subhead">รายการโครงการ</h2><p class="text-sm text-muted" id="list-meta"></p></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>รหัส</th><th>โครงการ / ผู้วิจัย</th><th>ประเภททุน</th><th class="right">งบที่ขอ</th><th>สถานะ</th></tr></thead>
+          <tbody id="plist"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card--pad-sm" id="meet-card"></div>
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script src="exec.js"></script>
+<script>
+(function () {
+  var R = RGMS, X = R.exec, esc = X.esc;
+  R.renderAppNav("exec-overview");
+  function $(id) { return document.getElementById(id); }
+  function money(n) { return R.fmtMoney(n); }
+  var F = { fy: R.CURRENT_FY, school: "" };
+
+  var fySel = $("f-fy");
+  fySel.innerHTML = '<option value="">ทุกปีงบประมาณ</option>' + R.fiscalYears().map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join("");
+  fySel.value = String(F.fy);
+  if (fySel.value !== String(F.fy)) { F.fy = ""; fySel.value = ""; }
+  $("f-school").innerHTML = '<option value="">ทุกสำนักวิชา</option>' + R.SCHOOLS.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join("");
+
+  fySel.addEventListener("change", function () { F.fy = fySel.value ? Number(fySel.value) : ""; render(); });
+  $("f-school").addEventListener("change", function () { F.school = $("f-school").value; render(); });
+  $("f-reset").addEventListener("click", function () { F.fy = ""; F.school = ""; fySel.value = ""; $("f-school").value = ""; render(); });
+
+  var STEPS = [
+    [1, "ยื่นข้อเสนอ", ["submitted"]],
+    [2, "ตรวจเอกสาร / มอบหมายผู้ประเมิน", ["screening"]],
+    [3, "ประเมิน 2 แทร็ก", ["review"]],
+    [4, "พร้อมเข้าวาระ คกก.", ["ready"]],
+    [5, "มีมติ คกก.", ["conditional", "decided_approve", "decided_reject"]],
+    [6, "ประกาศผล / ดำเนินโครงการ", ["announced", "running"]]
+  ];
+
+  function render() {
+    var d = X.portfolio({ fy: F.fy || null, school: F.school || null });
+    var all = X.portfolio({});
+    var ready = X.pendingCount(), toSign = X.readyToAnnounce().length;
+    $("action-card").innerHTML = '<div class="ex-action-card"><div><h2 class="text-subhead">รอท่านดำเนินการ</h2>' +
+      '<p class="text-sm text-muted">รอบันทึกมติ <strong>' + ready + '</strong> โครงการ · รอลงนามประกาศ <strong>' + toSign + '</strong> โครงการ · รอนักวิจัยปรับแก้ ' + X.awaitingResearcher().length + ' โครงการ (ทุกปีงบประมาณ)</p></div>' +
+      '<a class="btn btn-primary btn-md" href="staff-agenda.html">ไปหน้ามติ / ประกาศผล →</a></div>';
+
+    function tile(l, v, s) { return '<div class="stat-card"><div class="stat__label">' + l + '</div><div class="stat__value">' + v + '</div><div class="text-sm text-muted">' + s + '</div></div>'; }
+    $("kpis").innerHTML =
+      tile("โครงการทั้งหมด", d.total, "ตามตัวกรอง") +
+      tile("อัตราอนุมัติ", d.rate == null ? "—" : d.rate + "%", d.approveN + " อนุมัติ · " + d.rejectN + " ไม่อนุมัติ" + (d.conditionalN ? " · " + d.conditionalN + " มีเงื่อนไข" : "")) +
+      tile("งบที่ขอ (บาท)", money(d.requested), "รวมทุกโครงการ") +
+      tile("งบที่อนุมัติ (บาท)", money(d.approved), d.requested ? Math.round(d.approved * 100 / d.requested) + "% ของงบที่ขอ" : "—");
+
+    var max = Math.max(1, d.reach[1] || 0);
+    $("funnel").innerHTML = STEPS.map(function (s) {
+      var reach = d.reach[s[0]] || 0, cur = s[2].reduce(function (a, k) { return a + (d.current[k] || 0); }, 0);
+      return '<div class="ex-funnel__row"><div>' + s[1] + '</div><div class="ex-bar"><div class="ex-bar__fill' + (s[0] === 6 ? " ex-bar__fill--ok" : "") + '" style="width:' + Math.round(reach * 100 / max) + '%"></div></div>' +
+        '<div class="text-sm"><strong>' + reach + '</strong> ผ่านถึง · <span class="text-muted">อยู่ขั้นนี้ ' + cur + '</span></div></div>';
+    }).join("");
+
+    var tmax = Math.max(1, Math.max.apply(null, d.byTier.map(function (t) { return t.requested; })));
+    $("tiers").innerHTML = d.byTier.map(function (t) {
+      return '<div class="ex-tier"><div><strong>' + esc(t.tier.label) + '</strong><div class="text-sm text-muted">เพดาน ' + money(t.tier.cap) + ' · ' + t.n + ' โครงการ</div></div>' +
+        '<div class="ex-bar-pair"><div class="ex-bar"><div class="ex-bar__fill ex-bar__fill--gold" style="width:' + Math.round(t.requested * 100 / tmax) + '%"></div></div>' +
+        '<div class="ex-bar"><div class="ex-bar__fill" style="width:' + Math.round(t.approved * 100 / tmax) + '%"></div></div></div>' +
+        '<div class="text-sm" style="text-align:right;">ขอ ' + money(t.requested) + '<br>อนุมัติ <strong>' + money(t.approved) + '</strong></div></div>';
+    }).join("");
+
+    // ตารางสำนักวิชาแสดงทุกสำนัก (ตามปีงบ) เพื่อให้คลิกเลือกได้
+    var dd = X.portfolio({ fy: F.fy || null });
+    $("schools").innerHTML = dd.bySchool.filter(function (r) { return r.n > 0; }).map(function (r) {
+      return '<tr class="ex-row-link' + (F.school === r.school ? " is-selected" : "") + '" data-school="' + esc(r.school) + '"><td>' + esc(r.school) + '</td><td class="right">' + r.n + '</td><td class="right">' + (r.ready || "—") + '</td>' +
+        '<td class="right">' + money(r.requested) + '</td><td class="right">' + money(r.approved) + '</td><td class="right">' + (r.rate == null ? "—" : r.rate + "%") + '</td></tr>';
+    }).join("") || '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:20px;">ไม่มีข้อมูล</td></tr>';
+
+    $("list-meta").textContent = d.total + " โครงการ" + (F.fy ? " · ปีงบประมาณ " + F.fy : "") + (F.school ? " · " + F.school : "");
+    $("plist").innerHTML = d.list.map(function (p) {
+      var s = X.stateOf(p), r = X.resolutionOf(p.id);
+      var badge = r ? R.resolutionBadge(r.code) + (s === "announced" ? ' <span class="ex-pill">ประกาศแล้ว</span>' : "") : R.badgeHTML(R.effectiveStatus(p));
+      return '<tr><td><span class="mono text-sm">' + esc(p.id) + '</span></td><td><a href="project-detail.html?id=' + encodeURIComponent(p.id) + '" class="text-strong">' + esc(p.title) + '</a><div class="text-sm text-muted">' + esc(p.pi) + ' · ' + esc(p.school) + '</div></td>' +
+        '<td>' + esc(R.tierOf(p).label) + '</td><td class="right">' + money(p.budgetReq) + '</td><td>' + badge + '</td></tr>';
+    }).join("") || '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">ไม่มีโครงการตามตัวกรอง</td></tr>';
+
+    var m = X.meeting(), ann = X.announcements();
+    $("meet-card").innerHTML = '<div class="ex-meeting"><div><div class="text-sm text-muted">การประชุมที่เปิดอยู่</div><span class="ex-meeting__no">ครั้งที่ ' + esc(m.no) + '</span></div>' +
+      '<div class="text-sm text-muted">ประกาศที่ลงนามแล้ว ' + ann.length + ' ฉบับ' + (ann[0] ? ' · ล่าสุดฉบับที่ ' + esc(ann[0].no) : '') + '</div></div>';
+  }
+
+  $("schools").addEventListener("click", function (e) {
+    var tr = e.target.closest("tr[data-school]"); if (!tr) { return; }
+    var s = tr.getAttribute("data-school");
+    F.school = F.school === s ? "" : s; $("f-school").value = F.school; render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
