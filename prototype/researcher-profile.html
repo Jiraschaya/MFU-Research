@@ -6,11 +6,26 @@
 <title>โปรไฟล์นักวิจัย — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
 <style>
+  /* .notice ใน style.css ตั้ง display:flex ไว้ ทำให้ attribute hidden ไม่ทำงาน — ต้องบังคับเอง */
+  [hidden] { display:none !important; }
+  /* notice--wait ประกาศไว้แค่ใน exec.css (หน้านี้ไม่ได้โหลด) — ประกาศซ้ำด้วย token เดิมของระบบ */
+  .notice--wait { border-left-color: var(--st-wait); background: var(--st-wait-tint); }
+
   .grp-title { display:flex; align-items:center; gap:var(--space-2); margin-bottom:var(--space-3); }
   .grp-title .num { width:26px; height:26px; border-radius:8px; background:var(--color-primary-tint); color:var(--color-primary);
     display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:13px; }
   .save-bar { position:sticky; bottom:0; background:var(--color-surface); border-top:1px solid var(--color-border);
-    padding:var(--space-3) 0; margin-top:var(--space-2); display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap; z-index:5; }
+    padding:var(--space-3) 0; padding-bottom:calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    margin-top:var(--space-2); display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap; z-index:5; }
+  .save-bar__status { display:flex; flex-direction:column; gap:2px; }
+
+  /* error ใต้ช่อง — ใช้สีเดียวกับ .req และสถานะ "ไม่อนุมัติ/ข้อผิดพลาด" ของระบบ */
+  .field__error { display:none; font-size:13px; color:var(--st-reject); font-weight:500; }
+  .field--error .field__error { display:block; }
+  .field--error .field__control { border-color:var(--st-reject); }
+  .field--error .field__control:focus { box-shadow:0 0 0 3px var(--st-reject-tint); }
+  .form-summary { margin:0; font-size:13px; font-weight:600; color:var(--st-reject); }
+  textarea.field__control { resize:vertical; min-height:84px; line-height:1.55; }
 </style>
 </head>
 <body>
@@ -24,12 +39,18 @@
       <p class="text-muted">กรอกครั้งเดียว — ระบบจะดึงข้อมูลชุดนี้ (ประวัติ ส่วน ข + ข้อมูลติดต่อหัวหน้าโครงการ) ไปใส่ในทุกข้อเสนอโครงการโดยอัตโนมัติ · แก้ไข/อัปเดตเมื่อไรก็ได้</p>
     </div>
 
+    <div class="notice notice--wait" id="sample-warn" hidden>
+      <span class="notice__title">ข้อมูลในฟอร์มยังเป็นค่าตัวอย่าง</span>
+      <span class="notice__body">แก้ให้เป็นข้อมูลจริงของท่านแล้วกด "บันทึกโปรไฟล์" ก่อนยื่นข้อเสนอ</span>
+    </div>
+
     <div class="notice notice--info">
       <span class="notice__title">ทำไมต้องมีโปรไฟล์?</span>
       <span class="notice__body">ในแบบ RS-01 "ส่วน ข ประวัติคณะผู้วิจัย" และข้อมูลหัวหน้าโครงการ (ข้อ 1.1) ต้องกรอกซ้ำทุกครั้งที่ยื่น — เก็บไว้ในโปรไฟล์แล้วกรอกครั้งเดียวจบ ยื่นข้อเสนอครั้งถัดไปเพียงตรวจทาน</span>
     </div>
 
-    <form id="profile-form" class="stack gap-4">
+    <!-- novalidate: ใช้ข้อความ error ของระบบเองแทนของเบราว์เซอร์ -->
+    <form id="profile-form" class="stack gap-4" novalidate>
       <div class="card">
         <div class="grp-title"><span class="num">1</span><h2 class="text-subhead">ข้อมูลติดต่อหัวหน้าโครงการ</h2></div>
         <div class="grid grid-2" id="grp-identity"></div>
@@ -41,15 +62,19 @@
       </div>
 
       <div class="card">
-        <div class="grp-title"><span class="num">3</span><h2 class="text-subhead">ผลงานและประสบการณ์วิจัย</h2></div>
-        <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">ส่วนนี้ไม่บังคับ แต่กรอกไว้จะช่วยให้ยื่นข้อเสนอได้เร็วขึ้นมาก — ผู้ทรงคุณวุฒิใช้พิจารณาประสบการณ์คณะผู้วิจัย</p>
+        <div class="grp-title"><span class="num">3</span><h2 class="text-subhead">ผลงานและประสบการณ์วิจัย</h2><span class="tag">ไม่บังคับ</span></div>
+        <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">กรอกไว้จะช่วยให้ยื่นข้อเสนอได้เร็วขึ้นมาก — ผู้ทรงคุณวุฒิใช้พิจารณาประสบการณ์คณะผู้วิจัย</p>
         <div class="stack gap-3" id="grp-portfolio"></div>
       </div>
 
       <div class="save-bar">
         <button type="submit" class="btn btn-primary btn-lg">บันทึกโปรไฟล์</button>
-        <a class="btn btn-secondary btn-md" href="proposal-new.html">ไปยื่นข้อเสนอ →</a>
-        <span class="text-sm text-muted" id="saved-note"></span>
+        <a class="btn btn-secondary btn-md" id="go-proposal" href="proposal-new.html">ไปยื่นข้อเสนอ →</a>
+        <div class="save-bar__status">
+          <span class="text-sm text-muted" id="req-count"></span>
+          <span class="text-sm text-muted" id="saved-note" aria-live="polite"></span>
+        </div>
+        <p class="form-summary" id="form-summary" role="alert" hidden></p>
       </div>
     </form>
 
@@ -58,48 +83,206 @@
 
 <script src="shared.js"></script>
 <script>
+  if (!window.RGMS) {
+    document.getElementById("app-nav-root").innerHTML =
+      '<div style="padding:16px;background:#fdecea;color:#b71c1c">โหลด shared.js ไม่สำเร็จ — ตรวจว่าไฟล์อยู่โฟลเดอร์เดียวกับหน้านี้</div>';
+    throw new Error("shared.js not loaded");
+  }
+
   RGMS.renderAppNav("researcher-profile");
   var P = RGMS.getProfile();
+  var dirty = false;
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function $(id) { return document.getElementById(id); }
+
+  // PROFILE_FIELDS ใน shared.js ตั้ง email/phone เป็น type:"text" — จึงระบุชนิดตาม key โดยตรง
+  var KIND = { email: "email", phone: "tel" };
+  var VALIDATORS = {
+    email: {
+      test: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); },
+      msg: "รูปแบบอีเมลไม่ถูกต้อง"
+    },
+    tel: {
+      // ยอมรับเบอร์ต่อพ่วง/หลายเบอร์ แต่ต้องมีตัวเลขอย่างน้อย 8 หลัก
+      test: function (v) { return /^[0-9+\-\s()#,]+$/.test(v) && v.replace(/\D/g, "").length >= 8 && v.length <= 25; },
+      msg: "รูปแบบเบอร์โทรไม่ถูกต้อง (ต้องมีตัวเลขอย่างน้อย 8 หลัก)"
+    }
+  };
+  function kindOf(f) { return KIND[f.key] || null; }
+
+  // ---- เบอร์โทร: จัดรูปแบบอัตโนมัติ (ไม่ต้องพิมพ์ขีดเอง) ----
+  // 02 (กรุงเทพฯ) → 02-123-4567 · ที่เหลือ → 081-234-5678 (มือถือ 10 หลัก / โทรศัพท์บ้านต่างจังหวัด 9 หลักก็เข้ารูปเดียวกัน)
+  function formatDigits(d) {
+    var g = d.indexOf("02") === 0 ? [2, 3, 4] : [3, 3, 4];
+    d = d.slice(0, g[0] + g[1] + g[2]);
+    var out = [], i = 0;
+    g.forEach(function (n) { if (i < d.length) { out.push(d.slice(i, i + n)); i += n; } });
+    return out.join("-");
+  }
+  // จัดรูปแบบเฉพาะเมื่อมีแต่ตัวเลข/ขีด/ช่องว่าง — ถ้าใส่ + ( ) # , (เบอร์ต่างประเทศ/เบอร์ต่อ/หลายเบอร์) จะไม่แตะต้อง
+  function isPlainPhone(v) { return /^[0-9\s\-]*$/.test(v); }
+
+  var FIELD = {};
+  RGMS.PROFILE_FIELDS.forEach(function (f) { FIELD[f.key] = f; });
 
   function ctrl(f) {
-    var v = (P[f.key] == null ? "" : String(P[f.key])).replace(/"/g, "&quot;");
-    var req = f.required ? ' <span class="req">*</span>' : '';
-    var wrapStart = '<div class="field" data-key="' + f.key + '"><label class="field__label">' + f.label + req + '</label>';
+    var id = "pf-" + f.key;
+    var raw = P[f.key] == null ? "" : String(P[f.key]);
+    var kind = kindOf(f);
+    if (kind === "tel" && isPlainPhone(raw)) raw = formatDigits(raw.replace(/\D/g, ""));   // ค่าที่เก็บไว้เป็น 0812345678 ก็แสดงเป็น 081-234-5678
+    var attrs = ' id="' + esc(id) + '" class="field__control pf" data-key="' + esc(f.key) + '"' +
+      (f.required ? ' aria-required="true"' : '') + ' aria-describedby="' + esc(id) + '-err"' +
+      (kind === "email" ? ' type="email" inputmode="email" autocomplete="email"' : '') +
+      (kind === "tel" ? ' type="tel" inputmode="tel" autocomplete="tel" placeholder="081-234-5678" maxlength="25"' : '');
+    var control;
+
     if (f.type === "school") {
-      return wrapStart + '<select class="field__control pf" data-key="' + f.key + '">' +
-        RGMS.SCHOOLS.map(function (s) { return '<option' + (s === P[f.key] ? ' selected' : '') + '>' + s + '</option>'; }).join("") + '</select></div>';
+      // ค่าที่เก็บไว้ไม่อยู่ในรายการสำนักวิชา → แสดง "— เลือก —" แทนการเลือกตัวแรกให้เงียบ ๆ
+      var opts = (RGMS.SCHOOLS.indexOf(raw) < 0 ? '<option value="" selected disabled>— เลือก —</option>' : '') +
+        RGMS.SCHOOLS.map(function (s) {
+          return '<option value="' + esc(s) + '"' + (s === raw ? ' selected' : '') + '>' + esc(s) + '</option>';
+        }).join("");
+      control = '<select' + attrs + '>' + opts + '</select>';
+    } else if (f.type === "area") {
+      control = '<textarea' + attrs + ' rows="3">' + esc(raw) + '</textarea>';
+    } else {
+      control = '<input' + attrs + ' value="' + esc(raw) + '">';
     }
-    if (f.type === "area") {
-      return wrapStart + '<textarea class="field__control pf" data-key="' + f.key + '" rows="3" placeholder="' + f.label + '">' + (P[f.key] || "") + '</textarea></div>';
-    }
-    return wrapStart + '<input class="field__control pf" data-key="' + f.key + '" value="' + v + '" placeholder="' + f.label + '"></div>';
+
+    // style.css มี .sr-only อยู่แล้ว จึงใช้ได้เลย
+    return '<div class="field" id="fld-' + esc(f.key) + '">' +
+      '<label class="field__label" for="' + esc(id) + '">' + esc(f.label) +
+      (f.required ? ' <span class="req" aria-hidden="true">*</span><span class="sr-only"> (จำเป็น)</span>' : '') + '</label>' +
+      control +
+      '<div class="field__error" id="' + esc(id) + '-err"></div></div>';
   }
+
   ["identity", "academic", "portfolio"].forEach(function (g) {
-    document.getElementById("grp-" + g).innerHTML =
+    $("grp-" + g).innerHTML =
       RGMS.PROFILE_FIELDS.filter(function (f) { return f.group === g; }).map(ctrl).join("");
   });
 
+  function setErr(key, msg) {
+    var wrap = $("fld-" + key), el = $("pf-" + key), box = $("pf-" + key + "-err");
+    if (!wrap || !el || !box) return;
+    wrap.classList.toggle("field--error", !!msg);
+    box.textContent = msg || "";
+    if (msg) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+  }
+
+  // ตรวจทีละช่อง ใช้ร่วมกันทั้งตอนออกจากช่อง ตอนพิมพ์แก้ และตอนกดบันทึก
+  function validate(el) {
+    var key = el.getAttribute("data-key"), f = FIELD[key], v = el.value.trim(), kind = kindOf(f), msg = "";
+    if (f.required && !v) msg = (f.type === "school") ? "กรุณาเลือก" : "จำเป็นต้องกรอก";
+    else if (v && kind && !VALIDATORS[kind].test(v)) msg = VALIDATORS[kind].msg;
+    setErr(key, msg);
+    return msg;
+  }
+
+  // ตัวนับช่องที่จำเป็น — บอกว่าเหลืออีกกี่ช่อง
+  function updateReqCount() {
+    var req = RGMS.PROFILE_FIELDS.filter(function (f) { return f.required; });
+    var done = req.filter(function (f) { var el = $("pf-" + f.key); return el && el.value.trim(); }).length;
+    $("req-count").textContent = "ช่องที่จำเป็นกรอกแล้ว " + done + "/" + req.length;
+  }
+
   function updatedLine() {
-    var note = document.getElementById("saved-note");
-    if (P.updatedAt) {
-      var d = new Date(P.updatedAt);
-      note.textContent = "บันทึกล่าสุด " + d.toLocaleString("th-TH");
-    } else { note.textContent = "ยังไม่เคยบันทึก — ตอนนี้เป็นค่าตัวอย่าง"; }
+    var d = P.updatedAt ? new Date(P.updatedAt) : null;
+    if (d && !isNaN(d)) {
+      $("saved-note").textContent = "บันทึกล่าสุด " + d.toLocaleString("th-TH");
+      $("sample-warn").hidden = true;
+    } else {
+      $("saved-note").textContent = "ยังไม่เคยบันทึก";
+      $("sample-warn").hidden = false;
+    }
   }
   updatedLine();
+  updateReqCount();
 
-  document.getElementById("profile-form").addEventListener("submit", function (e) {
+  var form = $("profile-form"), summary = $("form-summary");
+  function isPf(t) { return t && t.classList && t.classList.contains("pf"); }
+
+  // พิมพ์แต่ตัวเลข ระบบใส่ขีดให้เองระหว่างพิมพ์ (วางเบอร์ที่มีหรือไม่มีขีดก็จัดให้)
+  var phoneEl = $("pf-phone");
+  var prevDigits = phoneEl ? phoneEl.value.replace(/\D/g, "").length : 0;
+  if (phoneEl) phoneEl.addEventListener("input", function (e) {
+    var raw = phoneEl.value;
+    if (!isPlainPhone(raw)) { prevDigits = raw.replace(/\D/g, "").length; return; }
+    var digits = raw.replace(/\D/g, "");
+    var pos = phoneEl.selectionStart == null ? raw.length : phoneEl.selectionStart;
+    var before = raw.slice(0, pos).replace(/\D/g, "").length;          // จำนวนตัวเลขก่อนเคอร์เซอร์
+    // กด Backspace ทับขีด: ตัวเลขไม่ลด ระบบจะใส่ขีดกลับ → ลบตัวเลขก่อนขีดแทน ไม่ให้เคอร์เซอร์ค้าง
+    if (e.inputType === "deleteContentBackward" && digits.length === prevDigits && before > 0) {
+      digits = digits.slice(0, before - 1) + digits.slice(before); before--;
+    }
+    var out = formatDigits(digits);
+    before = Math.min(before, out.replace(/\D/g, "").length);
+    phoneEl.value = out;
+    var p = 0, c = 0;
+    while (p < out.length && c < before) { if (/\d/.test(out.charAt(p))) c++; p++; }
+    phoneEl.setSelectionRange(p, p);                                    // คืนเคอร์เซอร์ไว้ตำแหน่งเดิม แม้แก้กลางตัวเลข
+    prevDigits = out.replace(/\D/g, "").length;
+  });
+
+  form.addEventListener("focusout", function (e) { if (isPf(e.target)) validate(e.target); });
+  function onEdit(e) {
+    dirty = true;
+    updateReqCount();
+    if (isPf(e.target) && e.target.getAttribute("aria-invalid")) validate(e.target);   // error หายทันทีที่แก้ถูก
+  }
+  form.addEventListener("input", onEdit);
+  form.addEventListener("change", onEdit);
+
+  window.addEventListener("beforeunload", function (e) {
+    if (dirty) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // หน้ายื่นข้อเสนอเช็กเรื่องโปรไฟล์ที่ยังไม่บันทึกเองอยู่แล้ว จึงเตือนที่นี่เฉพาะกรณีมีการแก้ไขค้าง
+  $("go-proposal").addEventListener("click", function (e) {
+    if (dirty && !confirm("มีการแก้ไขที่ยังไม่ได้บันทึก ออกจากหน้านี้เลยหรือไม่?")) { e.preventDefault(); return; }
+    dirty = false;
+  });
+
+  form.addEventListener("submit", function (e) {
     e.preventDefault();
-    var patch = {};
-    document.querySelectorAll(".pf").forEach(function (el) { patch[el.getAttribute("data-key")] = el.value.trim(); });
-    // ตรวจ required
-    var missing = RGMS.PROFILE_FIELDS.filter(function (f) { return f.required && !patch[f.key]; });
-    if (missing.length) {
-      RGMS.toast("กรุณากรอก: " + missing.map(function (f) { return f.label; }).join(", "), "accent");
+    var patch = {}, bad = [], firstBad = null;
+    var els = document.querySelectorAll(".pf");
+
+    els.forEach(function (el) {
+      var key = el.getAttribute("data-key");
+      patch[key] = el.value.trim();
+      if (validate(el)) { bad.push(FIELD[key].label); if (!firstBad) firstBad = el; }
+    });
+
+    if (bad.length) {
+      summary.textContent = "พบ " + bad.length + " ช่องที่ต้องแก้ไข: " + bad.join(", ");
+      summary.hidden = false;
+      RGMS.toast("กรุณาตรวจสอบ: " + bad.join(", "), "accent");
+      firstBad.focus({ preventScroll: true });
+      firstBad.scrollIntoView({ block: "center", behavior: "smooth" });
       return;
     }
-    P = RGMS.saveProfile(patch);
+    summary.hidden = true;
+
+    // RGMS.saveProfile กลืน error ของ localStorage เองและคืนค่ากลับมาเสมอ (try/catch ฝั่งนี้จึงจับไม่ได้)
+    // จึงอ่านกลับมาตรวจว่าเขียนลงเครื่องจริงหรือไม่
+    var saved = RGMS.saveProfile(patch);
+    var check = RGMS.getProfile();
+    if (!check.updatedAt || check.updatedAt !== saved.updatedAt) {
+      RGMS.toast("บันทึกไม่สำเร็จ — เบราว์เซอร์อาจปิดการเก็บข้อมูล ลองใหม่อีกครั้ง", "accent");
+      return;
+    }
+    P = check;
+
+    els.forEach(function (el) { el.value = patch[el.getAttribute("data-key")]; });   // แสดงค่าที่ trim แล้วให้ตรงกับที่บันทึก
+    dirty = false;
     updatedLine();
+    updateReqCount();
     RGMS.toast("บันทึกโปรไฟล์แล้ว — พร้อมใช้ในทุกข้อเสนอ", "ok");
   });
 </script>
