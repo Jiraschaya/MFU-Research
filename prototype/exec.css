@@ -1,0 +1,101 @@
+/* =========================================================================
+   exec.css — สไตล์เสริมของฝั่งผู้บริหาร (exec-overview.html, staff-agenda.html,
+   และแผงเงื่อนไขมติใน project-detail.html) ใช้ design tokens เดียวกับ style.css
+   ไม่แก้ style.css กลาง เพื่อไม่ชนกับงานของเพื่อนร่วมทีมตอน merge
+   ========================================================================= */
+
+/* ---- notice ที่ style.css กลางยังไม่ได้ประกาศ (หลายหน้าเรียกใช้อยู่) ---- */
+.notice--wait   { border-left-color: var(--st-wait);   background: var(--st-wait-tint); }
+.notice--reject { border-left-color: var(--st-reject); background: var(--st-reject-tint); }
+
+/* ---- ตัวเลือกมติแบบปุ่มกลุ่ม ---- */
+.chip-group { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip {
+  min-height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--color-border-strong); background: var(--color-surface);
+  color: var(--color-text); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+.chip:hover { border-color: var(--color-primary); }
+.chip:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.chip.is-active[data-dec="approve"]        { background: var(--st-ok-tint);     border-color: var(--st-ok);     color: var(--st-ok);     font-weight: 700; }
+.chip.is-active[data-dec="approve_revise"] { background: var(--st-revise-tint); border-color: var(--st-revise); color: var(--st-revise); font-weight: 700; }
+.chip.is-active[data-dec="reject"]         { background: var(--st-reject-tint); border-color: var(--st-reject); color: var(--st-reject); font-weight: 700; }
+
+/* ---- การ์ดวาระต่อโครงการ ---- */
+.ex-list { display: flex; flex-direction: column; gap: var(--space-4); }
+.ex-item {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
+  padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
+}
+.ex-item.has-error { border-color: var(--st-reject); box-shadow: 0 0 0 3px var(--st-reject-tint); }
+.ex-item__title { font-weight: 600; font-size: 16px; line-height: 1.4; color: var(--color-text-strong); }
+.ex-item__meta { font-size: 13px; color: var(--color-text-muted); }
+.ex-pill {
+  display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--color-surface-alt); color: var(--color-text-muted); border: 1px solid var(--color-border); white-space: nowrap;
+}
+.ex-pill--cap { background: var(--color-accent-tint); color: var(--color-accent-strong); border-color: rgba(197, 155, 39, 0.4); }
+.ex-grid-fields { display: grid; grid-template-columns: 220px 1fr; gap: var(--space-4); align-items: start; }
+@media (max-width: 720px) { .ex-grid-fields { grid-template-columns: 1fr; } }
+.ex-hint { font-size: 12.5px; color: var(--color-text-muted); margin-top: 4px; }
+.ex-error { font-size: 12.5px; color: var(--st-reject); font-weight: 600; margin-top: 4px; }
+.ex-warn  { font-size: 12.5px; color: var(--st-wait);   font-weight: 600; margin-top: 4px; }
+.field__control.is-invalid { border-color: var(--st-reject); }
+.field__control.is-invalid:focus { box-shadow: 0 0 0 3px var(--st-reject-tint); }
+
+/* ---- รายละเอียดประกอบการพิจารณา (details/summary) ---- */
+.ex-details { border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-alt); }
+.ex-details > summary {
+  cursor: pointer; padding: var(--space-2) var(--space-3); font-size: 13px; font-weight: 600; color: var(--color-primary-strong);
+  list-style: none; display: flex; align-items: center; gap: var(--space-2);
+}
+.ex-details > summary::-webkit-details-marker { display: none; }
+.ex-details > summary::before { content: "▸"; transition: transform .12s ease; }
+.ex-details[open] > summary::before { transform: rotate(90deg); }
+.ex-details__body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-surface); }
+.ex-quote { border-left: 3px solid var(--color-accent); padding: 2px 0 2px var(--space-3); font-size: 13.5px; color: var(--color-text); }
+.ex-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--color-text-muted); }
+.ex-log time { font-family: var(--font-mono); color: var(--color-text-subtle); margin-right: 6px; }
+
+/* ---- แถบการประชุม ---- */
+.ex-meeting { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ex-meeting__no { font-family: var(--font-mono); font-weight: 700; font-size: 18px; color: var(--color-primary-strong); }
+
+/* ---- ประกาศแต่ละฉบับ ---- */
+.ex-ann { border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); overflow: hidden; }
+.ex-ann__head { padding: var(--space-3) var(--space-4); background: var(--color-accent-tint); border-bottom: 1px solid rgba(197, 155, 39, 0.35); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+.ex-ann__row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-divider); font-size: 14px; }
+.ex-ann__row:last-child { border-bottom: none; }
+
+/* ---- ร่างประกาศใน modal ---- */
+.ex-doc { font-size: 13.5px; line-height: 1.65; }
+.ex-doc h4 { text-align: center; font-size: 16px; margin: 0 0 4px; }
+.ex-doc .ex-doc__sub { text-align: center; color: var(--color-text-muted); margin-bottom: 12px; }
+.ex-sign { border: 1px dashed var(--color-border-strong); border-radius: var(--radius-sm); padding: var(--space-3); background: var(--color-surface-alt); }
+
+/* ---- ภาพรวมพอร์ตทุน: แท่งสัดส่วน ---- */
+.ex-filters { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; }
+.ex-filters .field { min-width: 200px; }
+.ex-funnel { display: flex; flex-direction: column; gap: var(--space-3); }
+.ex-funnel__row { display: grid; grid-template-columns: 190px 1fr 150px; gap: var(--space-3); align-items: center; font-size: 14px; }
+@media (max-width: 720px) { .ex-funnel__row { grid-template-columns: 1fr; gap: 4px; } }
+.ex-bar { height: 22px; border-radius: 6px; background: var(--color-surface-raised); overflow: hidden; position: relative; }
+.ex-bar__fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-strong) 100%); min-width: 2px; transition: width .25s ease; }
+.ex-bar__fill--gold { background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-strong) 100%); }
+.ex-bar__fill--ok { background: var(--st-ok); }
+.ex-bar-pair { display: flex; flex-direction: column; gap: 4px; }
+.ex-tier { display: grid; grid-template-columns: 170px 1fr 170px; gap: var(--space-3); align-items: center; font-size: 14px; padding: var(--space-2) 0; border-bottom: 1px solid var(--color-divider); }
+.ex-tier:last-child { border-bottom: none; }
+@media (max-width: 720px) { .ex-tier { grid-template-columns: 1fr; gap: 4px; } }
+.ex-legend { display: flex; gap: var(--space-4); font-size: 12.5px; color: var(--color-text-muted); flex-wrap: wrap; }
+.ex-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ex-action-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ex-row-link { cursor: pointer; }
+.ex-row-link:hover { background: var(--color-primary-tint); }
+.ex-row-link.is-selected { background: var(--color-accent-tint); }
+
+/* ---- แถบลอยด้านล่าง (ใช้คลาส .executive-dock ของ style.css) ---- */
+.ex-dock-spacer { height: 88px; }
+.executive-dock .ex-dock__text { font-size: 13px; color: #D1D5DB; }
+.executive-dock .ex-dock__btn { background: var(--color-accent); border-color: var(--color-accent); color: #111827; font-weight: 700; }
