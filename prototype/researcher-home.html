@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>โครงการของฉัน — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* .notice ใน style.css ตั้ง display:flex ไว้ ทำให้ attribute hidden ไม่ทำงาน — ต้องบังคับเอง */
+  [hidden] { display:none !important; }
+  /* notice--wait ถูกประกาศไว้แค่ใน exec.css (หน้านี้ไม่ได้โหลด) จึงเคยไม่มีสี — ประกาศซ้ำด้วย token เดิมของระบบ */
+  .notice--wait { border-left-color: var(--st-wait); background: var(--st-wait-tint); }
+
+  /* การ์ดรอบทุนที่เปิดรับ: ย้ายจาก inline style มาเป็นคลาส */
+  .call-card { border: 1px solid var(--color-primary); background: var(--color-primary-tint); }
+  .call-card .call-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); }
+
+  .proj-title { font-weight: 600; color: var(--color-text-strong); line-height: 1.4; }
+</style>
 </head>
 <body>
 <div id="app-nav-root"></div>
@@ -21,6 +33,18 @@
       </div>
     </div>
 
+    <!-- เตือนเมื่อมีโครงการที่ต้องแก้ตามมติ — เรื่องที่นักวิจัยต้องลงมือ -->
+    <div class="notice notice--wait" id="revise-note" role="status" hidden>
+      <span class="notice__title" id="revise-title"></span>
+      <span class="notice__body">เปิดโครงการเพื่อดูเงื่อนไขตามมติ แล้วส่งฉบับแก้ไขกลับ</span>
+    </div>
+
+    <!-- ยังไม่บันทึกโปรไฟล์ (ใช้ RGMS.profileSaved() เหมือนหน้ายื่นข้อเสนอ) -->
+    <div class="notice notice--wait" id="profile-warn" hidden>
+      <span class="notice__title">ยังไม่ได้บันทึกโปรไฟล์นักวิจัย</span>
+      <span class="notice__body">ข้อมูลหัวหน้าโครงการและประวัติ (ส่วน ข) ในข้อเสนอจะดึงจากโปรไฟล์ — <a href="researcher-profile.html">กรอกโปรไฟล์ก่อนยื่น</a></span>
+    </div>
+
     <div class="stack gap-3" id="open-calls"></div>
 
     <div class="grid grid-3" id="kpis"></div>
@@ -30,7 +54,8 @@
       <div class="table-wrap">
         <table class="table">
           <thead><tr>
-            <th>รหัส</th><th>ชื่อโครงการ</th><th>รอบทุน</th><th class="right">งบที่ขอ</th><th>สถานะ</th><th></th>
+            <th scope="col">รหัส</th><th scope="col">ชื่อโครงการ</th><th scope="col">รอบทุน</th>
+            <th scope="col" class="right">งบที่ขอ</th><th scope="col">สถานะ</th><th scope="col"><span class="sr-only">การดำเนินการ</span></th>
           </tr></thead>
           <tbody id="rows"></tbody>
         </table>
@@ -42,66 +67,135 @@
 
 <script src="shared.js"></script>
 <script>
+  // shared.js โหลดไม่ขึ้น → บอกสาเหตุแทนหน้าโล่ง
+  if (!window.RGMS) {
+    document.getElementById("app-nav-root").innerHTML =
+      '<div style="padding:16px;background:#fdecea;color:#b71c1c">โหลด shared.js ไม่สำเร็จ — ตรวจว่าไฟล์อยู่โฟลเดอร์เดียวกับหน้านี้</div>';
+    throw new Error("shared.js not loaded");
+  }
+
   RGMS.renderAppNav("researcher-home");
-  var me = RGMS.currentRole().name;
-  document.getElementById("greet").textContent = "สวัสดี " + me + " — โครงการที่คุณเป็นหัวหน้าโครงการ";
 
-  var mine = RGMS.PROJECTS.filter(function (p) { return p.pi === me; });
-  if (!mine.length) mine = RGMS.PROJECTS.slice(0, 3); // เผื่อสลับบทบาท
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function $(id) { return document.getElementById(id); }
+  function detailHref(id) { return "project-detail.html?id=" + encodeURIComponent(id); }
 
-  // การ์ดทุนที่เปิดรับสมัคร — นักวิจัยกดยื่นได้ทันที (อ่านสถานะจาก callStatus จริง)
-  var openCalls = RGMS.CALLS.filter(function (c) { return RGMS.callStatus(c) === "open"; });
-  var ocEl = document.getElementById("open-calls");
+  // ---------- วันที่: ข้อมูลเก็บเป็น "พ.ศ.-เดือน-วัน" (เช่น 2569-11-30) แสดงเป็นไทยอ่านง่าย ----------
+  var TH_M = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  function parseDate(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+  }
+  function fmtDate(s) { var p = parseDate(s); return p ? p.d + " " + TH_M[p.m - 1] + " " + p.y : (s || "—"); }
+  function daysLeft(s) {
+    var p = parseDate(s); if (!p) return null;
+    var ce = p.y > 2400 ? p.y - 543 : p.y;
+    return Math.ceil((new Date(ce, p.m - 1, p.d, 23, 59, 59) - new Date()) / 86400000);
+  }
+
+  // ---------- ข้อมูลของฉัน ----------
+  var me = (RGMS.currentRole() || {}).name || "";
+  $("greet").textContent = "สวัสดี " + (me || "นักวิจัย") + " — โครงการที่คุณเป็นหัวหน้าโครงการ";
+
+  if (!RGMS.profileSaved()) $("profile-warn").hidden = false;
+
+  // ใช้สถานะ "จริง" (รวมมติ/ประกาศ) ทั้งป้ายสถานะ ตัวนับ และปุ่ม — เดิมป้ายใช้ effectiveStatus แต่ปุ่ม/ตัวนับใช้ p.status ดิบ
+  // ทำให้เมื่อ คกก. มีมติ "ให้ปรับแก้" ป้ายขึ้น "ให้ปรับแก้ตามมติ" แต่ปุ่ม "ปรับแก้ตามมติ" ไม่ขึ้น
+  var mine = (RGMS.PROJECTS || [])
+    .filter(function (p) { return me && p.pi === me; })
+    .map(function (p, i) { return { p: p, st: RGMS.effectiveStatus(p), i: i }; })
+    .sort(function (a, b) {                       // โครงการที่ต้องแก้ตามมติขึ้นก่อน ที่เหลือคงลำดับเดิม
+      return ((b.st === "revise") - (a.st === "revise")) || (a.i - b.i);
+    });
+
+  // ---------- เตือนโครงการที่ต้องปรับแก้ ----------
+  var reviseN = mine.filter(function (x) { return x.st === "revise"; }).length;
+  if (reviseN) {
+    $("revise-title").textContent = "มี " + reviseN + " โครงการที่ต้องปรับแก้ตามมติ";
+    $("revise-note").hidden = false;
+  }
+
+  // ---------- ทุนที่เปิดรับสมัคร ----------
+  var calls = RGMS.CALLS || [];
+  var openCalls = calls.filter(function (c) { return RGMS.callStatus(c) === "open"; });
+  var ocEl = $("open-calls");
   if (openCalls.length) {
-    var tierChips = Object.keys(RGMS.TIERS).map(function (k) { var t = RGMS.TIERS[k]; return '<span class="tag">' + t.short + ' ≤ ' + RGMS.fmtMoney(t.cap) + '</span>'; }).join(" ");
+    var tierChips = Object.keys(RGMS.TIERS || {}).map(function (k) {
+      var t = RGMS.TIERS[k];
+      return '<span class="tag">' + esc(t.short) + ' ≤ ' + esc(RGMS.fmtMoney(t.cap)) + '</span>';
+    }).join(" ");
     ocEl.innerHTML = '<span class="text-overline">ทุนที่เปิดรับสมัคร</span>' +
       '<div class="grid grid-auto">' + openCalls.map(function (c) {
-        return '<div class="card stack gap-2" style="border:1px solid var(--color-primary); background:var(--color-primary-tint);">' +
-          '<div class="between wrap gap-2"><span class="text-subhead">' + c.title + '</span><span class="badge badge-ok">เปิดรับ</span></div>' +
-          '<div class="text-sm text-muted">ปีงบ ' + c.fiscalYear + ' · รับข้อเสนอ <span class="num">' + c.open + '</span> – <span class="num">' + c.close + '</span></div>' +
+        var n = daysLeft(c.close), left = "";
+        if (n != null && n >= 0) {
+          left = '<span class="badge ' + (n <= 7 ? "badge-wait" : "badge-draft") + '">' +
+            (n === 0 ? "ปิดรับวันนี้" : "ปิดรับอีก " + n + " วัน") + '</span>';
+        }
+        // หน้ายื่นข้อเสนอเลือกรอบที่เปิดอยู่ให้เอง (RGMS.openCall) จึงไม่ต้องส่งรหัสรอบไป
+        return '<div class="card stack gap-2 call-card">' +
+          '<div class="between wrap gap-2"><span class="text-subhead">' + esc(c.title) + '</span><span class="badge badge-ok">เปิดรับ</span></div>' +
+          '<div class="call-meta text-sm text-muted"><span>รับข้อเสนอ ' + esc(fmtDate(c.open)) + ' – ' + esc(fmtDate(c.close)) + '</span>' + left + '</div>' +
           '<div class="cluster gap-1 wrap">' + tierChips + '</div>' +
           '<a class="btn btn-primary btn-md" href="proposal-new.html" style="align-self:flex-start; margin-top:4px;">ยื่นข้อเสนอโครงการ →</a>' +
         '</div>';
       }).join("") + '</div>';
   } else {
-    var up = RGMS.CALLS.filter(function (c) { return RGMS.callStatus(c) === "upcoming"; })[0];
+    var up = calls.filter(function (c) { return RGMS.callStatus(c) === "upcoming"; })[0];
     ocEl.innerHTML = '<div class="notice notice--wait"><span class="notice__title">ขณะนี้ยังไม่มีรอบที่เปิดรับสมัคร</span>' +
-      '<span class="notice__body">' + (up ? ('รอบถัดไป: ' + up.title + ' · เปิดรับ ' + up.open + ' ถึง ' + up.close) : 'โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย') + '</span></div>';
+      '<span class="notice__body">' + (up ? ('รอบถัดไป: ' + esc(up.title) + ' · เปิดรับ ' + esc(fmtDate(up.open)) + ' ถึง ' + esc(fmtDate(up.close))) : 'โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย') + '</span></div>';
   }
 
-  var active = mine.filter(function (p) { return ["ongoing","progress","final","financial"].indexOf(p.status) >= 0; }).length;
-  var inReview = mine.filter(function (p) { return ["submitted","screening","review","committee","revise"].indexOf(p.status) >= 0; }).length;
-  var totalBudget = mine.reduce(function (s, p) { return s + p.budgetReq; }, 0);
-  document.getElementById("kpis").innerHTML = [
+  // ---------- KPI ----------
+  var REVIEWING = ["submitted", "endorse", "screening", "review", "committee", "revise", "approved"];  // รวม endorse และ approved (รอประกาศ) ที่เดิมไม่ถูกนับ
+  var RUNNING   = ["ongoing", "progress", "final", "financial", "announced"];
+  var inReview = mine.filter(function (x) { return REVIEWING.indexOf(x.st) >= 0; }).length;
+  var running  = mine.filter(function (x) { return RUNNING.indexOf(x.st) >= 0; }).length;
+  var totalBudget = mine.reduce(function (s, x) { return s + (Number(x.p.budgetReq) || 0); }, 0);
+  $("kpis").innerHTML = [
     ['อยู่ระหว่างพิจารณา', inReview, 'โครงการ'],
-    ['กำลังดำเนินการ', active, 'โครงการ'],
+    ['กำลังดำเนินการ', running, 'โครงการ'],
     ['งบที่ขอรวม', RGMS.fmtMoney(totalBudget), 'บาท']
   ].map(function (k) {
-    return '<div class="card stat"><span class="stat__value">' + k[1] + '</span>' +
-           '<span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+    return '<div class="card stat"><span class="stat__value">' + esc(k[1]) + '</span>' +
+           '<span class="stat__label">' + esc(k[0]) + ' · ' + esc(k[2]) + '</span></div>';
   }).join("");
 
-  function actionFor(p) {
-    if (p.status === "revise") return '<a class="btn btn-primary btn-sm" href="project-detail.html?id=' + p.id + '">ปรับแก้ตามมติ</a>';
-    if (p.status === "ongoing") return '<a class="btn btn-secondary btn-sm" href="project-detail.html?id=' + p.id + '">ส่งรายงานก้าวหน้า</a>';
-    if (p.status === "final") return '<a class="btn btn-secondary btn-sm" href="project-detail.html?id=' + p.id + '">ดูสถานะการเงิน</a>';
-    return '<a class="btn btn-ghost btn-sm" href="project-detail.html?id=' + p.id + '">รายละเอียด →</a>';
+  // ---------- ตารางโครงการ ----------
+  function actionFor(x) {
+    var label, cls;
+    if (x.st === "revise")       { label = "ปรับแก้ตามมติ";     cls = "btn-primary"; }
+    else if (x.st === "ongoing") { label = "ส่งรายงานก้าวหน้า"; cls = "btn-secondary"; }
+    else if (x.st === "final")   { label = "ดูสถานะการเงิน";   cls = "btn-secondary"; }
+    else                         { label = "รายละเอียด →";      cls = "btn-ghost"; }
+    // ลิงก์ชื่อซ้ำกันทุกแถว → ใส่รหัสโครงการใน aria-label ให้ screen reader แยกออก
+    return '<a class="btn ' + cls + ' btn-sm" href="' + esc(detailHref(x.p.id)) + '" aria-label="' + esc(label + " โครงการ " + x.p.id) + '">' + esc(label) + '</a>';
   }
 
-  document.getElementById("rows").innerHTML = mine.map(function (p) {
-    return '<tr class="is-clickable" data-id="' + p.id + '">' +
-      '<td class="num">' + p.id + '</td>' +
-      '<td>' + p.title + '</td>' +
-      '<td><span class="pill-round">' + p.round + '</span></td>' +
-      '<td class="right num">' + RGMS.fmtMoney(p.budgetReq) + '</td>' +
-      '<td>' + RGMS.badgeHTML(RGMS.effectiveStatus(p)) + '</td>' +
-      '<td class="right">' + actionFor(p) + '</td>' +
-    '</tr>';
-  }).join("");
-  document.getElementById("rows").addEventListener("click", function (e) {
-    if (e.target.closest("a")) return;
+  var rowsEl = $("rows");
+  if (!mine.length) {
+    rowsEl.innerHTML = '<tr><td colspan="6" class="text-muted" style="padding:24px; text-align:center;">ยังไม่มีโครงการที่คุณเป็นหัวหน้าโครงการ — เริ่มต้นด้วย <a href="proposal-new.html">ยื่นข้อเสนอใหม่</a></td></tr>';
+  } else {
+    rowsEl.innerHTML = mine.map(function (x) {
+      var p = x.p;
+      return '<tr class="is-clickable" data-id="' + esc(p.id) + '">' +
+        '<td class="num">' + esc(p.id) + '</td>' +
+        '<td><div class="proj-title">' + esc(p.title) + '</div>' + (p.duration ? '<div class="text-sm text-muted">ระยะเวลา ' + esc(p.duration) + '</div>' : '') + '</td>' +
+        '<td><span class="pill-round">' + esc(p.round) + '</span></td>' +
+        '<td class="right num">' + esc(RGMS.fmtMoney(Number(p.budgetReq) || 0)) + '</td>' +
+        '<td>' + RGMS.badgeHTML(x.st) + '</td>' +
+        '<td class="right">' + actionFor(x) + '</td>' +
+      '</tr>';
+    }).join("");
+  }
+
+  rowsEl.addEventListener("click", function (e) {
+    if (e.target.closest("a, button")) return;
     var tr = e.target.closest("[data-id]");
-    if (tr) window.location.href = "project-detail.html?id=" + tr.getAttribute("data-id");
+    if (tr) window.location.href = detailHref(tr.getAttribute("data-id"));
   });
 </script>
 </body>
