@@ -61,8 +61,10 @@
 </main>
 
 <script src="shared.js"></script>
+<script src="staff-nav.js"></script>
 <script>
   RGMS.renderAppNav("staff-queue");
+  StaffNav.mount("staff-queue");
   // งานของ จนท. = ทุกสถานะที่อยู่ในขอบเขต MVP เฟส 1 (ยื่น → เอนดอร์ส/ตรวจ → พิจารณา → มติ)
   var WORK = ["submitted","screening","review","committee","revise","approved"];
   var base = RGMS.PROJECTS.filter(function (p) { return WORK.indexOf(p.status) >= 0; });
