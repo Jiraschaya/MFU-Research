@@ -5,21 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>เปิดรับทุน / รอบทุน — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
 </head>
 <body>
 <div id="app-nav-root"></div>
 <main class="section">
   <div class="container stack gap-5">
 
-    <div class="page-head">
+    <div class="page-head s-enter">
       <h1 class="text-headline">เปิดรับทุน / รอบทุน</h1>
-      <p class="text-muted">เจ้าหน้าที่เปิด/ปิดรอบการรับข้อเสนอแต่ละปีงบ กำหนดช่วงเวลายื่นและเพดานงบ — ผู้ยื่นจะยื่นข้อเสนอได้เฉพาะรอบที่สถานะ "เปิดรับ" ภายในกำหนด (FR-01/02/03)</p>
+      <p class="text-muted">เจ้าหน้าที่สร้าง เปิด/ปิดรอบการรับข้อเสนอแต่ละปีงบ กำหนดช่วงเวลายื่นและเพดานงบ — ผู้ยื่นจะยื่นข้อเสนอได้เฉพาะรอบที่สถานะ "เปิดรับ" ภายในกำหนด (FR-01/02/03)</p>
     </div>
 
-    <div class="between wrap" style="gap:12px;">
+    <div class="between wrap s-enter" style="gap:12px; animation-delay:.04s;">
       <div id="open-note"></div>
       <button class="btn btn-primary btn-md" id="new-call">+ สร้างรอบทุนใหม่</button>
     </div>
+
+    <div class="chip-group s-enter" id="filters" style="animation-delay:.08s;"></div>
 
     <div class="stack gap-4" id="cards"></div>
 
@@ -31,54 +34,179 @@
   RGMS.renderAppNav("staff-calls");
   var st = { open: ["เปิดรับ", "badge-ok"], closed_recent: ["ปิดรับล่าสุด", "badge-info"], closed: ["ปิดรับแล้ว", "badge-draft"], upcoming: ["กำลังจะเปิด", "badge-wait"] };
 
+  /* ---------- เก็บรอบทุนที่เจ้าหน้าที่สร้าง/แก้ไข (localStorage) ----------
+     สถานะเปิด/ปิดใช้กลไกกลางเดิม (RGMS.setCallStatus) จึงมีผลกับทุกหน้า
+     ส่วนรอบใหม่และการแก้กำหนดการ/เพดาน เก็บแยกคีย์ และรวมเข้า RGMS.CALLS ในหน้านี้ */
+  var CKEY = "rgms_calls_custom", EKEY = "rgms_calls_edits";
+  function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  var custom = load(CKEY, []), edits = load(EKEY, {});
+  function applyStored() {
+    RGMS.CALLS.forEach(function (c) { if (edits[c.id]) Object.keys(edits[c.id]).forEach(function (k) { c[k] = edits[c.id][k]; }); });
+    custom.forEach(function (c) { if (!RGMS.CALLS.some(function (x) { return x.id === c.id; })) RGMS.CALLS.push(c); });
+  }
+  applyStored();
+  function isCustom(id) { return custom.some(function (c) { return c.id === id; }); }
+
+  var TIER_NOTE = "เพดานจริงแยกตามประเภททุน: นักวิจัยใหม่ 100,000 · พัฒนา 200,000 · ยุทธศาสตร์/ต่อยอด 300,000";
+  var CAP_MIN = 100000, CAP_MAX = 300000;
+  var filter = "all", firstPaint = true;
+
+  function dateOk(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!m) return null;
+    var d = new Date(+m[1] - 543, +m[2] - 1, +m[3]);
+    return (d.getFullYear() === +m[1] - 543 && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3]) ? d : null;
+  }
+  function nextRoundNo(fy) {
+    var n = 0; RGMS.CALLS.forEach(function (c) { if (c.fiscalYear === fy) n++; });
+    var id; do { n++; id = fy + "-" + n; } while (RGMS.CALLS.some(function (c) { return c.id === id; }));
+    return n;
+  }
+  function defaultTitle(fy, n) { return "ทุนงบประมาณเงินรายได้ ปีงบประมาณ " + fy + " (รอบ " + n + ")"; }
+
+  /* ---------- ฟอร์มสร้าง/แก้ไขรอบ ---------- */
+  function openForm(existing) {
+    var isEdit = !!existing;
+    var cur = RGMS.CURRENT_FY, defFy = isEdit ? existing.fiscalYear : cur + 1;
+    var defN = isEdit ? null : nextRoundNo(defFy);
+    var v = isEdit ? existing : { title: defaultTitle(defFy, defN), open: (defFy - 1) + "-10-01", close: (defFy - 1) + "-11-30", cap: 300000 };
+    function field(id, label, val, extra) {
+      return '<div class="field" style="margin:0;"><label class="field__label" for="' + id + '">' + label + '</label>' +
+        '<input class="field__control" id="' + id + '" value="' + esc(val) + '" ' + (extra || "") + '><div class="field__error" id="' + id + '-e" hidden></div></div>';
+    }
+    RGMS.modal({
+      title: isEdit ? "แก้ไขรอบทุน · " + existing.id : "สร้างรอบทุนใหม่",
+      body: '<div class="grid gap-3">' +
+        field("f-fy", "ปีงบประมาณ (พ.ศ.)", defFy, 'inputmode="numeric"' + (isEdit ? ' readonly style="background:var(--color-border);"' : '')) +
+        field("f-title", "ชื่อรอบทุน", v.title) +
+        '<div class="grid grid-2">' + field("f-open", "วันเปิดรับ (พ.ศ. ปปปป-ดด-วว)", v.open, 'placeholder="2569-10-01"') +
+          field("f-close", "วันปิดรับ (พ.ศ. ปปปป-ดด-วว)", v.close, 'placeholder="2569-11-30"') + '</div>' +
+        field("f-cap", "เพดานงบสูงสุด (บาท)", v.cap, 'inputmode="numeric"') +
+        '<p class="text-sm text-muted" style="margin:0;">' + TIER_NOTE + '</p>' +
+        (isEdit ? '' : '<p class="text-sm text-muted" style="margin:0;">รอบใหม่จะมีสถานะ "กำลังจะเปิด" — กด "เปิดรับ" เมื่อพร้อมให้ผู้ยื่นส่งข้อเสนอ</p>') +
+        '</div>',
+      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="mk">' + (isEdit ? "บันทึกการแก้ไข" : "สร้างรอบทุน") + '</button>',
+      onMount: function (back, close) {
+        var $ = function (id) { return back.querySelector("#" + id); };
+        var titleTouched = isEdit;
+        $("f-title").addEventListener("input", function () { titleTouched = true; });
+        if (!isEdit) $("f-fy").addEventListener("input", function () {
+          var y = parseInt($("f-fy").value, 10);
+          if (y >= 2500 && y <= 2700) {
+            if (!titleTouched) $("f-title").value = defaultTitle(y, nextRoundNo(y));
+            $("f-open").value = (y - 1) + "-10-01"; $("f-close").value = (y - 1) + "-11-30";
+          }
+        });
+        function err(id, msg) { var e = $(id + "-e"), c = $(id); if (msg) { e.textContent = msg; e.hidden = false; c.classList.add("is-invalid"); } else { e.hidden = true; c.classList.remove("is-invalid"); } return !msg; }
+        $("mk").addEventListener("click", function () {
+          var fy = parseInt($("f-fy").value, 10), title = $("f-title").value.trim();
+          var o = $("f-open").value.trim(), c = $("f-close").value.trim(), cap = Number(String($("f-cap").value).replace(/,/g, ""));
+          var od = dateOk(o), cd = dateOk(c), ok = true;
+          ok = err("f-fy", (fy >= 2569 && fy <= 2600) ? "" : "ระบุปีงบประมาณ พ.ศ. 2569–2600") && ok;
+          ok = err("f-title", title ? "" : "กรอกชื่อรอบทุน") && ok;
+          ok = err("f-open", od ? "" : "รูปแบบวันที่ไม่ถูกต้อง (เช่น 2569-10-01)") && ok;
+          ok = err("f-close", !cd ? "รูปแบบวันที่ไม่ถูกต้อง (เช่น 2569-11-30)" : (od && cd <= od ? "วันปิดรับต้องหลังวันเปิดรับ" : "")) && ok;
+          ok = err("f-cap", (isFinite(cap) && cap >= CAP_MIN && cap <= CAP_MAX && Math.round(cap) === cap) ? "" : "เพดานต้องอยู่ระหว่าง " + RGMS.fmtMoney(CAP_MIN) + " – " + RGMS.fmtMoney(CAP_MAX) + " บาท") && ok;
+          if (!ok) return;
+          if (isEdit) {
+            var patch = { title: title, open: o, close: c, cap: cap };
+            if (isCustom(existing.id)) { custom.forEach(function (x) { if (x.id === existing.id) Object.keys(patch).forEach(function (k) { x[k] = patch[k]; }); }); save(CKEY, custom); }
+            else { edits[existing.id] = patch; save(EKEY, edits); }
+            Object.keys(patch).forEach(function (k) { existing[k] = patch[k]; });
+            close(); RGMS.toast("บันทึกการแก้ไขรอบ " + existing.id + " แล้ว", "ok");
+          } else {
+            var n = nextRoundNo(fy), rec = { id: fy + "-" + n, fiscalYear: fy, title: title, open: o, close: c, cap: cap, status: "upcoming", submissions: 0 };
+            custom.push(rec); save(CKEY, custom); RGMS.CALLS.push(rec);
+            close(); RGMS.toast("สร้างรอบ " + rec.id + " แล้ว — กด 'เปิดรับ' เพื่อเริ่มรับข้อเสนอ", "ok");
+          }
+          render();
+        });
+        $("f-title").focus();
+      }
+    });
+  }
+
+  function confirmDelete(c) {
+    RGMS.modal({
+      title: "ลบรอบทุน " + c.id,
+      body: '<p style="margin:0;">ลบรอบ <b>' + esc(c.title) + '</b> ออกจากระบบ? (ลบได้เฉพาะรอบที่สร้างเองและยังไม่มีข้อเสนอ)</p>',
+      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="del">ลบรอบ</button>',
+      onMount: function (back, close) {
+        back.querySelector("#del").addEventListener("click", function () {
+          custom = custom.filter(function (x) { return x.id !== c.id; }); save(CKEY, custom);
+          var i = RGMS.CALLS.indexOf(c); if (i >= 0) RGMS.CALLS.splice(i, 1);
+          var ov = load("rgms_call_status", {}); if (ov[c.id]) { delete ov[c.id]; save("rgms_call_status", ov); }
+          close(); RGMS.toast("ลบรอบ " + c.id + " แล้ว", "accent"); render();
+        });
+      }
+    });
+  }
+
+  /* ---------- แสดงผล ---------- */
+  var FILTERS = [["all", "ทั้งหมด"], ["open", "เปิดรับ"], ["upcoming", "กำลังจะเปิด"], ["closed", "ปิดรับแล้ว"]];
+  function group(cs) { return (cs === "closed_recent" || cs === "closed") ? "closed" : cs; }
+
   function render() {
     var oc = RGMS.openCall();
     document.getElementById("open-note").innerHTML = oc
-      ? '<span class="text-sm">รอบที่เปิดรับขณะนี้: <b>' + oc.title + '</b> · ปิดรับ <span class="num">' + oc.close + '</span></span>'
+      ? '<span class="text-sm">รอบที่เปิดรับขณะนี้: <b>' + esc(oc.title) + '</b> · ปิดรับ <span class="num">' + oc.close + '</span></span>'
       : '<span class="text-sm text-accent" style="font-weight:600;">ขณะนี้ไม่มีรอบที่เปิดรับ — ผู้ยื่นยังยื่นข้อเสนอไม่ได้</span>';
 
-    document.getElementById("cards").innerHTML = RGMS.CALLS.map(function (c) {
-      var cs = RGMS.callStatus(c); var s = st[cs] || ["-", "badge-draft"];
-      var isOpen = cs === "open";
+    var all = RGMS.CALLS.slice().sort(function (a, b) { return (b.fiscalYear - a.fiscalYear) || (a.id < b.id ? 1 : -1); });
+    var counts = { all: all.length, open: 0, upcoming: 0, closed: 0 };
+    all.forEach(function (c) { counts[group(RGMS.callStatus(c))]++; });
+    document.getElementById("filters").innerHTML = FILTERS.map(function (f) {
+      return '<button class="chip' + (filter === f[0] ? " is-active" : "") + '" data-f="' + f[0] + '">' + f[1] + ' (' + counts[f[0]] + ')</button>';
+    }).join("");
+
+    var list = all.filter(function (c) { return filter === "all" || group(RGMS.callStatus(c)) === filter; });
+    var maxSub = Math.max.apply(null, [1].concat(all.map(function (c) { return c.submissions || 0; })));
+    document.getElementById("cards").innerHTML = list.length ? list.map(function (c, i) {
+      var cs = RGMS.callStatus(c), s = st[cs] || ["-", "badge-draft"], isOpen = cs === "open";
       var toggle = isOpen
         ? '<button class="btn btn-secondary btn-md" data-close-call="' + c.id + '">ปิดรับ</button>'
         : '<button class="btn btn-ok btn-md" data-open-call="' + c.id + '">เปิดรับ</button>';
-      return '<div class="card stack gap-3">' +
+      var canDel = isCustom(c.id) && !(c.submissions > 0) && !isOpen;
+      return '<div class="card stack gap-3 call-card ' + (isOpen ? "is-open" : cs === "upcoming" ? "is-upcoming" : "") + (firstPaint ? " s-enter" : "") + '" style="animation-delay:' + i * 0.05 + 's;">' +
         '<div class="between wrap"><div class="stack gap-1">' +
-          '<div class="cluster gap-2"><span class="text-title">' + c.title + '</span><span class="badge ' + s[1] + '">' + s[0] + '</span></div>' +
+          '<div class="cluster gap-2"><span class="text-title">' + esc(c.title) + '</span><span class="badge ' + s[1] + '">' + s[0] + '</span>' + (isCustom(c.id) ? '<span class="tag">สร้างโดย จนท.</span>' : '') + '</div>' +
           '<div class="text-sm text-muted">ปีงบ ' + c.fiscalYear + ' · รับข้อเสนอ ' + c.open + ' – ' + c.close + '</div></div>' +
-          '<div class="pill-round">ยื่นแล้ว ' + c.submissions + '</div></div>' +
+          '<div class="pill-round">ยื่นแล้ว ' + (c.submissions || 0) + '</div></div>' +
         '<div class="grid grid-3">' +
           '<div class="stack gap-1"><span class="text-sm text-muted">ช่วงเปิดรับ</span><span style="font-weight:600;" class="num">' + c.open + ' – ' + c.close + '</span></div>' +
           '<div class="stack gap-1"><span class="text-sm text-muted">เพดานงบสูงสุด</span><span style="font-weight:600;" class="num">' + RGMS.fmtBaht(c.cap) + '</span></div>' +
-          '<div class="stack gap-1"><span class="text-sm text-muted">ข้อเสนอที่ยื่น</span><span style="font-weight:600;" class="num">' + c.submissions + ' โครงการ</span></div>' +
+          '<div class="stack gap-1"><span class="text-sm text-muted">ข้อเสนอที่ยื่น</span><span style="font-weight:600;" class="num">' + (c.submissions || 0) + ' โครงการ</span>' +
+            '<div class="call-meter" aria-hidden="true"><span style="width:' + Math.round(((c.submissions || 0) / maxSub) * 100) + '%"></span></div></div>' +
         '</div>' +
         '<div class="cluster gap-2">' + toggle +
-          '<button class="btn btn-ghost btn-md" data-edit="' + c.id + '">แก้ไขกำหนดการ/เพดาน</button></div>' +
+          '<button class="btn btn-ghost btn-md" data-edit="' + c.id + '">แก้ไขกำหนดการ/เพดาน</button>' +
+          (canDel ? '<button class="btn btn-ghost btn-md" data-del="' + c.id + '">ลบรอบ</button>' : '') + '</div>' +
       '</div>';
-    }).join("");
+    }).join("") : '<div class="card text-center text-muted" style="padding:32px;">ไม่มีรอบทุนในหมวดนี้</div>';
+    firstPaint = false;
   }
 
-  document.getElementById("cards").addEventListener("click", function (e) {
-    var o = e.target.closest("[data-open-call]"), c = e.target.closest("[data-close-call]"), ed = e.target.closest("[data-edit]");
-    if (o) { RGMS.setCallStatus(o.getAttribute("data-open-call"), "open"); RGMS.toast("เปิดรับข้อเสนอรอบนี้แล้ว — ผู้ยื่นยื่นได้ทันที", "ok"); render(); }
-    else if (c) { RGMS.setCallStatus(c.getAttribute("data-close-call"), "closed"); RGMS.toast("ปิดรับข้อเสนอรอบนี้แล้ว — ระบบล็อกการยื่น", "accent"); render(); }
-    else if (ed) { RGMS.toast("เปิดฟอร์มแก้ไขกำหนดการ/เพดานงบ (สาธิต)", "accent"); }
-  });
+  function byId(id) { return RGMS.CALLS.filter(function (c) { return c.id === id; })[0]; }
 
-  document.getElementById("new-call").addEventListener("click", function () {
-    RGMS.modal({
-      title: "สร้างรอบทุนใหม่",
-      body: '<div class="grid gap-3">' +
-        '<div class="field" style="margin:0;"><label class="field__label">ปีงบประมาณ</label><input class="field__control" value="2570"></div>' +
-        '<div class="grid grid-2"><div class="field" style="margin:0;"><label class="field__label">วันเปิดรับ</label><input class="field__control" value="2569-10-01"></div>' +
-        '<div class="field" style="margin:0;"><label class="field__label">วันปิดรับ</label><input class="field__control" value="2569-11-30"></div></div>' +
-        '<div class="field" style="margin:0;"><label class="field__label">เพดานงบสูงสุด (บาท)</label><input class="field__control" value="300000"></div>' +
-        '<p class="text-sm text-muted" style="margin:0;">เพดานจริงแยกตามประเภททุน: นักวิจัยใหม่ 100,000 · พัฒนา 200,000 · ยุทธศาสตร์/ต่อยอด 300,000</p></div>',
-      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" data-close id="mk">สร้างรอบ (สาธิต)</button>',
-      onMount: function (back) { back.querySelector("#mk").addEventListener("click", function () { RGMS.toast("สร้างรอบทุนใหม่แล้ว — กด 'เปิดรับ' เพื่อเริ่มรับข้อเสนอ (สาธิต)", "ok"); }); }
-    });
+  document.getElementById("cards").addEventListener("click", function (e) {
+    var o = e.target.closest("[data-open-call]"), c = e.target.closest("[data-close-call]"), ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]");
+    if (o) {
+      var id = o.getAttribute("data-open-call"), closedOthers = [];
+      RGMS.CALLS.forEach(function (x) { if (x.id !== id && RGMS.callStatus(x) === "open") { RGMS.setCallStatus(x.id, "closed"); closedOthers.push(x.id); } });
+      RGMS.setCallStatus(id, "open");
+      RGMS.toast("เปิดรับข้อเสนอรอบ " + id + " แล้ว — ผู้ยื่นยื่นได้ทันที" + (closedOthers.length ? " (ปิดรอบ " + closedOthers.join(", ") + " อัตโนมัติ เพราะเปิดรับได้ทีละรอบ)" : ""), "ok");
+      render();
+    }
+    else if (c) { RGMS.setCallStatus(c.getAttribute("data-close-call"), "closed"); RGMS.toast("ปิดรับข้อเสนอรอบนี้แล้ว — ระบบล็อกการยื่น", "accent"); render(); }
+    else if (ed) { var r = byId(ed.getAttribute("data-edit")); if (r) openForm(r); }
+    else if (del) { var d = byId(del.getAttribute("data-del")); if (d) confirmDelete(d); }
   });
+  document.getElementById("filters").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-f]"); if (!b) return; filter = b.getAttribute("data-f"); render();
+  });
+  document.getElementById("new-call").addEventListener("click", function () { openForm(null); });
 
   render();
 </script>
