@@ -5,18 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>กล่องงาน · ตรวจเอกสาร — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
 </head>
 <body>
 <div id="app-nav-root"></div>
 <main class="section">
   <div class="container stack gap-5">
 
-    <div class="page-head">
+    <div class="page-head s-enter">
       <h1 class="text-headline">กล่องงาน · ตรวจเอกสารและกลั่นกรอง</h1>
-      <p class="text-muted">ทุกโครงการที่รอการดำเนินการของเจ้าหน้าที่ พร้อมผลตรวจความครบถ้วนอัตโนมัติ</p>
+      <p class="text-muted">ทุกโครงการที่รอการดำเนินการของเจ้าหน้าที่ พร้อมผลตรวจความครบถ้วนอัตโนมัติ — กดการ์ดสรุปหรือแถบสถานะเพื่อกรองรายการ</p>
     </div>
 
-    <div class="between wrap" style="gap:12px;">
+    <div class="between wrap s-enter" style="gap:12px; animation-delay:.04s;">
       <div class="stack gap-1">
         <span class="text-overline">ปีงบประมาณ</span>
         <div class="chip-group" id="year"></div>
@@ -29,7 +30,15 @@
 
     <div class="grid grid-4" id="kpis"></div>
 
-   <div class="card card--featured card--pad-sm">
+    <div class="card card--pad-sm s-enter" style="animation-delay:.12s;">
+      <div class="stack gap-2">
+        <div class="between wrap"><span class="text-overline">สัดส่วนตามสถานะ</span><span class="text-sm text-muted" id="pipe-total"></span></div>
+        <div class="pipe" id="pipe" role="group" aria-label="สัดส่วนโครงการตามสถานะ"></div>
+        <div class="pipe-legend" id="pipe-legend"></div>
+      </div>
+    </div>
+
+    <div class="card card--featured card--pad-sm s-enter" style="animation-delay:.16s;">
       <div class="stack gap-3">
         <div class="between wrap gap-3">
           <div class="chip-group" id="filters"></div>
@@ -64,10 +73,45 @@
   var cross = false;                        // แสดงงานค้างข้ามปี (ไม่กรองปี)
   var active = "all";
   var q = "";                               // คำค้นหา (FR-69)
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var firstPaint = true;
+
+  // กลุ่มสถานะที่ใช้กรอง (นอกเหนือจากสถานะเดี่ยว)
+  var GROUPS = {
+    todo:     ["submitted","screening","revise"],
+    staff:    ["submitted","screening"],
+    inreview: ["review","committee"]
+  };
+  var STAGE_LABEL = { submitted: "รอตรวจเอกสาร", screening: "รอมอบคณะอนุกรรมการ", review: "กำลังพิจารณา", committee: "รอวาระ/มติ", revise: "รอผู้วิจัยแก้ไข", approved: "อนุมัติ รอประกาศผล" };
+  var STAGE_COLOR = { submitted: "#C59B27", screening: "#D97706", review: "#2563EB", committee: "#7C3AED", revise: "#DC2626", approved: "#0F7B4F" };
 
   function scoped() { return (cross || fy === "all") ? base.slice() : base.filter(function (p) { return RGMS.fyOf(p) === fy; }); }
   function searchMatch(p) { if (!q) return true; return (p.id + " " + p.title + " " + p.pi + " " + p.school).toLowerCase().indexOf(q.toLowerCase()) >= 0; }
   function visible() { return scoped(); }
+
+  function match(p) {
+    if (active === "all") return true;
+    if (GROUPS[active]) return GROUPS[active].indexOf(p.status) >= 0;
+    return p.status === active;
+  }
+
+  function setFilter(id) {
+    active = (id === active && id !== "all") ? "all" : id;   // กดซ้ำ = ล้างตัวกรอง
+    renderFilters(); renderKpis(true); renderPipe(); renderRows();
+  }
+
+  /* ---------- count-up ---------- */
+  function countUp(el, to) {
+    if (reduce || !isFinite(to)) { el.textContent = RGMS.fmtMoney(to); return; }
+    var t0 = null, dur = 650;
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = RGMS.fmtMoney(Math.round(to * e));
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
 
   function renderYear() {
     var opts = [{ v: RGMS.CURRENT_FY, l: "ปีงบ " + RGMS.CURRENT_FY + " (ปัจจุบัน)" }]
@@ -79,20 +123,47 @@
     }).join("");
   }
 
-  function renderKpis() {
+  var kpiAnim = true;
+  function renderKpis(noAnim) {
     var list = visible();
-    var needStaff = list.filter(function (p) { return ["submitted","screening"].indexOf(p.status) >= 0; }).length;
-    var inReview = list.filter(function (p) { return ["review","committee"].indexOf(p.status) >= 0; }).length;
+    var needStaff = list.filter(function (p) { return GROUPS.staff.indexOf(p.status) >= 0; }).length;
+    var inReview = list.filter(function (p) { return GROUPS.inreview.indexOf(p.status) >= 0; }).length;
     var totalReq = list.reduce(function (s, p) { return s + p.budgetReq; }, 0);
     var scopeLabel = cross ? 'ข้ามปี' : (fy === "all" ? 'ทุกปี' : 'ปีงบ ' + fy);
-    document.getElementById("kpis").innerHTML = [
-      ['รอเจ้าหน้าที่ดำเนินการ', needStaff, 'โครงการ', 'accent'],
-      ['อยู่ระหว่างประเมิน/วาระ', inReview, 'โครงการ', ''],
-      ['ทั้งหมด · ' + scopeLabel, list.length, 'โครงการ', ''],
-      ['งบที่ขอรวม', RGMS.fmtMoney(totalReq), 'บาท', '']
-    ].map(function (k) {
-     return '<div class="card stat-card stat"><span class="stat__value' + (k[3] === 'accent' ? ' text-accent' : '') + '">' + k[1] + '</span>' +
-        '<span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>';
+    var items = [
+      { label: 'รอเจ้าหน้าที่ดำเนินการ', val: needStaff, unit: 'โครงการ', accent: true, f: 'staff' },
+      { label: 'อยู่ระหว่างประเมิน/วาระ', val: inReview, unit: 'โครงการ', f: 'inreview' },
+      { label: 'ทั้งหมด · ' + scopeLabel, val: list.length, unit: 'โครงการ', f: 'all' },
+      { label: 'งบที่ขอรวม', val: totalReq, unit: 'บาท' }
+    ];
+    var host = document.getElementById("kpis");
+    host.innerHTML = items.map(function (k, i) {
+      var inner = '<span class="stat__value' + (k.accent ? ' text-accent' : '') + '" data-to="' + k.val + '">' + RGMS.fmtMoney(k.val) + '</span>' +
+        '<span class="stat__label">' + k.label + ' · ' + k.unit + '</span>' +
+        (k.f ? '<span class="kpi-hint">' + (active === k.f && k.f !== "all" ? 'กำลังกรอง · กดเพื่อล้าง' : 'กดเพื่อกรอง') + '</span>' : '');
+      var delay = 'animation-delay:' + (0.06 + i * 0.05) + 's;';
+      if (!k.f) return '<div class="card stat-card stat kpi-static s-enter" style="' + delay + '">' + inner + '</div>';
+      var on = active === k.f;
+      return '<button type="button" class="card stat-card stat kpi-btn s-enter' + (on ? ' is-active' : '') + '" data-kf="' + k.f + '" aria-pressed="' + on + '" style="' + delay + '">' + inner + '</button>';
+    }).join("");
+    if (!noAnim && kpiAnim) {
+      host.querySelectorAll("[data-to]").forEach(function (el) { countUp(el, Number(el.getAttribute("data-to"))); });
+    }
+    if (noAnim) host.querySelectorAll(".s-enter").forEach(function (el) { el.style.animation = "none"; });
+  }
+
+  function renderPipe() {
+    var list = visible(), total = list.length;
+    var counts = {}; WORK.forEach(function (s) { counts[s] = 0; });
+    list.forEach(function (p) { counts[p.status]++; });
+    document.getElementById("pipe-total").textContent = total + " โครงการ";
+    var pipe = document.getElementById("pipe");
+    pipe.classList.toggle("has-active", WORK.indexOf(active) >= 0);
+    pipe.innerHTML = WORK.filter(function (s) { return counts[s] > 0; }).map(function (s, i) {
+      return '<button type="button" class="pipe__seg' + (active === s ? ' is-active' : '') + '" data-ps="' + s + '" style="flex:' + counts[s] + ' 1 0; background:' + STAGE_COLOR[s] + '; animation-delay:' + (i * 0.06) + 's;" title="' + STAGE_LABEL[s] + ' ' + counts[s] + '" aria-label="' + STAGE_LABEL[s] + ' ' + counts[s] + ' โครงการ"></button>';
+    }).join("") || '';
+    document.getElementById("pipe-legend").innerHTML = WORK.map(function (s) {
+      return '<button type="button" data-ps="' + s + '" class="' + (active === s ? 'is-active' : '') + '"><i style="background:' + STAGE_COLOR[s] + '"></i>' + STAGE_LABEL[s] + ' <b class="num">' + counts[s] + '</b></button>';
     }).join("");
   }
 
@@ -108,12 +179,6 @@
     document.getElementById("filters").innerHTML = filters.map(function (f) {
       return '<button class="chip' + (f.id === active ? ' is-active' : '') + '" data-f="' + f.id + '">' + f.label + '</button>';
     }).join("");
-  }
-
-  function match(p) {
-    if (active === "all") return true;
-    if (active === "todo") return ["submitted","screening","revise"].indexOf(p.status) >= 0;
-    return p.status === active;
   }
 
   function docCell(p) {
@@ -140,8 +205,8 @@
   function renderRows() {
     var list = visible().filter(match).filter(searchMatch).sort(function (a, b) { return b.id < a.id ? -1 : 1; });
     document.getElementById("count").textContent = list.length + " รายการ" + (q ? ' · ค้นหา "' + q + '"' : "");
-    document.getElementById("rows").innerHTML = list.length ? list.map(function (p) {
-      return '<tr class="is-clickable" data-id="' + p.id + '">' +
+    document.getElementById("rows").innerHTML = list.length ? list.map(function (p, i) {
+      return '<tr class="is-clickable s-row" style="animation-delay:' + Math.min(i, 12) * 0.03 + 's;" data-id="' + p.id + '">' +
         '<td class="num">' + p.id + '</td>' +
         '<td><div style="font-weight:600;">' + p.title + '</div><div class="text-sm text-muted">' + p.pi + '</div></td>' +
         '<td class="text-sm">' + p.school + '</td>' +
@@ -154,7 +219,7 @@
     }).join("") : '<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">ไม่พบรายการที่ตรงกับตัวกรอง/คำค้นหา</td></tr>';
   }
 
-  function refresh() { renderYear(); renderKpis(); renderRows(); }
+  function refresh() { renderYear(); renderKpis(); renderPipe(); renderRows(); }
 
   document.getElementById("year").addEventListener("click", function (e) {
     var b = e.target.closest("[data-y]"); if (!b || cross) return;
@@ -169,8 +234,14 @@
   });
   document.getElementById("filters").addEventListener("click", function (e) {
     var b = e.target.closest("[data-f]"); if (!b) return;
-    active = b.getAttribute("data-f"); renderFilters(); renderRows();
+    active = b.getAttribute("data-f"); renderFilters(); renderKpis(true); renderPipe(); renderRows();
   });
+  document.getElementById("kpis").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-kf]"); if (b) setFilter(b.getAttribute("data-kf"));
+  });
+  function onPipe(e) { var b = e.target.closest("[data-ps]"); if (b) setFilter(b.getAttribute("data-ps")); }
+  document.getElementById("pipe").addEventListener("click", onPipe);
+  document.getElementById("pipe-legend").addEventListener("click", onPipe);
   document.getElementById("rows").addEventListener("click", function (e) {
     if (e.target.closest("a")) return;
     var tr = e.target.closest("[data-id]");
