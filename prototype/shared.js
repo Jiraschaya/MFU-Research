@@ -492,6 +492,10 @@
     { id: "P-2569-042", title: "การออกแบบ UX แอปสุขภาพจิตสำหรับนักศึกษา", pi: "อ.ดร.ชนิกานต์ พูลสวัสดิ์", school: SCHOOLS[5], budgetReq: 120000, tier: "dev", status: "revise", submittedAt: "2568-10-20", score: 76 },
     { id: "P-2569-043", title: "ระบบสนับสนุนการตัดสินใจจัดเส้นทางนิเทศฝึกงานด้วย GIS", pi: "อ.ดร.ปวีณา สืบสมบัติ", school: SCHOOLS[0], budgetReq: 99000, tier: "new", status: "approved", submittedAt: "2568-10-15", score: 83 },
     { id: "P-2569-044", title: "การทำนายการลงทะเบียนของนักศึกษาด้วย Machine Learning", pi: "อ.ดร.พัชราภรณ์ พรรณวงค์", school: SCHOOLS[0], budgetReq: 61000, tier: "new", status: "rejected", submittedAt: "2568-10-14", score: 58 },
+    /* ---- ตัวอย่างสาธิตแทร็กการเงิน: งบเกินเพดาน / ไม่เกินเพดาน และแทร็กเนื้อหาที่ยัง "รอประเมิน" (2 แทร็กไม่ต้องรอกัน) ---- */
+    { id: "P-2569-045", title: "ระบบวิเคราะห์ภาพถ่ายดาวเทียมเพื่อติดตามพื้นที่เพาะปลูกกาแฟ", pi: "อ.ดร.วิภาดา ศรีสุข", school: SCHOOLS[0], budgetReq: 150000, tier: "new", status: "review", submittedAt: "2568-11-04", score: 81, financeDefault: "pending" },
+    { id: "P-2569-046", title: "การพัฒนาแอปพลิเคชันติดตามการใช้พลังงานในอาคารเรียน", pi: "ผศ.ดร.ชยพล วัฒนากุล", school: SCHOOLS[2], budgetReq: 180000, tier: "dev", status: "review", submittedAt: "2568-11-05", score: 80, financeDefault: "pending",
+      reviewers: [{ name: "ผศ.ดร.วรินทร มโนธรรม", submitted: false, total: 0, recommend: null, scores: {}, comment: "" }] },
     /* ---- ปีงบ 2568 (รอบก่อน · กำลังดำเนินการ/ปิด — overlap กับ 2569) ---- */
     { id: "P-2568-051", title: "การพัฒนาเซนเซอร์วัดความชื้นดินสำหรับสวนกาแฟ", pi: "อ.ดร.ณัฐวุฒิ แสนคำ", school: SCHOOLS[3], budgetReq: 200000, tier: "dev", status: "ongoing", round: "2568-1", startDate: "2567-12-01", progressPct: 35 },
     { id: "P-2568-052", title: "การวิเคราะห์เมตาโบโลมิกส์ของกาแฟอาราบิกาภาคเหนือ", pi: "ผศ.ดร.กิติพงษ์ คงพินิจบรรจง", school: SCHOOLS[1], budgetReq: 300000, tier: "strategy", status: "ongoing", round: "2568-1", progressPct: 45 },
@@ -682,6 +686,7 @@
   /* ค่าเริ่มต้นแทร็กการเงิน — โครงการที่เคยผ่านไปถึง committee ขึ้นไปภายใต้โมเดลเดิม ถือว่าการเงินผ่านแล้วด้วย (backward-compat)
      ส่วนโครงการที่ยัง status = review ให้กระจายสถานะแบบ deterministic (จาก id) เพื่อสาธิตแทร็กคู่ขนานที่ไม่ตรงกัน */
   function defaultFinanceStatus(p) {
+    if (p.financeDefault) return p.financeDefault;   // กำหนดสถานะตั้งต้นของข้อมูลตัวอย่างโดยตรง
     if (["committee", "revise", "approved", "rejected", "announced"].indexOf(p.status) >= 0) return "cleared";
     if (p.status === "review") {
       var n = String(p.id).split("").reduce(function (a, c) { return a + c.charCodeAt(0); }, 0);
@@ -883,6 +888,29 @@
       setContentRecommend(p.id, null);
     });
   }
+  /* ---- แทร็กการเงิน: งานค้างของ จนท.การเงิน = โครงการรอรับตรวจ (ยังไม่มีเจ้าของ) + งานของฉันที่ยังรอตรวจ ---- */
+  function financePendingCount() {
+    var me = ROLES.finance.name;
+    return PROJECTS.filter(function (p) { return inReviewPhase(p.status); }).filter(function (p) {
+      var owner = financeOwnerOf(p.id);
+      return !owner || (owner === me && financeTrackStatus(p.id) === "pending");
+    }).length;
+  }
+  /* PROTOTYPE ONLY: รีเซ็ตแทร็กการเงินกลับจุดเริ่มต้นเพื่อทดสอบซ้ำ
+     1) ย้อนการ "รับตรวจ" และ "เปลี่ยนผู้รับผิดชอบ" ทั้งหมด → ผู้รับผิดชอบกลับเป็นค่าเริ่มต้น
+        (งานที่รับตรวจเองกลับเป็น "รอรับตรวจ" / งานที่ส่งต่อให้คนอื่นกลับมาอยู่ที่ผู้ตรวจเดิม)
+     2) งานที่กลับมาเป็นของผู้ตรวจปัจจุบัน → รอตรวจ + ล้างข้อคิดเห็น; งานของคนอื่นกลับค่าเริ่มต้น */
+  function resetFinanceReview() {
+    var me = ROLES.finance.name;
+    _persist(_FINANCE_OWNER_KEY, {});
+    var trk = _store(_FINANCE_TRACK_KEY), cm = _store(_FINANCE_COMMENT_KEY);
+    PROJECTS.filter(function (p) { return inReviewPhase(p.status); }).forEach(function (p) {
+      if (financeOwnerOf(p.id) === me) { trk[p.id] = "pending"; cm[p.id] = ""; }
+      else { delete trk[p.id]; delete cm[p.id]; }
+    });
+    _persist(_FINANCE_TRACK_KEY, trk);
+    _persist(_FINANCE_COMMENT_KEY, cm);
+  }
   /* อัปเดตตัวเลขแจ้งเตือนใน sidebar โดยไม่ต้องวาด sidebar ใหม่ */
   function refreshNavCounts() {
     var role = currentRole();
@@ -932,7 +960,7 @@
     ],
     finance: [
       { group: "DASHBOARD", items: [
-        { id: "finance-review-queue", href: "finance-review-queue.html", label: "คิวตรวจการเงิน / รับตรวจ" }
+        { id: "finance-review-queue", href: "finance-review-queue.html", label: "คิวตรวจการเงิน / รับตรวจ", count: function () { return financePendingCount(); } }
       ]}
     ],
     exec: [
@@ -1207,6 +1235,7 @@ function switchRole(roleId) {
    currentRole: currentRole, setRole: setRole, switchRole: switchRole, renderAppNav: renderAppNav,
     reviewerAssigned: reviewerAssigned, reviewerPendingCount: reviewerPendingCount, refreshNavCounts: refreshNavCounts,
     contentRecommend: contentRecommend, setContentRecommend: setContentRecommend, resetReviewerContent: resetReviewerContent,
+    financePendingCount: financePendingCount, resetFinanceReview: resetFinanceReview,
     toast: toast, modal: modal, timelineHTML: timelineHTML,
     resetDemoData: resetDemoData, calculateBudgetRules: calculateBudgetRules
   };
