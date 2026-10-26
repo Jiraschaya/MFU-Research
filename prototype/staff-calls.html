@@ -31,6 +31,7 @@
 
 <script src="shared.js"></script>
 <script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
 <script>
   RGMS.renderAppNav("staff-calls");
   StaffNav.mount("staff-calls");
@@ -117,11 +118,11 @@
             if (isCustom(existing.id)) { custom.forEach(function (x) { if (x.id === existing.id) Object.keys(patch).forEach(function (k) { x[k] = patch[k]; }); }); save(CKEY, custom); }
             else { edits[existing.id] = patch; save(EKEY, edits); }
             Object.keys(patch).forEach(function (k) { existing[k] = patch[k]; });
-            close(); RGMS.toast("บันทึกการแก้ไขรอบ " + existing.id + " แล้ว", "ok");
+            StaffAudit.log("แก้ไขรอบทุน", existing.id + " · เพดาน " + RGMS.fmtBaht(cap), "call"); close(); RGMS.toast("บันทึกการแก้ไขรอบ " + existing.id + " แล้ว", "ok");
           } else {
             var n = nextRoundNo(fy), rec = { id: fy + "-" + n, fiscalYear: fy, title: title, open: o, close: c, cap: cap, status: "upcoming", submissions: 0 };
             custom.push(rec); save(CKEY, custom); RGMS.CALLS.push(rec);
-            close(); RGMS.toast("สร้างรอบ " + rec.id + " แล้ว — กด 'เปิดรับ' เพื่อเริ่มรับข้อเสนอ", "ok");
+            StaffAudit.log("สร้างรอบทุน", rec.id + " · " + rec.title, "call"); close(); RGMS.toast("สร้างรอบ " + rec.id + " แล้ว — กด 'เปิดรับ' เพื่อเริ่มรับข้อเสนอ", "ok");
           }
           render();
         });
@@ -140,7 +141,7 @@
           custom = custom.filter(function (x) { return x.id !== c.id; }); save(CKEY, custom);
           var i = RGMS.CALLS.indexOf(c); if (i >= 0) RGMS.CALLS.splice(i, 1);
           var ov = load("rgms_call_status", {}); if (ov[c.id]) { delete ov[c.id]; save("rgms_call_status", ov); }
-          close(); RGMS.toast("ลบรอบ " + c.id + " แล้ว", "accent"); render();
+          StaffAudit.log("ลบรอบทุน", c.id, "call"); close(); RGMS.toast("ลบรอบ " + c.id + " แล้ว", "accent"); render();
         });
       }
     });
@@ -197,11 +198,11 @@
     if (o) {
       var id = o.getAttribute("data-open-call"), closedOthers = [];
       RGMS.CALLS.forEach(function (x) { if (x.id !== id && RGMS.callStatus(x) === "open") { RGMS.setCallStatus(x.id, "closed"); closedOthers.push(x.id); } });
-      RGMS.setCallStatus(id, "open");
+      RGMS.setCallStatus(id, "open"); StaffAudit.log("เปิดรับทุน", id, "call");
       RGMS.toast("เปิดรับข้อเสนอรอบ " + id + " แล้ว — ผู้ยื่นยื่นได้ทันที" + (closedOthers.length ? " (ปิดรอบ " + closedOthers.join(", ") + " อัตโนมัติ เพราะเปิดรับได้ทีละรอบ)" : ""), "ok");
       render();
     }
-    else if (c) { RGMS.setCallStatus(c.getAttribute("data-close-call"), "closed"); RGMS.toast("ปิดรับข้อเสนอรอบนี้แล้ว — ระบบล็อกการยื่น", "accent"); render(); }
+    else if (c) { RGMS.setCallStatus(c.getAttribute("data-close-call"), "closed"); StaffAudit.log("ปิดรับทุน", c.getAttribute("data-close-call"), "call"); RGMS.toast("ปิดรับข้อเสนอรอบนี้แล้ว — ระบบล็อกการยื่น", "accent"); render(); }
     else if (ed) { var r = byId(ed.getAttribute("data-edit")); if (r) openForm(r); }
     else if (del) { var d = byId(del.getAttribute("data-del")); if (d) confirmDelete(d); }
   });
