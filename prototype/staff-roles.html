@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จัดการสิทธิ์ผู้ใช้งาน — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+    <div class="page-head s-enter">
+      <h1 class="text-headline">จัดการสิทธิ์ผู้ใช้งาน (FR-76)</h1>
+      <p class="text-muted">กำหนดบทบาทและเปิด/ระงับการใช้งานของผู้ใช้ในระบบ ทุกการเปลี่ยนแปลงถูกบันทึกใน Audit Log</p>
+    </div>
+    <div class="between wrap gap-3 s-enter"><div class="chip-group" id="filters"></div>
+      <button class="btn btn-primary btn-md" id="add">+ เพิ่มผู้ใช้</button></div>
+    <div class="card card--featured card--pad-sm s-enter"><div class="table-wrap"><table class="table">
+      <thead><tr><th>ชื่อ-สกุล</th><th>บทบาท</th><th>สถานะ</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header"><h2 class="text-subhead">สิทธิ์ของแต่ละบทบาท</h2></div><div class="table-wrap"><table class="table"><thead><tr><th>บทบาท</th><th>ขอบเขตการเข้าถึง</th></tr></thead><tbody id="perm"></tbody></table></div></div>
+  </div>
+</main>
+<script src="shared.js"></script>
+<script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
+<script>
+  StaffPage.init("staff-roles");
+  var E = StaffPage.esc, KEY = "rgms_staff_users", ROLES = ["researcher","chair","secretary","staff","reviewer","finance","exec"];
+  var LBL = { researcher: "นักวิจัย", chair: "ประธานวิจัยสำนักวิชา/คณบดี", secretary: "เลขาสำนักวิชา", staff: "เจ้าหน้าที่ส่วนบริหาร", reviewer: "คณะอนุกรรมการ", finance: "เจ้าหน้าที่การเงิน", exec: "ผู้บริหาร/คกก.ส่งเสริม" };
+  var PERM = { researcher: "ยื่นข้อเสนอ ติดตามสถานะ รายงานความก้าวหน้าเฉพาะโครงการของตน", chair: "รับรองข้อเสนอระดับสำนักวิชา", secretary: "ช่วยจัดเตรียมเอกสารระดับสำนักวิชา", staff: "ตรวจเอกสาร มอบคณะอนุกรรมการ จัดวาระ เปิดรอบทุน คุมงวดเงิน", reviewer: "พิจารณาเฉพาะโครงการที่ได้รับมอบหมาย (ซ่อนชื่อผู้ประเมินอื่น)", finance: "ตรวจแทร็กการเงินแบบ claim", exec: "ดูภาพรวม ลงมติ ประกาศผล" };
+  function seed() {
+    var u = [], id = 1;
+    Object.keys(RGMS_ROLES()).forEach(function (k) { u.push({ id: "u" + id++, name: RGMS_ROLES()[k].name, role: k, active: true }); });
+    RGMS.STAFF.forEach(function (s) { if (!u.some(function (x) { return x.name === s.name; })) u.push({ id: "u" + id++, name: s.name, role: "staff", active: true }); });
+    RGMS.FINANCE_REVIEWERS.forEach(function (nm) { if (!u.some(function (x) { return x.name === nm; })) u.push({ id: "u" + id++, name: nm, role: "finance", active: true }); });
+    RGMS.REVIEWERS.forEach(function (r) { if (!u.some(function (x) { return x.name === r.name; })) u.push({ id: "u" + id++, name: r.name, role: "reviewer", active: true }); });
+    return u;
+  }
+  function RGMS_ROLES() { // ชื่อผู้ใช้สาธิตของแต่ละบทบาท (อ่านผ่านบทบาทปัจจุบัน/ค่าคงที่)
+    return { researcher: { name: "ผศ.ดร.นภัส วงศ์ประเสริฐ" }, chair: { name: "รศ.ดร.อาคม ผลานุสนธิ์" }, secretary: { name: "คุณเบญจวรรณ ทิพย์วงศ์" }, staff: { name: "คุณกมลชนก อินทร์แก้ว" }, reviewer: { name: "รศ.ดร.สุเมธ ธำรงชัย" }, finance: { name: "คุณรัตน์ติการณ์ หลวงใจ" }, exec: { name: "รศ.ดร.อรวรรณ สีหราช" } };
+  }
+  var users = StaffPage.ld(KEY, null) || seed(), f = "all";
+  function save() { StaffPage.sv(KEY, users); }
+  function render() {
+    document.getElementById("filters").innerHTML = [["all","ทั้งหมด"]].concat(ROLES.map(function (r) { return [r, LBL[r]]; })).map(function (x) {
+      var c = x[0] === "all" ? users.length : users.filter(function (u) { return u.role === x[0]; }).length;
+      return '<button class="chip' + (f === x[0] ? ' is-active' : '') + '" data-f="' + x[0] + '">' + x[1] + ' (' + c + ')</button>'; }).join("");
+    document.getElementById("rows").innerHTML = users.filter(function (u) { return f === "all" || u.role === f; }).map(function (u, i) {
+      return '<tr class="s-row" style="animation-delay:' + Math.min(i, 12) * 0.025 + 's;"><td><b>' + E(u.name) + '</b></td>' +
+        '<td><select class="field__control" data-role="' + u.id + '" style="max-width:260px;">' + ROLES.map(function (r) { return '<option value="' + r + '"' + (r === u.role ? ' selected' : '') + '>' + LBL[r] + '</option>'; }).join("") + '</select></td>' +
+        '<td>' + (u.active ? '<span class="badge badge-ok">ใช้งาน</span>' : '<span class="badge badge-draft">ระงับ</span>') + '</td>' +
+        '<td class="right"><button class="btn btn-secondary btn-sm" data-toggle="' + u.id + '">' + (u.active ? 'ระงับ' : 'เปิดใช้งาน') + '</button></td></tr>'; }).join("");
+    document.getElementById("perm").innerHTML = ROLES.map(function (r) { return '<tr><td><b>' + LBL[r] + '</b></td><td class="text-sm">' + PERM[r] + '</td></tr>'; }).join("");
+  }
+  function byId(id) { return users.filter(function (u) { return u.id === id; })[0]; }
+  document.getElementById("filters").addEventListener("click", function (e) { var b = e.target.closest("[data-f]"); if (b) { f = b.getAttribute("data-f"); render(); } });
+  document.getElementById("rows").addEventListener("change", function (e) {
+    var s = e.target.closest("[data-role]"); if (!s) return; var u = byId(s.getAttribute("data-role")), old = u.role; u.role = s.value; save();
+    StaffAudit.log("เปลี่ยนบทบาทผู้ใช้", u.name + ": " + LBL[old] + " → " + LBL[u.role], "access"); RGMS.toast("เปลี่ยนบทบาท " + u.name + " เป็น " + LBL[u.role], "ok"); render();
+  });
+  document.getElementById("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-toggle]"); if (!b) return; var u = byId(b.getAttribute("data-toggle")); u.active = !u.active; save();
+    StaffAudit.log(u.active ? "เปิดใช้งานผู้ใช้" : "ระงับผู้ใช้", u.name, "access"); RGMS.toast((u.active ? "เปิดใช้งาน " : "ระงับ ") + u.name, u.active ? "ok" : "accent"); render();
+  });
+  document.getElementById("add").addEventListener("click", function () {
+    RGMS.modal({ title: "เพิ่มผู้ใช้", body: '<div class="grid gap-3"><div class="field" style="margin:0;"><label class="field__label" for="nu-name">ชื่อ-สกุล</label><input class="field__control" id="nu-name"><div class="field__error" id="nu-err" hidden>กรอกชื่อ-สกุล</div></div>' +
+      '<div class="field" style="margin:0;"><label class="field__label" for="nu-role">บทบาท</label><select class="field__control" id="nu-role">' + ROLES.map(function (r) { return '<option value="' + r + '">' + LBL[r] + '</option>'; }).join("") + '</select></div></div>',
+      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="nu-ok">เพิ่มผู้ใช้</button>',
+      onMount: function (back, close) { back.querySelector("#nu-ok").addEventListener("click", function () {
+        var nm = back.querySelector("#nu-name").value.trim(); if (!nm) { back.querySelector("#nu-err").hidden = false; return; }
+        var r = back.querySelector("#nu-role").value; users.unshift({ id: "u" + Date.now(), name: nm, role: r, active: true }); save();
+        StaffAudit.log("เพิ่มผู้ใช้", nm + " (" + LBL[r] + ")", "access"); close(); RGMS.toast("เพิ่มผู้ใช้ " + nm + " แล้ว", "ok"); render(); }); } });
+  });
+  render();
+</script>
+</body>
+</html>
+

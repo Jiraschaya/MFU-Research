@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คุมภาระงานเจ้าหน้าที่ — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+    <div class="page-head s-enter">
+      <h1 class="text-headline">คุมภาระงานเจ้าหน้าที่ / ผู้ตรวจ</h1>
+      <p class="text-muted">ภาพรวมปริมาณงานของเจ้าหน้าที่ส่วนบริหาร เจ้าหน้าที่การเงิน (แทร็กการเงิน) และคณะอนุกรรมการ — ใช้ดูว่าใครถืองานมากเกินไป</p>
+    </div>
+    <div class="grid grid-3" id="kpis"></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header"><h2 class="text-subhead">เจ้าหน้าที่ส่วนบริหารงานวิจัย (แบ่งตามหน้าที่)</h2></div><div class="stack gap-3" id="staff"></div></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header"><h2 class="text-subhead">เจ้าหน้าที่การเงิน · แทร็กการเงิน (claim-based)</h2></div><div class="stack gap-3" id="fin"></div></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header"><h2 class="text-subhead">คณะอนุกรรมการ · แทร็กเนื้อหา</h2></div><div class="stack gap-3" id="rev"></div></div>
+  </div>
+</main>
+<script src="shared.js"></script>
+<script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
+<script>
+  StaffPage.init("staff-team");
+  var P = RGMS.PROJECTS, E = StaffPage.esc;
+  function n(f) { return P.filter(f).length; }
+  // งานต่อหน้าที่ (คิวเดียวทั้งทีม — ไม่แบ่งรายบุคคล ตามกติกา case manager)
+  var FN = {
+    operations: { todo: n(function (p) { return ["submitted","screening"].indexOf(p.status) >= 0; }), note: "รอตรวจเอกสาร/มอบคณะอนุกรรมการ" },
+    finance:    { todo: n(function (p) { return ["final","financial"].indexOf(p.status) >= 0; }), note: "ตรวจรายงานการเงิน/เบิกจ่ายงวด" },
+    standards:  { todo: n(function (p) { return ["committee","approved"].indexOf(p.status) >= 0; }), note: "จัดวาระ/ประกาศผล/มาตรฐานการวิจัย" }
+  };
+  function bar(v, max, cls) { return '<div class="call-meter" style="height:8px;"><span style="width:' + Math.round(v / Math.max(1, max) * 100) + '%"></span></div>'; }
+  function badge(v) { return v <= 3 ? "badge-ok" : v <= 6 ? "badge-wait" : "badge-reject"; }
+  function row(name, sub, v, max, tail) {
+    return '<div class="stack gap-1"><div class="between"><div><b>' + E(name) + '</b> <span class="text-sm text-muted">' + E(sub) + '</span></div><span class="cluster gap-2">' + (tail || '') + '<span class="badge ' + badge(v) + '">ถือ ' + v + '</span></span></div>' + bar(v, max) + '</div>';
+  }
+  var finNames = RGMS.FINANCE_REVIEWERS, finLoads = finNames.map(RGMS.financeLoad);
+  var revs = RGMS.REVIEWERS.map(function (r) { return { r: r, l: RGMS.reviewerLoad(r.name) }; }).sort(function (a, b) { return b.l - a.l; });
+  var overloaded = finLoads.filter(function (v) { return v > 6; }).length + revs.filter(function (x) { return x.l > 6; }).length;
+  document.getElementById("kpis").innerHTML = [
+    ["งานรอเจ้าหน้าที่รวม", FN.operations.todo + FN.finance.todo + FN.standards.todo, "รายการ"],
+    ["โครงการในแทร็กการเงิน", finLoads.reduce(function (a, b) { return a + b; }, 0), "โครงการ"],
+    ["ผู้ถืองานเกิน 6 โครงการ", overloaded, "คน"]
+  ].map(function (k) { return '<div class="card stat-card stat s-enter"><span class="stat__value">' + k[1] + '</span><span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>'; }).join("");
+  document.getElementById("staff").innerHTML = RGMS.STAFF.map(function (s) {
+    var f = FN[s.fn] || { todo: 0, note: "" }; return row(s.name, "· " + s.fnLabel + " — " + f.note, f.todo, 10);
+  }).join("");
+  document.getElementById("fin").innerHTML = finNames.map(function (nm, i) { return row(nm, "", finLoads[i], 10); }).join("");
+  document.getElementById("rev").innerHTML = revs.map(function (x) {
+    return row(x.r.name, "· " + x.r.school + " · " + x.r.expertise.join(", "), x.l, 10);
+  }).join("");
+</script>
+</body>
+</html>
+

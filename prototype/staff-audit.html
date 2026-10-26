@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ประวัติการใช้งาน Audit Log — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+    <div class="page-head s-enter">
+      <h1 class="text-headline">ประวัติการใช้งาน (Audit Log)</h1>
+      <p class="text-muted">บันทึกกิจกรรมของระบบ — การยื่น/ตรวจ/มติจากข้อมูลโครงการ และการดำเนินการของเจ้าหน้าที่ในหน้าเหล่านี้ เรียงจากล่าสุด</p>
+    </div>
+    <div class="grid grid-3" id="kpis"></div>
+    <div class="card card--featured card--pad-sm s-enter"><div class="stack gap-3"><div class="between wrap gap-3"><div class="chip-group" id="filters"></div>
+      <input class="field__control" id="search" placeholder="ค้นหา ผู้ดำเนินการ / การกระทำ / รายละเอียด" style="max-width:340px;"></div>
+      <div class="between"><span class="text-sm text-muted num" id="count"></span><button class="btn btn-secondary btn-sm" id="dl">ดาวน์โหลด CSV</button></div></div>
+      <div class="table-wrap" style="margin-top:12px;"><table class="table"><thead><tr><th>เวลา</th><th>ผู้ดำเนินการ</th><th>การกระทำ</th><th>รายละเอียด</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+  </div>
+</main>
+<script src="shared.js"></script>
+<script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
+<script>
+  StaffPage.init("staff-audit");
+  var E = StaffPage.esc, f = "all", q = "", all = StaffAudit.all();
+  var T = { all: "ทั้งหมด", project: "โครงการ", meeting: "มติ", access: "สิทธิ์ผู้ใช้", finance: "การเงิน", export: "ส่งออก", call: "รอบทุน" };
+  var TB = { project: "badge-info", meeting: "badge-review", access: "badge-revise", finance: "badge-ok", export: "badge-wait", call: "badge-wait", other: "badge-draft" };
+  function list() { return all.filter(function (r) { return (f === "all" || r.type === f) && (!q || (r.by + " " + r.action + " " + r.detail).toLowerCase().indexOf(q.toLowerCase()) >= 0); }); }
+  function render() {
+    var loc = StaffAudit.local().length;
+    document.getElementById("kpis").innerHTML = [["บันทึกทั้งหมด", all.length], ["จากการดำเนินการของเจ้าหน้าที่", loc], ["ผู้ดำเนินการไม่ซ้ำ", Object.keys(all.reduce(function (m, r) { m[r.by] = 1; return m; }, {})).length]]
+      .map(function (k, i) { return '<div class="card stat-card stat s-enter" style="animation-delay:' + i * 0.05 + 's;"><span class="stat__value">' + k[1] + '</span><span class="stat__label">' + k[0] + '</span></div>'; }).join("");
+    document.getElementById("filters").innerHTML = Object.keys(T).map(function (k) { return '<button class="chip' + (f === k ? ' is-active' : '') + '" data-f="' + k + '">' + T[k] + '</button>'; }).join("");
+    var l = list(); document.getElementById("count").textContent = l.length + " รายการ" + (l.length > 100 ? " (แสดง 100 รายการล่าสุด)" : "");
+    document.getElementById("rows").innerHTML = l.length ? l.slice(0, 100).map(function (r, i) {
+      return '<tr class="s-row" style="animation-delay:' + Math.min(i, 12) * 0.02 + 's;"><td class="num text-sm" style="white-space:nowrap;">' + E(r.at) + '</td><td class="text-sm">' + E(r.by) + '</td><td><span class="badge ' + (TB[r.type] || "badge-draft") + '">' + E(r.action) + '</span></td><td class="text-sm text-muted">' + E(r.detail) + '</td></tr>'; }).join("") : '<tr><td colspan="4" class="text-center text-muted" style="padding:24px;">ไม่พบบันทึก</td></tr>';
+  }
+  document.getElementById("filters").addEventListener("click", function (e) { var b = e.target.closest("[data-f]"); if (b) { f = b.getAttribute("data-f"); render(); } });
+  document.getElementById("search").addEventListener("input", function (e) { q = e.target.value.trim(); render(); });
+  document.getElementById("dl").addEventListener("click", function () { StaffPage.csv("rgms-audit-log.csv", ["เวลา","ผู้ดำเนินการ","การกระทำ","รายละเอียด"], list().map(function (r) { return [r.at, r.by, r.action, r.detail]; })); });
+  render();
+</script>
+</body>
+</html>
+

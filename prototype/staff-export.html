@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ส่งออกรายงาน & e-Office — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+    <div class="page-head s-enter">
+      <h1 class="text-headline">ส่งออกรายงาน & e-Office</h1>
+      <p class="text-muted">ดาวน์โหลดรายงานเป็นไฟล์ CSV (เปิดใน Excel ได้) และสร้างบันทึกข้อความส่งเข้า e-Office (สาธิต)</p>
+    </div>
+    <div class="grid grid-2" id="cards"></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header between"><h2 class="text-subhead" id="pv-title">ตัวอย่างข้อมูล</h2><span class="text-sm text-muted" id="pv-count"></span></div>
+      <div class="table-wrap"><table class="table"><thead id="pv-head"></thead><tbody id="pv-body"></tbody></table></div></div>
+    <div class="card card--pad-sm s-enter"><div class="card__header"><h2 class="text-subhead">ประวัติการส่ง e-Office</h2></div><div class="table-wrap"><table class="table"><thead><tr><th>เลขที่บันทึก</th><th>รายงาน</th><th>วันที่ส่ง</th><th>ผู้ส่ง</th></tr></thead><tbody id="hist"></tbody></table></div></div>
+  </div>
+</main>
+<script src="shared.js"></script>
+<script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
+<script>
+  StaffPage.init("staff-export");
+  var E = StaffPage.esc, HK = "rgms_staff_eoffice", hist = StaffPage.ld(HK, []), cur = "projects";
+  var M = RGMS.MEETINGS, P = RGMS.PROJECTS;
+  var REP = {
+    projects: { name: "ทะเบียนข้อเสนอโครงการ", desc: "รหัส ชื่อ ผู้วิจัย สำนักวิชา ประเภททุน งบที่ขอ สถานะ", head: ["รหัส","ชื่อโครงการ","ผู้วิจัย","สำนักวิชา","ประเภททุน","งบที่ขอ (บาท)","สถานะ"],
+      rows: function () { return P.map(function (p) { return [p.id, p.title, p.pi, p.school, RGMS.tierOf(p).short, p.budgetReq, RGMS.stageOf(RGMS.effectiveStatus(p)).label || p.status]; }); } },
+    budget: { name: "สรุปการเบิกจ่ายตามงวด", desc: "โครงการที่ดำเนินการอยู่ พร้อมสถานะแต่ละงวด", head: ["รหัส","ชื่อโครงการ","งวด 1","งวด 2","งวด 3","ความคืบหน้า (%)"],
+      rows: function () { return P.filter(function (p) { return p.installments; }).map(function (p) { return [p.id, p.title].concat(p.installments.map(function (g) { return g.amount + " (" + g.status + ")"; })).concat([p.progressPct]); }); } },
+    meetings: { name: "มติที่ประชุมคณะกรรมการ", desc: "ทุกการประชุมและมติรายโครงการ", head: ["การประชุม","วันที่","รหัสโครงการ","มติ"],
+      rows: function () { var r = []; M.forEach(function (m) { m.items.forEach(function (it) { r.push([m.no, m.date, it.projectId, it.resolution]); }); }); return r; } },
+    calls: { name: "รอบการเปิดรับทุน", desc: "ปีงบ ช่วงเวลา เพดานงบ และจำนวนข้อเสนอ", head: ["รหัสรอบ","ชื่อรอบ","เปิด","ปิด","เพดาน (บาท)","ข้อเสนอ","สถานะ"],
+      rows: function () { return RGMS.CALLS.map(function (c) { return [c.id, c.title, c.open, c.close, c.cap, c.submissions || 0, RGMS.callStatus(c)]; }); } }
+  };
+  function render() {
+    document.getElementById("cards").innerHTML = Object.keys(REP).map(function (k, i) {
+      var r = REP[k];
+      return '<div class="card stack gap-2 s-enter' + (k === cur ? ' kpi-btn is-active' : '') + '" style="animation-delay:' + i * 0.05 + 's;"><div class="between"><b>' + r.name + '</b><span class="tag">' + r.rows().length + ' แถว</span></div>' +
+        '<p class="text-sm text-muted" style="margin:0;">' + r.desc + '</p><div class="cluster gap-2"><button class="btn btn-secondary btn-sm" data-pv="' + k + '">ดูตัวอย่าง</button>' +
+        '<button class="btn btn-primary btn-sm" data-dl="' + k + '">ดาวน์โหลด CSV</button><button class="btn btn-ghost btn-sm" data-eo="' + k + '">ส่ง e-Office</button></div></div>'; }).join("");
+    var r = REP[cur], rows = r.rows();
+    document.getElementById("pv-title").textContent = "ตัวอย่าง · " + r.name; document.getElementById("pv-count").textContent = rows.length + " แถว (แสดง 8 แถวแรก)";
+    document.getElementById("pv-head").innerHTML = '<tr>' + r.head.map(function (h) { return '<th>' + h + '</th>'; }).join("") + '</tr>';
+    document.getElementById("pv-body").innerHTML = rows.slice(0, 8).map(function (x) { return '<tr>' + x.map(function (c) { return '<td class="text-sm">' + E(c) + '</td>'; }).join("") + '</tr>'; }).join("");
+    document.getElementById("hist").innerHTML = hist.length ? hist.map(function (h) { return '<tr><td class="num">' + h.no + '</td><td>' + E(h.rep) + '</td><td class="num">' + h.at + '</td><td>' + E(h.by) + '</td></tr>'; }).join("") : '<tr><td colspan="4" class="text-center text-muted" style="padding:20px;">ยังไม่เคยส่ง</td></tr>';
+  }
+  document.getElementById("cards").addEventListener("click", function (e) {
+    var pv = e.target.closest("[data-pv]"), dl = e.target.closest("[data-dl]"), eo = e.target.closest("[data-eo]");
+    if (pv) { cur = pv.getAttribute("data-pv"); render(); }
+    else if (dl) { var k = dl.getAttribute("data-dl"), r = REP[k]; StaffPage.csv("rgms-" + k + ".csv", r.head, r.rows()); StaffAudit.log("ส่งออกรายงาน CSV", r.name, "export"); RGMS.toast("ดาวน์โหลด " + r.name + " แล้ว", "ok"); }
+    else if (eo) { var k2 = eo.getAttribute("data-eo"), r2 = REP[k2];
+      RGMS.modal({ title: "ส่งเข้า e-Office (สาธิต)", body: '<p style="margin:0 0 8px;">สร้างบันทึกข้อความแนบรายงาน <b>' + r2.name + '</b> (' + r2.rows().length + ' แถว) ส่งถึงงานสารบรรณ</p><div class="field" style="margin:0;"><label class="field__label" for="eo-to">ส่งถึง</label><input class="field__control" id="eo-to" value="งานสารบรรณ สำนักงานอธิการบดี"></div>',
+        foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="eo-ok">ส่ง</button>',
+        onMount: function (back, close) { back.querySelector("#eo-ok").addEventListener("click", function () {
+          var no = "อว 6.1/" + String(hist.length + 1).padStart(3, "0"); hist.unshift({ no: no, rep: r2.name, at: StaffPage.nowBE(), by: RGMS.currentRole().name }); StaffPage.sv(HK, hist);
+          StaffAudit.log("ส่งเข้า e-Office", no + " · " + r2.name, "export"); close(); RGMS.toast("ส่งเข้า e-Office แล้ว เลขที่ " + no, "ok"); render(); }); } }); }
+  });
+  render();
+</script>
+</body>
+</html>
+

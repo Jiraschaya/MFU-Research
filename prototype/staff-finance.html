@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คุมงวดเงิน & ปิดโครงการ — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div id="app-nav-root"></div>
+<main class="section">
+  <div class="container stack gap-5">
+    <div class="page-head s-enter">
+      <h1 class="text-headline">คุมงวดเงิน & ปิดโครงการ</h1>
+      <p class="text-muted">ติดตามการเบิกจ่ายตามงวด (50/40/10) ของโครงการที่ดำเนินการอยู่ อนุมัติเบิกจ่ายงวดที่ถึงกำหนด และปิดโครงการเมื่อจ่ายครบและงานเสร็จ</p>
+    </div>
+    <div class="grid grid-4" id="kpis"></div>
+    <div class="chip-group s-enter" id="filters"></div>
+    <div class="card card--featured card--pad-sm s-enter"><div class="table-wrap"><table class="table">
+      <thead><tr><th>โครงการ</th><th>ความคืบหน้า</th><th>งวด 1</th><th>งวด 2</th><th>งวด 3</th><th>สถานะ</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></div>
+  </div>
+</main>
+<script src="shared.js"></script>
+<script src="staff-nav.js"></script>
+<script src="staff-pages.js"></script>
+<script>
+  StaffPage.init("staff-finance");
+  var E = StaffPage.esc, IK = "rgms_staff_inst", CK = "rgms_staff_closed";
+  var inst = StaffPage.ld(IK, {}), closed = StaffPage.ld(CK, {}), f = "all";
+  var LIVE = ["ongoing","progress","final","financial","closed"];
+  var base = RGMS.PROJECTS.filter(function (p) { return LIVE.indexOf(p.status) >= 0; });
+  function stOf(p) { return closed[p.id] ? "closed" : p.status; }
+  function iSt(p, i) { return (inst[p.id] && inst[p.id][i]) || p.installments[i].status; }
+  var IB = { paid: ["จ่ายแล้ว","badge-ok"], due: ["ถึงกำหนด","badge-wait"], pending: ["รอ","badge-draft"] };
+  var ST = { ongoing: "ดำเนินการ", progress: "รายงานความก้าวหน้า", final: "รายงานฉบับสมบูรณ์", financial: "รายงานการเงิน", closed: "ปิดโครงการแล้ว" };
+  function canClose(p) { return stOf(p) !== "closed" && [0,1,2].every(function (i) { return iSt(p, i) === "paid"; }) && (p.progressPct || 0) >= 100; }
+  function render() {
+    var sum = { paid: 0, due: 0, pending: 0 };
+    base.forEach(function (p) { p.installments.forEach(function (g, i) { sum[iSt(p, i)] += g.amount; }); });
+    document.getElementById("kpis").innerHTML = [["จ่ายแล้ว", sum.paid, "บาท"], ["ถึงกำหนดจ่าย", sum.due, "บาท"], ["รอถึงงวด", sum.pending, "บาท"], ["พร้อมปิดโครงการ", base.filter(canClose).length, "โครงการ"]]
+      .map(function (k, i) { return '<div class="card stat-card stat s-enter" style="animation-delay:' + i * 0.05 + 's;"><span class="stat__value' + (i === 1 ? ' text-accent' : '') + '">' + RGMS.fmtMoney(k[1]) + '</span><span class="stat__label">' + k[0] + ' · ' + k[2] + '</span></div>'; }).join("");
+    var F = [["all","ทั้งหมด"],["due","มีงวดถึงกำหนด"],["ready","พร้อมปิด"],["closed","ปิดแล้ว"]];
+    document.getElementById("filters").innerHTML = F.map(function (x) { return '<button class="chip' + (f === x[0] ? ' is-active' : '') + '" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join("");
+    var list = base.filter(function (p) {
+      if (f === "due") return [0,1,2].some(function (i) { return iSt(p, i) === "due"; });
+      if (f === "ready") return canClose(p); if (f === "closed") return stOf(p) === "closed"; return true; });
+    document.getElementById("rows").innerHTML = list.length ? list.map(function (p, i) {
+      var dueIdx = [0,1,2].filter(function (j) { return iSt(p, j) === "due"; })[0];
+      var act = dueIdx != null ? '<button class="btn btn-ok btn-sm" data-pay="' + p.id + ':' + dueIdx + '">อนุมัติจ่ายงวด ' + (dueIdx + 1) + '</button>'
+        : canClose(p) ? '<button class="btn btn-primary btn-sm" data-close="' + p.id + '">ปิดโครงการ</button>' : '<span class="text-sm text-muted">—</span>';
+      return '<tr class="s-row" style="animation-delay:' + Math.min(i, 12) * 0.03 + 's;"><td><div class="num text-sm text-muted">' + p.id + '</div><div style="font-weight:600;">' + E(p.title) + '</div><div class="text-sm text-muted">' + E(p.pi) + ' · ' + RGMS.fmtBaht(p.budgetReq) + '</div></td>' +
+        '<td style="min-width:110px;"><span class="num text-sm">' + (p.progressPct || 0) + '%</span><div class="call-meter"><span style="width:' + (p.progressPct || 0) + '%"></span></div></td>' +
+        [0,1,2].map(function (j) { var s = IB[iSt(p, j)]; return '<td><span class="badge ' + s[1] + '">' + s[0] + '</span><div class="text-sm text-muted num">' + RGMS.fmtMoney(p.installments[j].amount) + '</div></td>'; }).join("") +
+        '<td>' + ST[stOf(p)] + '</td><td class="right">' + act + '</td></tr>'; }).join("") : '<tr><td colspan="7" class="text-center text-muted" style="padding:24px;">ไม่มีรายการ</td></tr>';
+  }
+  document.getElementById("filters").addEventListener("click", function (e) { var b = e.target.closest("[data-f]"); if (b) { f = b.getAttribute("data-f"); render(); } });
+  document.getElementById("rows").addEventListener("click", function (e) {
+    var pay = e.target.closest("[data-pay]"), cl = e.target.closest("[data-close]");
+    if (pay) { var a = pay.getAttribute("data-pay").split(":"), p = RGMS.getProject(a[0]), j = +a[1];
+      inst[p.id] = inst[p.id] || {}; inst[p.id][j] = "paid"; StaffPage.sv(IK, inst);
+      if (j < 2 && iSt(p, j + 1) === "pending") { inst[p.id][j + 1] = "due"; StaffPage.sv(IK, inst); }
+      StaffAudit.log("อนุมัติเบิกจ่ายงวดที่ " + (j + 1), p.id + " · " + RGMS.fmtBaht(p.installments[j].amount), "finance"); RGMS.toast("อนุมัติเบิกจ่ายงวดที่ " + (j + 1) + " ของ " + p.id, "ok"); render(); }
+    else if (cl) { var q = RGMS.getProject(cl.getAttribute("data-close")); closed[q.id] = true; StaffPage.sv(CK, closed);
+      StaffAudit.log("ปิดโครงการ", q.id + " · " + q.title, "finance"); RGMS.toast("ปิดโครงการ " + q.id + " แล้ว", "ok"); render(); }
+  });
+  render();
+</script>
+</body>
+</html>
+

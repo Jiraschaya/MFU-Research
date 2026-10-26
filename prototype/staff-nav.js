@@ -20,11 +20,11 @@
     { id: "exec-overview", n: "1.", label: "ภาพรวมส่วนบริหาร", icon: I.grid, href: "exec-overview.html" },
     { id: "staff-queue",   n: "2.", label: "กล่องคัดกรอง & ตรวจงบ 17.2", icon: I.clip, href: "staff-queue.html", count: true },
     { id: "staff-agenda",  n: "3.", label: "วาระประชุม e-Agenda", icon: I.cal, href: "staff-agenda.html" },
-    { id: "staff-team",    n: "4.", label: "คุมภาระงานเจ้าหน้าที่", icon: I.users },
-    { id: "staff-roles",   n: "5.", label: "จัดการสิทธิ์ผู้ใช้งาน (FR-76)", icon: I.shield },
-    { id: "staff-finance", n: "6.", label: "คุมงวดเงิน & ปิดโครงการ", icon: I.cash },
-    { id: "staff-export",  n: "7.", label: "ส่งออกรายงาน & e-Office", icon: I.out },
-    { id: "staff-audit",   n: "8.", label: "ประวัติการใช้งาน Audit Log", icon: I.clock },
+    { id: "staff-team",    n: "4.", label: "คุมภาระงานเจ้าหน้าที่", icon: I.users, href: "staff-team.html" },
+    { id: "staff-roles",   n: "5.", label: "จัดการสิทธิ์ผู้ใช้งาน (FR-76)", icon: I.shield, href: "staff-roles.html" },
+    { id: "staff-finance", n: "6.", label: "คุมงวดเงิน & ปิดโครงการ", icon: I.cash, href: "staff-finance.html" },
+    { id: "staff-export",  n: "7.", label: "ส่งออกรายงาน & e-Office", icon: I.out, href: "staff-export.html" },
+    { id: "staff-audit",   n: "8.", label: "ประวัติการใช้งาน Audit Log", icon: I.clock, href: "staff-audit.html" },
     { id: "staff-calls",   n: "",   label: "เปิดรับทุน / รอบทุน", icon: I.flag, href: "staff-calls.html" }
   ];
 
@@ -47,5 +47,26 @@
       e.preventDefault(); RGMS.toast("“" + a.getAttribute("data-soon") + "” ยังไม่อยู่ในต้นแบบนี้", "accent");
     });
   }
-  window.StaffNav = { mount: mount };
+
+  /* ---------- ตัวช่วยกลางของหน้าเจ้าหน้าที่ ---------- */
+  var K_LOG = "rgms_staff_log";
+  function rd(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function wr(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var MON = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  function stamp() { var d = new Date(); return d.getDate() + " " + MON[d.getMonth()] + " " + (d.getFullYear() + 543) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function log(action, text, pid) {
+    var all = rd(K_LOG, []);
+    all.push({ action: action, text: text, id: pid || "", at: stamp(), by: RGMS.currentRole().name, ts: Date.now() });
+    wr(K_LOG, all.slice(-500));
+  }
+  function csv(filename, rows) {
+    var body = rows.map(function (r) { return r.map(function (c) { c = String(c == null ? "" : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(","); }).join("\r\n");
+    var blob = new Blob(["\uFEFF" + body], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function boot(pageId) { RGMS.setRole("staff"); RGMS.renderAppNav(pageId); mount(pageId); }
+  window.StaffNav = { mount: mount, boot: boot, log: log, logs: function () { return rd(K_LOG, []); }, rd: rd, wr: wr, esc: esc, csv: csv, stamp: stamp };
 })();
