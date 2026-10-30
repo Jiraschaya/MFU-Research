@@ -43,6 +43,7 @@
   .review-row + .review-row { margin-top:var(--space-2); }
   .review-row__label { font-size:12px; font-weight:600; color:var(--color-text-muted); }
   @media (max-width:640px){ .bline__top{ grid-template-columns:1fr; } .tier-grid{ grid-template-columns:1fr; } }
+  .doc-row.is-over { outline: 2px dashed var(--color-primary); background: var(--color-primary-tint); }
 </style>
 </head>
 <body>
@@ -63,7 +64,7 @@
         <div class="card card--featured" id="sec-0">
           <h2 class="text-subhead" style="margin-bottom:var(--space-2);"><span class="sec-num">0</span>เริ่มให้เร็ว — มีร่างข้อเสนออยู่แล้วใช่ไหม?</h2>
           <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">
-            อัปโหลดไฟล์ RS-01 (.docx) ที่เขียนไว้ ระบบจะ<strong>ดึงเนื้อหาไปเติมในฟอร์มให้อัตโนมัติ</strong> (ชื่อโครงการ · บทคัดย่อ · วัตถุประสงค์ · คำสำคัญ ฯลฯ) — คุณแค่ตรวจทานและเติมส่วนที่ขาด · หรือจะข้ามไปกรอกในฟอร์มด้านล่างเลยก็ได้
+            อัปโหลดไฟล์ RS-01 (.docx) ที่เขียนไว้ ระบบจะ<strong>ดึงเนื้อหาไปเติมในฟอร์มให้อัตโนมัติ</strong> (ชื่อโครงการ · บทคัดย่อ · วัตถุประสงค์ · คำสำคัญ ฯลฯ) — รองรับทั้งแบบ RS-01 และ <strong>"แบบเสนอขอรับการสนับสนุนงบประมาณโครงการวิจัยในชั้นเรียนและนวัตกรรมฯ"</strong> (ดึงตารางงบ ผู้ร่วมวิจัย และระยะเวลาให้ด้วย) — คุณแค่ตรวจทานและเติมส่วนที่ขาด · หรือจะข้ามไปกรอกในฟอร์มด้านล่างเลยก็ได้
           </p>
           <div class="dropzone" id="doc-drop">
             <div class="dropzone__icon">DOCX</div>
@@ -342,9 +343,12 @@
       checks.push({ label: c.label.replace("หมวด", "") + " ไม่เกิน " + Math.round(c.cap * 100) + "%",
         ok: pct <= c.cap, note: Math.round(pct * 100) + "% (" + RGMS.fmtMoney(t) + ")" });
     });
-    var needAttach = items.filter(function (b) { return RGMS.attachNeed(b.item); });
+    var needAttach = items.filter(function (b) { return RGMS.attachNeed(b.item) || b.needAttach; });
     checks.push({ label: "เอกสารแนบตามรายการ (TOR/ใบเสนอราคา/กำหนดการ)", ok: needAttach.length === 0,
       note: needAttach.length ? "ต้องแนบ " + needAttach.length + " รายการ" : "", soft: true });
+    var overLim = items.filter(function (b) { return b.limit && b.total > b.limit; });
+    if (items.some(function (b) { return b.limit; })) checks.push({ label: "รายการไม่เกินเพดานที่ฟอร์มกำหนด", ok: overLim.length === 0, soft: true,
+      note: overLim.length ? overLim.map(function (b) { return b.item + " เกิน " + RGMS.fmtMoney(b.total - b.limit); }).join(", ") : "" });
     return { checks: checks, total: total, byCat: byCat, rulesOk: checks.filter(function (c) { return !c.soft; }).every(function (c) { return c.ok; }) };
   }
   function checksHTML(checks) {
@@ -396,7 +400,8 @@
     }
     return "";
   }
-  function reviewExtracted(found, sourceLabel) {
+  function reviewExtracted(found, sourceLabel, extra) {
+    extra = extra || { rows: [], docs: [] };
     var box = document.getElementById("doc-parsed");
     var keys = Object.keys(found).filter(function (k) { return found[k]; });
     if (!keys.length) {
@@ -405,7 +410,7 @@
         '<span class="notice__body">โครงสร้างไฟล์อาจต่างจากแบบ RS-01 มาตรฐาน — กรอกในฟอร์มด้านล่างได้เลย หรือลองไฟล์ตัวอย่าง</span></div>';
       return;
     }
-    var labels = { "f-title": "ชื่อโครงการ (ไทย)", "f-title-en": "ชื่อโครงการ (อังกฤษ)", "f-keywords": "คำสำคัญ",
+    var labels = { "f-school": "สำนักวิชา (ผู้วิจัยคนที่ 1)", "f-duration": "ระยะเวลาดำเนินการ", "f-title": "ชื่อโครงการ (ไทย)", "f-title-en": "ชื่อโครงการ (อังกฤษ)", "f-keywords": "คำสำคัญ",
       "f-abstract": "ความสำคัญ/ที่มา", "f-objective": "วัตถุประสงค์", "f-scope": "ขอบเขต", "f-outcome": "ผลลัพธ์ที่คาดว่าจะได้รับ" };
     box.style.display = "block";
     box.innerHTML =
@@ -415,12 +420,27 @@
         return '<div class="review-row"><div class="review-row__label">' + (labels[k] || k) + '</div>' +
           '<div class="text-sm" style="margin-top:2px;">' + found[k].replace(/</g, "&lt;").slice(0, 240) + (found[k].length > 240 ? "…" : "") + '</div></div>';
       }).join("") +
+      (extra.rows.length ? '<div class="text-overline" style="margin:var(--space-3) 0 4px;">ข้อมูลอื่นที่พบในไฟล์</div>' + extra.rows.map(function (r) {
+        return '<div class="review-row"><div class="review-row__label">' + r.label + (r.warn ? ' <span class="badge badge-wait" style="font-size:10px;">โปรดตรวจ</span>' : '') + '</div>' +
+          '<div class="text-sm" style="margin-top:2px;">' + String(r.text).replace(/</g, "&lt;") + '</div></div>';
+      }).join("") : '') +
       '<div class="cluster gap-2" style="margin-top:var(--space-3);">' +
         '<button class="btn btn-primary btn-md" id="apply-extract">ใช้ข้อมูลนี้เติมฟอร์ม</button>' +
         '<button class="btn btn-ghost btn-sm" id="discard-extract">ยกเลิก</button></div>';
     document.getElementById("apply-extract").addEventListener("click", function () {
-      keys.forEach(function (k) { document.getElementById(k).value = found[k]; });
-      RGMS.toast("เติมข้อมูลจากไฟล์แล้ว — โปรดตรวจทานและเติมส่วนที่ขาด", "ok");
+      keys.forEach(function (k) {
+        var el = document.getElementById(k);
+        if (el.tagName === "SELECT" && !Array.prototype.some.call(el.options, function (o) { return o.value === found[k] || o.text === found[k]; })) {
+          var op = document.createElement("option"); op.textContent = found[k]; el.appendChild(op);   // ค่าจากไฟล์ที่ไม่อยู่ในรายการของระบบ
+        }
+        el.value = found[k];
+      });
+      if (extra.budget && extra.budget.length) {
+        document.querySelector('#mode-switch [data-mode="upload"]').click();
+        budget = extra.budget; renderParsed("ตารางงบประมาณจากไฟล์ Word (" + sourceLabel.replace(/^อัปโหลด:\s*/, "") + ")");
+      }
+      extraDocs = extra.docs || []; renderDocs();
+      RGMS.toast("เติมข้อมูลจากไฟล์แล้ว" + (extra.budget && extra.budget.length ? " (รวมตารางงบประมาณ " + extra.budget.length + " รายการ)" : "") + " — โปรดตรวจทานและเติมส่วนที่ขาด", "ok");
       box.style.display = "none";
       document.querySelector(".card h2").scrollIntoView({ behavior: "smooth", block: "start" });
       recompute();
@@ -428,26 +448,222 @@
     document.getElementById("discard-extract").addEventListener("click", function () { box.style.display = "none"; });
   }
 
+  /* ----------------------------------------------------------
+     ตัวอ่าน "แบบเสนอขอรับการสนับสนุนงบประมาณโครงการวิจัยในชั้นเรียนและนวัตกรรมฯ" (Rev.3)
+     แยกหัวข้อ 1–11 ตามชื่อหัวข้อ (ไม่พึ่งเลขข้อ เพราะ Word ใส่เลขอัตโนมัติ) แล้วดึงตารางผู้วิจัย/แผน/งบ
+     ---------------------------------------------------------- */
+  var TH_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  var R3_SECS = [
+    ["title", /^ชื่อโครงการ/], ["team", /^ข้อมูลของผู้ทำวิจัย|^ข้อมูลผู้วิจัย/], ["frame", /^กรอบงานวิจัย/],
+    ["bg", /^ความสำคัญและที่มา/], ["obj", /^วัตถุประสงค์/], ["concept", /^กรอบแนวคิด/], ["method", /^วิธีดำเนินการ/],
+    ["outcome", /^ผลที่คาดว่าจะได้รับ/], ["plan", /^แผนการดำเนินงาน/], ["refs", /^การอ้างอิง/], ["budget", /^งบประมาณ/]
+  ];
+  function nz(s) { return String(s == null ? "" : s).replace(/ /g, " ").replace(/\s+/g, " ").trim(); }
+  function r3Blocks(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html"), out = [];
+    function cellLines(cell) {
+      var ps = cell.querySelectorAll("p"), lines = [];
+      if (ps.length) Array.prototype.forEach.call(ps, function (p) { var t = nz(p.textContent); if (t) lines.push(t); });
+      else { var t = nz(cell.textContent); if (t) lines.push(t); }
+      return lines;
+    }
+    function walkList(list) {
+      Array.prototype.forEach.call(list.children, function (li) {
+        var c = li.cloneNode(true);
+        Array.prototype.forEach.call(c.querySelectorAll("ol,ul"), function (n) { n.parentNode.removeChild(n); });
+        var t = nz(c.textContent); if (t) out.push({ k: "li", text: t });
+        Array.prototype.forEach.call(li.children, function (n) { if (/^(OL|UL)$/.test(n.tagName)) walkList(n); });
+      });
+    }
+    Array.prototype.forEach.call(doc.body.children, function (el) {
+      if (/^(OL|UL)$/.test(el.tagName)) walkList(el);
+      else if (el.tagName === "TABLE") {
+        var rows = [];
+        Array.prototype.forEach.call(el.querySelectorAll("tr"), function (tr) { rows.push(Array.prototype.map.call(tr.children, cellLines)); });
+        out.push({ k: "table", rows: rows });
+      } else { var t = nz(el.textContent); if (t) out.push({ k: "p", text: t }); }
+    });
+    return out;
+  }
+  function r3Split(blocks) {
+    var secs = { _head: {} }, cur = null, pos = -1;
+    blocks.forEach(function (b) {
+      if (b.k !== "table" && b.text.length <= 220) {
+        var t = b.text.replace(/^\d{1,2}\s*[.)]\s*/, "");
+        for (var j = pos + 1; j < R3_SECS.length; j++) {
+          if (R3_SECS[j][1].test(t)) { pos = j; cur = R3_SECS[j][0]; secs[cur] = []; secs._head[cur] = t; return; }
+        }
+      }
+      if (cur) secs[cur].push(b);
+    });
+    return secs;
+  }
+  function r3Body(list) {   // ตัดบรรทัดคำแนะนำ "(ระบุ...)" และรวมเป็นข้อความ (li = ใส่เลขข้อให้)
+    var n = 0;
+    return (list || []).filter(function (b) { return b.k !== "table" && !/^\(/.test(b.text); })
+      .map(function (b) { return b.k === "li" ? (++n) + ". " + b.text : b.text; }).join("\n");
+  }
+  function r3Tables(list) { return (list || []).filter(function (b) { return b.k === "table"; }); }
+  function r3Num(t) { var v = parseFloat(String(t).replace(/[^\d.]/g, "")); return isNaN(v) ? 0 : v; }
+
+  function r3Budget(tbl) {
+    var items = [], cat = null, declared = null, skipped = [];
+    tbl.rows.forEach(function (r) {
+      var left = r[0] || [], amtTxt = nz((r[1] || []).join(" ")), first = left.join(" ");
+      if (/^รายการ/.test(first) && /จำนวนงบ/.test(amtTxt)) return;
+      if (/^รวม/.test(first)) { declared = r3Num(amtTxt) || null; return; }
+      left.forEach(function (ln) {
+        if (/หมวดค่าตอบแทน/.test(ln)) cat = "compensation";
+        else if (/หมวดค่าใช้สอย/.test(ln)) cat = "generaluse";
+        else if (/หมวดค่าวัสดุ/.test(ln)) cat = "material";
+        else if (/หมวดค่าเดินทาง/.test(ln)) cat = "travel";
+        else if (/ค่าใช้จ่ายอื่น/.test(ln)) cat = "generaluse";
+      });
+      var amt = r3Num(amtTxt);
+      if (!(amt > 0)) {   // แถวที่ไม่ได้ใส่จำนวนเงิน → รายงานให้ผู้ใช้เห็นว่าไม่ได้นำเข้า
+        left.forEach(function (ln) {
+          if (/หมวด/.test(ln) || /^\(/.test(ln)) return;
+          skipped.push(ln.replace(/^\d+(\s*\.\s*\d+)*\s*[.)]?\s*/, "").replace(/\s*\([^)]*\)\s*$/, "").trim());
+        });
+        return;
+      }
+      if (!cat) return;
+      var cands = left.filter(function (ln) { return !/หมวด/.test(ln) && !/^\(/.test(ln); });
+      var hints = left.filter(function (ln) { return /^\(/.test(ln); });
+      var line = cands.filter(function (ln) { return /^\d+(\s*\.\s*\d+)*\s*[.)]/.test(ln) || /^\d+\s*\)/.test(ln); })[0] || cands[0];
+      if (!line) return;
+      var name = line.replace(/^\d+(\s*\.\s*\d+)*\s*[.)]?\s*/, ""), note = hints.join(" ");
+      var m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(name);
+      if (m) { name = m[1]; note = (m[2] + " " + note).trim(); }
+      note = note.replace(/^\(|\)$/g, "").trim();
+      var att = /โปรดแนบ\s*(?:เอกสาร)?\s*([^)]*)/.exec(left.join(" "));
+      var i1 = Math.round(amt * INST[0].pct), i2 = Math.round(amt * INST[1].pct);
+      var it = { cat: cat, item: name, breakdown: note, total: amt, i1: i1, i2: i2, i3: amt - i1 - i2 };
+      if (att && att[1].trim()) it.needAttach = "แนบ " + att[1].trim();
+      var lim = 0, lm, re = /ไม่เกิน\s*([\d,]+)\s*บาท/g, whole = left.join(" ");
+      while ((lm = re.exec(whole))) lim = Math.max(lim, r3Num(lm[1]));
+      if (!lim && (lm = /([\d,]+)\s*บาท\s*\/\s*โครงการ/.exec(whole))) lim = r3Num(lm[1]);
+      if (lim) it.limit = lim;
+      items.push(it);
+    });
+    return { items: items, declared: declared, skipped: skipped.filter(function (x) { return x; }) };
+  }
+
+  function parseRev3(html) {
+    var secs = r3Split(r3Blocks(html));
+    var have = R3_SECS.filter(function (s) { return secs[s[0]]; }).length;
+    if (!secs.title || have < 4) return null;          // ไม่ใช่แบบฟอร์มนี้ → ให้ตัวอ่านเดิมทำงาน
+    var found = {}, extra = { rows: [], docs: [], budget: [] };
+
+    // 1. ชื่อโครงการ
+    (secs.title || []).forEach(function (b) {
+      if (b.k === "table") return;
+      var th = /^\(ภาษาไทย\)\s*(.+)/.exec(b.text), en = /^\(ภาษาอังกฤษ\)\s*(.+)/.exec(b.text);
+      if (th) found["f-title"] = th[1].trim(); else if (en) found["f-title-en"] = en[1].trim();
+    });
+    if (!found["f-title"]) { var f1 = (secs.title || []).filter(function (b) { return b.k !== "table"; })[0]; if (f1) found["f-title"] = f1.text; }
+
+    // 2. ผู้วิจัย (ตาราง) → สำนักวิชาของคนที่ 1 + เตือนหนังสือรับรองผู้ร่วมวิจัยต่างสำนักวิชา
+    var tt = r3Tables(secs.team)[0], team = [];
+    if (tt) tt.rows.forEach(function (r) {
+      if (r.length < 5 || /ลำดับ/.test((r[0] || []).join(""))) return;
+      var c = r.map(function (x) { return x.join(" "); });
+      team.push({ name: c[1], school: c[2], phone: c[3], email: c[4], pct: c[5] || "" });
+    });
+    if (team.length) {
+      if (team[0].school) {
+        found["f-school"] = team[0].school;
+        if (RGMS.SCHOOLS.indexOf(team[0].school) < 0)
+          extra.rows.push({ label: "สำนักวิชา \"" + team[0].school + "\"", text: "ไม่อยู่ในรายชื่อสำนักวิชาของระบบ — จะเพิ่มเป็นตัวเลือกให้ในหน้านี้ โปรดตรวจว่าถูกต้อง", warn: true });
+      }
+      var other = team.filter(function (m) { return m.school && m.school !== team[0].school; });
+      extra.rows.push({ label: "ผู้วิจัย/ผู้ร่วมวิจัย " + team.length + " คน",
+        text: team.map(function (m) { return m.name + " (" + m.school + (m.pct ? " · " + m.pct : "") + ")"; }).join(" · ") +
+          (other.length ? " — มีผู้ร่วมวิจัยต่างสำนักวิชา ต้องแนบหนังสือรับรอง" : ""), warn: other.length > 0 });
+      if (other.length) extra.docs.push({ key: "x_coauth", label: "หนังสือรับรองจากสำนักวิชาของผู้ร่วมวิจัย", note: other.map(function (m) { return m.name; }).join(", ") });
+    }
+
+    // 3. กรอบงานวิจัย/นวัตกรรม (ช่องที่ติ๊ก)
+    var checked = [], lastChecked = false;
+    (secs.frame || []).forEach(function (b) {
+      if (b.k === "table") return;
+      var m = /^(R|£|☐|☑|☒|✓|✔|□|■)\s*(.+)/.exec(b.text);
+      if (m) { lastChecked = /^(R|☑|☒|✓|✔|■)$/.test(m[1]); if (lastChecked) checked.push(m[2].trim()); }
+      else if (lastChecked && checked.length) checked[checked.length - 1] += " — " + b.text;
+    });
+    if (checked.length) extra.rows.push({ label: "กรอบงานวิจัย/นวัตกรรมที่เลือก", text: checked.join(" · ") });
+
+    // 4–5, 7.1, 8
+    found["f-abstract"] = r3Body(secs.bg);
+    found["f-objective"] = r3Body(secs.obj);
+    var m71 = (secs.method || []), s71 = [], inSample = false;
+    m71.forEach(function (b) {
+      if (b.k === "table") return;
+      if (/^7\s*\.\s*1\b/.test(b.text)) { inSample = true; return; }
+      if (/^7\s*\.\s*[2-9]\b/.test(b.text)) { inSample = false; }
+      if (inSample) s71.push(b);
+    });
+    found["f-scope"] = r3Body(s71);
+    found["f-outcome"] = r3Body(secs.outcome);
+
+    // 9. แผนงาน → ระยะเวลา
+    var ph = secs._head.plan || "", pm = /ตั้งแต่\s*(\S+)\s*ถึง\s*(\S+)/.exec(ph);
+    if (pm) {
+      var a = TH_MONTHS.indexOf(pm[1]), z = TH_MONTHS.indexOf(pm[2]);
+      if (a >= 0 && z >= 0) {
+        var months = z - a + 1; if (months <= 0) months += 12;
+        var opts = [6, 12, 18, 24], best = opts.filter(function (o) { return o >= months; })[0] || 24;
+        found["f-duration"] = best + " เดือน";
+        extra.rows.push({ label: "ระยะเวลาในแผนงาน", text: pm[1] + " – " + pm[2] + " = " + months + " เดือน" + (best !== months ? " (ปัดเป็น " + best + " เดือนตามตัวเลือกของระบบ)" : ""), warn: best !== months });
+      }
+    }
+    var pt = r3Tables(secs.plan)[0];
+    if (pt) {
+      var acts = pt.rows.filter(function (r) { return /^\d+\s*[.)]/.test((r[0] || []).join(" ")); }).length;
+      if (acts) extra.rows.push({ label: "แผนการดำเนินงาน", text: acts + " กิจกรรม (ตารางแผนไม่ถูกนำเข้า — ระบบสร้างให้ตอนยื่น)" });
+    }
+    var refs = (secs.refs || []).filter(function (b) { return b.k !== "table"; }).length;
+    if (refs) extra.rows.push({ label: "การอ้างอิง (APA 7th)", text: refs + " รายการ" });
+
+    // 11. งบประมาณ (ตาราง) → ส่วนที่ 3
+    var bt = r3Tables(secs.budget)[0];
+    if (bt) {
+      var rb = r3Budget(bt); extra.budget = rb.items;
+      var sum = rb.items.reduce(function (t, b) { return t + b.total; }, 0);
+      var mism = rb.declared != null && rb.declared !== sum;
+      extra.rows.push({ label: "งบประมาณ " + rb.items.length + " รายการ", warn: mism || !rb.items.length,
+        text: "รวม " + RGMS.fmtBaht(sum) + (mism ? " — ไม่ตรงกับ \"รวมทั้งสิ้น\" ในไฟล์ (" + RGMS.fmtBaht(rb.declared) + ") โปรดตรวจ" : "") + " · จะเติมลงส่วนที่ 3 และแบ่งงวดอัตโนมัติตามเกณฑ์ของระบบ" });
+      if (rb.skipped.length) extra.rows.push({ label: "รายการงบที่ไม่ได้ระบุจำนวนเงิน (ไม่นำเข้า)", text: rb.skipped.join(" · ") + " — เพิ่มได้ภายหลังที่ \"แก้ไขรายการเอง\"" });
+      var over = rb.items.filter(function (b) { return b.limit && b.total > b.limit; });
+      if (over.length) extra.rows.push({ label: "เกินเพดานที่ฟอร์มกำหนด", warn: true, text: over.map(function (b) { return b.item + " " + RGMS.fmtMoney(b.total) + " > " + RGMS.fmtMoney(b.limit); }).join(" · ") });
+      rb.items.forEach(function (b, i) { if (b.needAttach) extra.docs.push({ key: "x_att" + i, label: b.needAttach + " (" + b.item + ")", note: "ฟอร์มกำหนดให้แนบ" }); });
+    }
+    Object.keys(found).forEach(function (k) { if (!found[k]) delete found[k]; });
+    return { found: found, extra: extra };
+  }
+
   function handleDocx(file) {
     if (!/\.docx$/i.test(file.name)) { RGMS.toast("รองรับเฉพาะ .docx — โปรด Save as .docx ก่อน", "accent"); return; }
-    
-    var dz = document.getElementById("doc-drop");
-    if (dz) {
-      dz.innerHTML = 
-        '<div class="stack gap-2 text-center" style="padding:16px;">' +
-          '<div class="spinner" style="margin:0 auto;"></div>' +
-          '<span class="text-sm text-muted">กำลังวิเคราะห์โครงสร้างไฟล์ ' + file.name + '...</span>' +
-        '</div>';
-    }
+
+    var box = document.getElementById("doc-parsed");
+    box.style.display = "block";
+    box.innerHTML = '<div class="stack gap-2 text-center" style="padding:16px;"><div class="spinner" style="margin:0 auto;"></div>' +
+      '<span class="text-sm text-muted">กำลังวิเคราะห์โครงสร้างไฟล์ ' + file.name.replace(/</g, "&lt;") + '...</span></div>';
 
     var reader = new FileReader();
     reader.onload = function (e) {
-      mammoth.extractRawText({ arrayBuffer: e.target.result }).then(function (res) {
-        var text = res.value || "";
-        var found = {};
-        EXTRACT_MAP.forEach(function (m) { found[m.id] = extractField(text, m.starts, m.stops); });
-        reviewExtracted(found, "อัปโหลด: " + file.name);
-      }).catch(function () { RGMS.toast("อ่านไฟล์ .docx ไม่สำเร็จ", "accent"); });
+      var buf = e.target.result;
+      mammoth.convertToHtml({ arrayBuffer: buf }).then(function (res) {
+        var r3 = null;
+        try { r3 = parseRev3(res.value || ""); } catch (err) { r3 = null; }
+        if (r3) { reviewExtracted(r3.found, "อัปโหลด: " + file.name, r3.extra); return; }
+        // ไม่ใช่แบบเสนอขอฯ ในชั้นเรียน → ใช้ตัวอ่าน RS-01 เดิม
+        return mammoth.extractRawText({ arrayBuffer: buf }).then(function (raw) {
+          var text = raw.value || "", found = {};
+          EXTRACT_MAP.forEach(function (m) { found[m.id] = extractField(text, m.starts, m.stops); });
+          reviewExtracted(found, "อัปโหลด: " + file.name);
+        });
+      }).catch(function () { box.style.display = "none"; RGMS.toast("อ่านไฟล์ .docx ไม่สำเร็จ", "accent"); });
     };
     reader.readAsArrayBuffer(file);
   }
@@ -537,7 +753,7 @@
       var sub = list.reduce(function (s, b) { return s + b.total; }, 0);
       rowsHTML += '<tr class="bud-cat"><td colspan="4">' + c.label + '</td></tr>';
       list.forEach(function (b) {
-        var need = RGMS.attachNeed(b.item);
+        var need = RGMS.attachNeed(b.item) || b.needAttach;
         rowsHTML += '<tr><td>' + b.item + (need ? ' <span class="badge badge-wait" style="font-size:10px;">ต้อง' + need + '</span>' : '') +
           (b.breakdown ? '<div class="text-sm text-muted">' + b.breakdown + '</div>' : '') + '</td>' +
           '<td class="right num">' + RGMS.fmtMoney(b.i1) + '</td><td class="right num">' + RGMS.fmtMoney(b.i2) + '</td>' +
@@ -547,7 +763,7 @@
     });
     box.innerHTML =
       '<div class="notice notice--ok" style="margin-bottom:var(--space-3);"><span class="notice__title">ดูดข้อมูลงบสำเร็จ · ' + budget.length + ' รายการ · รวม ' + RGMS.fmtBaht(res.total) + '</span>' +
-        '<span class="notice__body">' + sourceLabel + ' — ถ้าต้องแก้ กลับไปแก้ใน Excel แล้วอัปโหลดใหม่ได้เลย</span></div>' +
+        '<span class="notice__body">' + sourceLabel + ' — ถ้าต้องแก้ แก้ในไฟล์ต้นทางแล้วอัปโหลดใหม่ หรือสลับไป "กรอกในระบบ" ได้เลย</span></div>' +
       '<div class="table-wrap" style="margin-bottom:var(--space-3);"><table class="table bud-table" style="min-width:520px;">' +
         '<thead><tr><th>รายการค่าใช้จ่าย</th><th class="right">งวด 1</th><th class="right">งวด 2</th><th class="right">งวด 3</th><th class="right">รวม</th></tr></thead>' +
         '<tbody>' + rowsHTML + '</tbody>' +
@@ -555,7 +771,16 @@
       '</table></div>' +
       '<span class="text-overline">ตรวจกฎอัตโนมัติ</span><ul class="checklist" style="font-size:13px; margin:8px 0 var(--space-3);">' + checksHTML(res.checks) + '</ul>' +
       '<div class="cluster gap-2"><button class="btn btn-secondary btn-sm" id="reupload">อัปโหลดไฟล์อื่น</button>' +
+        '<button class="btn btn-primary-solid btn-sm" id="edit-parsed">แก้ไขรายการเอง</button>' +
         '<span class="text-sm text-muted">ระบบจะแปลงเป็นตาราง 17 + 17.2 และใส่ใน RS-01 อัตโนมัติเมื่อยื่น</span></div>';
+    document.getElementById("edit-parsed").addEventListener("click", function () {
+      lines = budget.map(function (b) {
+        return { id: ++uid, cat: b.cat, item: b.item, price: b.total, needAttach: b.needAttach, limit: b.limit,
+          factors: [{ q: "", u: "" }, { q: "", u: "" }, { q: "", u: "" }] };
+      });
+      document.querySelector('#mode-switch [data-mode="manual"]').click();
+      RGMS.toast("ย้ายรายการมาให้แก้ไขในโหมด \"กรอกในระบบ\" แล้ว — ใส่ราคา × จำนวนเพิ่มได้", "ok");
+    });
     document.getElementById("reupload").addEventListener("click", function () {
       budget = null; box.style.display = "none"; document.getElementById("upload-area").style.display = "block"; recompute();
     });
@@ -581,18 +806,19 @@
   function linesToBudget() {
     return lines.filter(function (l) { return l.item && lineAmount(l) > 0; }).map(function (l) {
       var amt = lineAmount(l);
-      return { cat: l.cat, item: l.item, breakdown: breakdown(l), total: amt,
+      return { cat: l.cat, item: l.item, breakdown: breakdown(l), total: amt, needAttach: l.needAttach, limit: l.limit,
         i1: Math.round(amt * INST[0].pct), i2: Math.round(amt * INST[1].pct), i3: Math.round(amt * INST[2].pct) };
     });
   }
   function renderLines() {
     document.getElementById("blines").innerHTML = lines.map(function (l) {
       var cat = CATS.filter(function (c) { return c.id === l.cat; })[0];
-      var amt = lineAmount(l), need = RGMS.attachNeed(l.item);
+      var amt = lineAmount(l), need = RGMS.attachNeed(l.item) || l.needAttach;
       var itemField = cat && cat.freeText
         ? '<input class="field__control it-name" data-id="' + l.id + '" placeholder="ระบุรายการครุภัณฑ์" value="' + (l.item || '').replace(/"/g, '&quot;') + '" style="margin:0;">'
         : '<select class="field__control it-name" data-id="' + l.id + '" style="margin:0;"><option value="">— เลือกรายการ —</option>' +
-            (cat ? cat.items.map(function (it) { return '<option' + (it === l.item ? ' selected' : '') + '>' + it + '</option>'; }).join("") : "") + '</select>';
+            (cat ? cat.items.map(function (it) { return '<option' + (it === l.item ? ' selected' : '') + '>' + it + '</option>'; }).join("") : "") +
+            (cat && l.item && cat.items.indexOf(l.item) < 0 ? '<option selected>' + l.item.replace(/</g, "&lt;") + '</option>' : "") + '</select>';
       var inst = INST.map(function (g) { return g.label + ' ' + Math.round(g.pct*100) + '% <b>' + RGMS.fmtMoney(Math.round(amt*g.pct)) + '</b>'; }).join(" · ");
       return '<div class="bline" data-id="' + l.id + '"><div class="bline__top">' +
           '<div class="field" style="margin:0;"><label class="field__label">หมวด</label><select class="field__control it-cat" data-id="' + l.id + '" style="margin:0;">' +
@@ -667,6 +893,7 @@
      5. เอกสารแนบ + ตรวจความพร้อม
      ========================================================== */
   var manualDocsOn = {};
+  var extraDocs = [];   // เอกสารแนบเพิ่มที่ได้จากไฟล์ที่นำเข้า (เช่น TOR, หนังสือรับรองผู้ร่วมวิจัย)
   function docList() {
     var list = [
       { key: "form", label: "แบบฟอร์มข้อเสนอโครงการ (RS-01)", auto: true, note: "ระบบสร้างจากที่กรอก" },
@@ -677,23 +904,48 @@
     RGMS.RESEARCH_STANDARDS.forEach(function (s) {
       if (s.cert && stdChosen[s.id]) list.push({ key: "cert_" + s.id, label: s.cert, auto: false });
     });
+    extraDocs.forEach(function (d) { list.push({ key: d.key, label: d.label, auto: false, note: d.note }); });
     return list;
+  }
+  var DOC_OK = /\.(pdf|docx?|xlsx?|png|jpe?g)$/i, DOC_MAX = 10 * 1024 * 1024, pendingDoc = null;
+  function fmtSize(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+  function attachDoc(key, file) {
+    if (!file) return;
+    if (!DOC_OK.test(file.name)) { RGMS.toast("รองรับ PDF, Word, Excel, รูปภาพ (.png/.jpg) เท่านั้น", "accent"); return; }
+    if (file.size > DOC_MAX) { RGMS.toast("ไฟล์ใหญ่เกิน 10 MB — " + file.name, "accent"); return; }
+    manualDocsOn[key] = { name: file.name, size: file.size };
+    RGMS.toast("แนบไฟล์แล้ว: " + file.name, "ok"); renderDocs(); recompute();
   }
   function renderDocs() {
     document.getElementById("doc-list").innerHTML = docList().map(function (d) {
-      var ok = d.auto || !!manualDocsOn[d.key];
+      var f = manualDocsOn[d.key], ok = d.auto || !!f;
       var right = d.auto
         ? '<span class="badge badge-ok">อัตโนมัติ</span>'
-        : '<button class="btn ' + (manualDocsOn[d.key] ? 'btn-secondary' : 'btn-primary-solid') + ' btn-sm" data-doc="' + d.key + '">' + (manualDocsOn[d.key] ? 'ลบไฟล์' : 'แนบไฟล์') + '</button>';
-      return '<div class="doc-row"><span class="doc-row__icon">' + (ok ? '✓' : 'PDF') + '</span>' +
+        : (f ? '<button class="btn btn-secondary btn-sm" data-doc-del="' + d.key + '">ลบไฟล์</button>'
+             : '<button class="btn btn-primary-solid btn-sm" data-doc="' + d.key + '">แนบไฟล์</button>');
+      var sub = d.auto ? d.note : (f ? '📎 ' + String(f.name).replace(/</g, "&lt;") + ' · ' + fmtSize(f.size) : (d.note ? d.note + ' · ' : '') + 'ลากไฟล์มาวางที่แถวนี้ หรือกด "แนบไฟล์" (PDF/Word/Excel/รูป ไม่เกิน 10 MB)');
+      return '<div class="doc-row" data-key="' + d.key + '"><span class="doc-row__icon">' + (ok ? '✓' : 'PDF') + '</span>' +
         '<div class="flex-1"><div style="font-weight:600; font-size:14px;">' + d.label + ' <span class="req" style="color:var(--st-reject);">*</span></div>' +
-        '<div class="text-sm text-muted">' + (ok ? (d.auto ? d.note : 'แนบแล้ว') : (d.note || 'ยังไม่ได้แนบไฟล์')) + '</div></div>' + right + '</div>';
+        '<div class="text-sm text-muted">' + sub + '</div></div>' + right + '</div>';
     }).join("");
   }
-  document.getElementById("doc-list").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-doc]"); if (!b) return;
-    var k = b.getAttribute("data-doc"); manualDocsOn[k] = !manualDocsOn[k]; renderDocs(); recompute();
-  });
+  (function bindDocs() {
+    var list = document.getElementById("doc-list"), inp = document.createElement("input");
+    inp.type = "file"; inp.accept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"; inp.style.display = "none"; document.body.appendChild(inp);
+    inp.addEventListener("change", function () { if (pendingDoc && inp.files[0]) attachDoc(pendingDoc, inp.files[0]); inp.value = ""; });
+    list.addEventListener("click", function (e) {
+      var up = e.target.closest("[data-doc]"), del = e.target.closest("[data-doc-del]");
+      if (up) { pendingDoc = up.getAttribute("data-doc"); inp.click(); }
+      else if (del) { delete manualDocsOn[del.getAttribute("data-doc-del")]; renderDocs(); recompute(); }
+    });
+    ["dragover", "dragenter"].forEach(function (ev) { list.addEventListener(ev, function (e) { var r = e.target.closest(".doc-row[data-key]"); if (r) { e.preventDefault(); r.classList.add("is-over"); } }); });
+    ["dragleave", "drop"].forEach(function (ev) { list.addEventListener(ev, function (e) { var r = e.target.closest(".doc-row[data-key]"); if (r) r.classList.remove("is-over"); }); });
+    list.addEventListener("drop", function (e) {
+      var r = e.target.closest(".doc-row[data-key]"); if (!r) return; e.preventDefault();
+      var k = r.getAttribute("data-key"); if (docList().some(function (d) { return d.key === k && d.auto; })) return;
+      attachDoc(k, e.dataTransfer.files[0]);
+    });
+  })();
 
   function recompute() {
     var items = activeBudget(), hasBudget = items.length > 0;
