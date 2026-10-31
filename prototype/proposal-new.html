@@ -64,13 +64,13 @@
         <div class="card card--featured" id="sec-0">
           <h2 class="text-subhead" style="margin-bottom:var(--space-2);"><span class="sec-num">0</span>เริ่มให้เร็ว — มีร่างข้อเสนออยู่แล้วใช่ไหม?</h2>
           <p class="text-sm text-muted" style="margin-bottom:var(--space-3);">
-            อัปโหลดไฟล์ RS-01 (.docx) ที่เขียนไว้ ระบบจะ<strong>ดึงเนื้อหาไปเติมในฟอร์มให้อัตโนมัติ</strong> (ชื่อโครงการ · บทคัดย่อ · วัตถุประสงค์ · คำสำคัญ ฯลฯ) — รองรับทั้งแบบ RS-01 และ <strong>"แบบเสนอขอรับการสนับสนุนงบประมาณโครงการวิจัยในชั้นเรียนและนวัตกรรมฯ"</strong> (ดึงตารางงบ ผู้ร่วมวิจัย และระยะเวลาให้ด้วย) — คุณแค่ตรวจทานและเติมส่วนที่ขาด · หรือจะข้ามไปกรอกในฟอร์มด้านล่างเลยก็ได้
+            อัปโหลดไฟล์ RS-01 (.docx หรือ .pdf ที่มีข้อความ) ที่เขียนไว้ ระบบจะ<strong>ดึงเนื้อหาไปเติมในฟอร์มให้อัตโนมัติ</strong> (ชื่อโครงการ · บทคัดย่อ · วัตถุประสงค์ · คำสำคัญ ฯลฯ) — รองรับทั้งแบบ RS-01 และ <strong>"แบบเสนอขอรับการสนับสนุนงบประมาณโครงการวิจัยในชั้นเรียนและนวัตกรรมฯ"</strong> (ดึงตารางงบ ผู้ร่วมวิจัย และระยะเวลาให้ด้วย) — คุณแค่ตรวจทานและเติมส่วนที่ขาด · หรือจะข้ามไปกรอกในฟอร์มด้านล่างเลยก็ได้
           </p>
           <div class="dropzone" id="doc-drop">
             <div class="dropzone__icon">DOCX</div>
-            <div style="font-weight:600;">ลากไฟล์ RS-01 (.docx) มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
-            <div class="text-sm text-muted" style="margin-top:4px;">ระบบอ่านไฟล์ในเครื่องของคุณเท่านั้น ไม่อัปโหลดออกนอก · ไฟล์ .doc รุ่นเก่าโปรด Save as .docx ก่อน</div>
-            <input type="file" id="doc-file" accept=".docx" style="display:none;">
+            <div style="font-weight:600;">ลากไฟล์ RS-01 (.docx หรือ .pdf) มาวาง หรือคลิกเพื่อเลือกไฟล์</div>
+            <div class="text-sm text-muted" style="margin-top:4px;">ระบบอ่านไฟล์ในเครื่องของคุณเท่านั้น ไม่อัปโหลดออกนอก · ไฟล์ .doc รุ่นเก่าโปรด Save as .docx ก่อน · PDF แบบภาพสแกนอ่านไม่ได้ (ไม่มี OCR)</div>
+            <input type="file" id="doc-file" accept=".docx,.pdf" style="display:none;">
           </div>
           <div class="text-center" style="margin-top:var(--space-2);">
             <button class="btn btn-ghost btn-sm" id="doc-sample">หรือลองด้วยตัวอย่าง (ModernBERT วิเคราะห์รสกาแฟ)</button>
@@ -549,8 +549,9 @@
     return { items: items, declared: declared, skipped: skipped.filter(function (x) { return x; }) };
   }
 
-  function parseRev3(html) {
-    var secs = r3Split(r3Blocks(html));
+  function parseRev3(html) { return parseRev3WithBlocks(r3Blocks(html)); }
+  function parseRev3WithBlocks(blocks) {
+    var secs = r3Split(blocks);
     var have = R3_SECS.filter(function (s) { return secs[s[0]]; }).length;
     if (!secs.title || have < 4) return null;          // ไม่ใช่แบบฟอร์มนี้ → ให้ตัวอ่านเดิมทำงาน
     var found = {}, extra = { rows: [], docs: [], budget: [] };
@@ -642,8 +643,169 @@
     return { found: found, extra: extra };
   }
 
+  /* ----------------------------------------------------------
+     อ่านไฟล์ PDF (ที่มีข้อความ ไม่ใช่ภาพสแกน) ด้วย pdf.js แล้วสร้าง blocks ชุดเดียวกับ r3Blocks
+     → ใช้ r3Split/parseRev3 ตัวเดิม · ตารางผู้วิจัย/งบ แยกคอลัมน์จากตำแหน่ง x ของข้อความ
+     ---------------------------------------------------------- */
+  var PDFJS_VER = "4.10.38", PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@" + PDFJS_VER + "/build/";
+  function pdfLoad() {
+    if (!window.__pdfjsP) window.__pdfjsP = import(PDFJS_BASE + "pdf.min.mjs").then(function (m) { m.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "pdf.worker.min.mjs"; return m; });
+    return window.__pdfjsP;
+  }
+  var TH = /[฀-๿]/;
+  function thJoin(parts) {   // ต่อข้อความ: ไทย-ไทยไม่เว้นวรรค ที่เหลือเว้น 1 ช่อง
+    return parts.reduce(function (acc, t) {
+      t = String(t); if (!t) return acc; if (!acc) return t;
+      return acc + (TH.test(acc.slice(-1)) && TH.test(t.charAt(0)) ? "" : " ") + t;
+    }, "");
+  }
+  function cleanTh(t) { return nz(String(t).replace(/ +(?=[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E])/g, "").replace(/\u0E4D\u0E32/g, "\u0E33")); }
+  function pdfLines(pdf) {
+    var lines = [], pages = [];
+    for (var i = 1; i <= pdf.numPages; i++) pages.push(i);
+    return pages.reduce(function (chain, pn) {
+      return chain.then(function () { return pdf.getPage(pn).then(function (pg) { return pg.getTextContent(); }).then(function (tc) {
+        var rows = [], marks = [], MARK = /^[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+$/;
+        tc.items.forEach(function (it) {
+          if (!it.str) return;
+          var y = it.transform[5], x = it.transform[4];
+          if (MARK.test(it.str)) { marks.push({ s: it.str, x: x, y: y, w: it.width || 0 }); return; }   // สระ/วรรณยุกต์ลอย: วางตำแหน่งสูงกว่าบรรทัด
+          var r = rows.filter(function (q) { return Math.abs(q.y - y) <= 3; })[0];
+          if (!r) { r = { page: pn, y: y, items: [] }; rows.push(r); }
+          r.items.push({ s: it.str.replace(/\u0E4D\u0E32/g, "\u0E33"), x: x, w: it.width || 0 });
+        });
+        rows.sort(function (a, b) { return b.y - a.y; });
+        rows.forEach(function (r) { r.items.sort(function (a, b) { return a.x - b.x; }); });
+        marks.sort(function (a, b) { return a.x - b.x; }).forEach(function (m) {
+          var best = null; rows.forEach(function (r) { var d = Math.abs(r.y - m.y); if (d <= 16 && (!best || d < best.d)) best = { r: r, d: d }; });
+          if (!best) return;
+          var items = best.r.items, at = -1;
+          items.forEach(function (q, i) { if (q.x <= m.x + 1.5) at = i; });
+          items.splice(at + 1, 0, { s: m.s, x: m.x, w: m.w, mark: true });
+        });
+        rows.forEach(function (r) {
+          r.text = cleanTh(r.items.map(function (q) { return q.s; }).join(""));
+        });
+        rows = rows.filter(function (r) { return r.text; });
+        if (rows.length && /^\d{1,3}$/.test(rows[rows.length - 1].text) && rows[rows.length - 1].y < 70) rows.pop();   // เลขหน้า
+        rows.forEach(function (r) { lines.push(r); });
+      }); });
+    }, Promise.resolve()).then(function () { return lines; });
+  }
+  function pdfIsReadable(lines) {
+    var all = lines.map(function (l) { return l.text; }).join("");
+    if (all.length < 150) return "no-text";
+    var ctrl = (all.match(/[\u0000-\u001f�]/g) || []).length, thai = (all.match(/[ก-๎]/g) || []).length;
+    if (ctrl > all.length * 0.01 || thai < all.length * 0.15) return "garbled";
+    var cons = (all.match(/[\u0E01-\u0E2E]/g) || []).length, tone = (all.match(/[\u0E48-\u0E4B]/g) || []).length;
+    if (cons > 200 && tone / cons < 0.05) return "marks";   // ภาษาไทยปกติมีไม้เอก/โท/ตรี/จัตวา ~8–10% ของพยัญชนะ — ต่ำกว่านี้แปลว่าวรรณยุกต์หายระหว่างอ่าน
+    return "ok";
+  }
+  function lineX(l, re) {   // ตำแหน่ง x ของข้อความที่ตรง re ในบรรทัด (ข้อความถูกแบ่งเป็นชิ้นเล็ก จึงแมปจากออฟเซ็ตตัวอักษร)
+    var joined = "", offs = [];
+    l.items.forEach(function (q) { offs.push(joined.length); joined += q.s; });
+    var m = re.exec(joined); if (!m) return null;
+    var k = 0; offs.forEach(function (o, i) { if (o <= m.index) k = i; });
+    return l.items[k].x;
+  }
+  function pdfTeamTable(lines) {   // แยกคอลัมน์ตามตำแหน่ง x ของหัวตาราง
+    var hl = lines.filter(function (l) { return /ลำ/.test(l.text) && /ชื่อ/.test(l.text) && /สังกัด/.test(l.text); })[0];
+    if (!hl) return null;
+    var xs = [lineX(hl, /ลำ/), lineX(hl, /ชื่อ/), lineX(hl, /สังกัด/), lineX(hl, /โทรศัพท์/), lineX(hl, /อีเมล/), lineX(hl, /ร้อยละ/)];
+    if (xs.some(function (v) { return v == null; })) return null;
+    lines = lines.slice(lines.indexOf(hl) + 1);
+    var firstData = -1;
+    lines.forEach(function (l, i) { if (firstData < 0 && l.items[0] && /^\d{1,2}$/.test(l.items[0].s.trim()) && Math.abs(l.items[0].x - xs[0]) < 25) firstData = i; });
+    if (firstData < 0) return null;
+    var rows = [], cur = null;
+    lines.slice(firstData).forEach(function (l) {
+      var cells = l.items.reduce(function (m, q) {
+        var c = 0; xs.forEach(function (x, k) { if (q.x >= x - 5) c = k; });
+        (m[c] = m[c] || []).push(q.s); return m;
+      }, {});
+      if (cells[0] && /^\d{1,2}$/.test(cells[0].join("").trim())) { cur = [[], [], [], [], [], []]; rows.push(cur); }
+      if (!cur) return;
+      Object.keys(cells).forEach(function (k) { cur[k].push(cells[k].join("")); });
+    });
+    var out = [[["ลำดับ"], ["ชื่อ – สกุล"], ["สังกัด"], ["โทรศัพท์"], ["อีเมล์"], ["ร้อยละ"]]];
+    rows.forEach(function (r) { out.push(r.map(function (c, k) { return [cleanTh(k >= 3 ? c.join("") : thJoin(c))]; })); });
+    return out;
+  }
+  function pdfBudgetTable(lines) {
+    var hdrIdx = -1, amtX = null;
+    // หัวตารางอาจถูกตัดเป็นหลายบรรทัด ("จำนวนงบ" / "รายการ ... หมายเหตุ" / "ประมาณ(บาท)")
+    lines.forEach(function (l, i) { if (hdrIdx < 0 && /^รายการ/.test(l.text) && l.text.length < 40) hdrIdx = i; });
+    if (hdrIdx < 0) return null;
+    for (var h = Math.max(0, hdrIdx - 3); h <= Math.min(lines.length - 1, hdrIdx + 3); h++) {
+      if (amtX == null) amtX = lineX(lines[h], /จำนวน/);
+      if (h > hdrIdx && /ประมาณ|\(บาท\)/.test(lines[h].text) && lines[h].text.length < 40) hdrIdx = h;
+    }
+    if (amtX == null) return null;
+    var rows = [[["รายการ"], ["จำนวนงบประมาณ(บาท)"], []]], cur = null, pend = [];
+    function flush() { if (cur) { rows.push([cur.lines, cur.amt ? [cur.amt] : [], []]); cur = null; } }
+    for (var i = hdrIdx + 1; i < lines.length; i++) {
+      var l = lines[i], left = [], amt = null;
+      l.items.forEach(function (q) { if (q.x >= amtX - 40 && /^[\d,]+(\.\d+)?$/.test(q.s.trim())) amt = q.s.trim(); else if (q.x < amtX - 40 || !/^[\d,\s]*$/.test(q.s)) left.push(q.s); });
+      var txt = cleanTh(thJoin(left));
+      if (/^หมายเหตุ/.test(txt) && !amt) break;
+      if (/^รวม/.test(txt)) { flush(); rows.push([[txt], amt ? [amt] : [], []]); continue; }
+      if (/^\d+\s*\.\s*(หมวด|ค่าใช้จ่ายอื่น)/.test(txt)) { flush(); pend = [txt]; if (/ค่าใช้จ่ายอื่น/.test(txt)) { cur = { lines: pend, amt: amt }; pend = []; } continue; }
+      if (/^\d+\s*\.\s*\d+\s|^\d+\s*\)/.test(txt)) { flush(); cur = { lines: pend.concat([txt]), amt: amt }; pend = []; continue; }
+      if (cur) { cur.lines.push(txt); if (amt) cur.amt = amt; } else if (txt) pend.push(txt);
+    }
+    flush();
+    return rows;
+  }
+  function pdfBlocks(lines) {
+    var secKey = null, pos = -1, groups = [], g = null;
+    lines.forEach(function (l) {
+      var t = l.text.replace(/^\d{1,2}\s*[.)]\s*/, ""), hit = null;
+      if (l.text.length <= 220) for (var j = pos + 1; j < R3_SECS.length; j++) if (R3_SECS[j][1].test(t)) { pos = j; hit = R3_SECS[j][0]; break; }
+      if (hit) { g = { key: hit, head: l.text, lines: [] }; groups.push(g); } else if (g) g.lines.push(l); else { g = { key: null, head: null, lines: [l] }; groups.push(g); }
+    });
+    var NEWBLK = /^(\d{1,2}\s*[.)]\s*\S|\d+\.\d+\s|\d+\)\s|\(|[R£☐☑☒✓■□]\s|ระยะที่)/, out = [];
+    groups.forEach(function (gr) {
+      if (gr.head) out.push({ k: "p", text: gr.head });
+      var tbl = gr.key === "team" ? pdfTeamTable(gr.lines) : gr.key === "budget" ? pdfBudgetTable(gr.lines) : null;
+      if (tbl) { out.push({ k: "table", rows: tbl }); if (gr.key === "team") return; }
+      if (gr.key === "budget" && tbl) {   // ข้อความหลังตาราง (หมายเหตุ) ไม่จำเป็นต่อการอ่านงบ
+        return;
+      }
+      var cur = null;
+      gr.lines.forEach(function (l) {
+        if (cur && !NEWBLK.test(l.text) && !(/^\(/.test(cur.text) && /\)\s*$/.test(cur.text))) cur.text = cleanTh(thJoin([cur.text, l.text]));
+        else { cur = { k: "p", text: l.text }; out.push(cur); }
+      });
+    });
+    return out;
+  }
+  function handlePdf(file) {
+    var box = document.getElementById("doc-parsed");
+    box.style.display = "block";
+    box.innerHTML = '<div class="stack gap-2 text-center" style="padding:16px;"><div class="spinner" style="margin:0 auto;"></div>' +
+      '<span class="text-sm text-muted">กำลังอ่านไฟล์ PDF ' + file.name.replace(/</g, "&lt;") + '...</span></div>';
+    function fail(title, msg) {
+      box.innerHTML = '<div class="notice notice--wait"><span class="notice__title">' + title + '</span><span class="notice__body">' + msg + '</span></div>';
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      pdfLoad().then(function (lib) { return lib.getDocument({ data: new Uint8Array(e.target.result) }).promise; })
+        .then(pdfLines).then(function (lines) {
+          var q = pdfIsReadable(lines);
+          if (q === "no-text") return fail("PDF นี้ไม่มีข้อความให้อ่าน", "เป็นไฟล์ภาพสแกนหรือถูกป้องกันไว้ — ระบบยังไม่รองรับ OCR · โปรดส่งออกเป็น .docx จาก Word (Save as) หรือแนบ PDF ให้ผู้ช่วยแปลงเป็น .docx แล้วอัปโหลดใหม่");
+          if (q === "marks") return fail("ข้อความภาษาไทยจาก PDF นี้ไม่ครบ (วรรณยุกต์หาย)", "ไฟล์ PDF บางแบบเก็บไม้เอก/ไม้โทแยกจากตัวอักษร ทำให้ดึงข้อความได้ไม่ครบ ระบบจึงไม่เติมข้อมูลให้เพื่อกันข้อมูลผิด — โปรดแปลงเป็น .docx (Word: เปิดไฟล์ PDF แล้ว Save as .docx) แล้วอัปโหลดใหม่ หรือแนบ PDF นี้ให้ผู้ช่วยแปลงเป็น .docx ให้");
+          if (q === "garbled") return fail("อ่านตัวอักษรภาษาไทยจากไฟล์ PDF นี้ไม่ถูกต้อง", "ฟอนต์ในไฟล์ไม่มีข้อมูลตัวอักษรสำหรับดึงข้อความ — โปรดแปลงเป็น .docx (Word: เปิดไฟล์ PDF แล้ว Save as .docx) แล้วอัปโหลดใหม่");
+          var r3 = parseRev3WithBlocks(pdfBlocks(lines));
+          if (!r3) return fail("อ่านไฟล์ได้ แต่ไม่พบหัวข้อตามแบบฟอร์ม", "รองรับแบบเสนอขอรับการสนับสนุนฯ ในชั้นเรียน (Rev.3) — ไฟล์รูปแบบอื่นโปรดใช้ .docx หรือกรอกในฟอร์มด้านล่าง");
+          reviewExtracted(r3.found, "อัปโหลด: " + file.name + " (PDF — ตรวจทานข้อความให้ละเอียดกว่าไฟล์ .docx)", r3.extra);
+        }).catch(function () { fail("อ่านไฟล์ PDF ไม่สำเร็จ", "ตรวจว่าเป็น PDF ที่ไม่มีรหัสผ่าน และเชื่อมต่ออินเทอร์เน็ตได้ (ใช้ตัวอ่าน PDF จากเครือข่าย) — หรือแปลงเป็น .docx แล้วอัปโหลดใหม่"); });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
   function handleDocx(file) {
-    if (!/\.docx$/i.test(file.name)) { RGMS.toast("รองรับเฉพาะ .docx — โปรด Save as .docx ก่อน", "accent"); return; }
+    if (/\.pdf$/i.test(file.name)) { handlePdf(file); return; }
+    if (!/\.docx$/i.test(file.name)) { RGMS.toast("รองรับ .docx หรือ .pdf — ไฟล์ .doc รุ่นเก่าโปรด Save as .docx ก่อน", "accent"); return; }
 
     var box = document.getElementById("doc-parsed");
     box.style.display = "block";
