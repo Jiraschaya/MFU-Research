@@ -1,219 +1,152 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รับรองข้อเสนอ (สำนักวิชา) — RGMS ทุนวิจัย มฟล.</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รับรองข้อเสนอ (สำนักวิชา) — RGMS ทุนวิจัย มฟล.</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.review-item{overflow-wrap:anywhere}
+.review-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.review-empty{padding:20px 12px;text-align:center;color:var(--color-muted,#64748b)}
+.review-section{scroll-margin-top:24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;width:100%}
+.kpi-card{appearance:none;-webkit-appearance:none;position:relative;display:block;width:100%;min-width:0;min-height:125px;padding:24px 28px;overflow:hidden;text-align:left;font:inherit;color:#0f172a;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 12px rgba(15,23,42,.06);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+.kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#991b1b,#c79a24)}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(15,23,42,.12)}
+.kpi-card:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.kpi-card[aria-pressed="true"]{background:#fffaf0;box-shadow:0 0 0 2px rgba(183,138,34,.25),0 4px 12px rgba(15,23,42,.06)}
+.kpi-card__value{display:block;margin-bottom:6px;font-size:36px;line-height:1.15;font-weight:700}
+.kpi-card__label{display:block;font-size:15px;line-height:1.45;color:#334155}
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-bar[hidden]{display:none}
 
-    <style>
-        .review-item {
-            overflow-wrap: anywhere;
-        }
 
-        .review-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
+/* ป้ายสถานะ: จุด ขนาด และตัวอักษรเท่ากันทุกป้าย */
+.badge.chip{display:inline-flex;align-items:center;gap:8px;box-sizing:border-box;min-height:32px;padding:0 14px;font-size:14px;line-height:1.2;font-weight:600;white-space:nowrap}
+.badge.chip::before,.badge.chip::after{content:none!important;display:none!important}
+.chip__dot{flex:none;width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:none!important;animation:none!important}
 
-        .review-empty {
-            padding: 20px 12px;
-            text-align: center;
-            color: var(--color-muted, #64748b);
-        }
+/* หน้าต่างดูเอกสาร: สี่เหลี่ยมผืนผ้า เลื่อนดูได้ */
+.docview{max-height:min(72vh,640px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px}
+.docview__head{position:sticky;top:0;z-index:2;background:#fff;padding:14px 18px;border-bottom:1px solid #e2e8f0}
+.docview__chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.docview__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px;align-items:start}
+.docview__col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.docview__card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;min-width:0}
+.docview__card h4{margin:0 0 8px;font-size:14px;color:#334155}
+.docview__card--wide{grid-column:1/-1}
+@media (max-width:720px){.docview__grid{grid-template-columns:1fr}.docview__card--wide{grid-column:auto}}
 
-        .review-section {
-            scroll-margin-top: 24px;
-        }
+/* แจ้งเตือนมุมขวาบน */
+.notif{position:fixed;top:12px;right:16px;z-index:1000}
+.notif__btn{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.15);cursor:pointer;font-size:20px;line-height:1}
+.notif__btn:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.notif__badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#991b1b;color:#fff;font-size:12px;font-weight:700;line-height:20px;text-align:center}
+.notif__badge[hidden]{display:none}
+.notif__panel{position:absolute;top:52px;right:0;width:min(360px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.2)}
+.notif__panel[hidden]{display:none}
+.notif__head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e2e8f0;font-weight:600}
+.notif__head button{border:0;background:none;color:#2563eb;cursor:pointer;font:inherit;font-size:13px}
+.notif__item{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;line-height:1.45}
+.notif__item.unread{background:#fffaf0}
+.notif__time{display:block;font-size:12px;color:#64748b}
+.notif__empty{padding:20px;text-align:center;color:#64748b;font-size:14px}
 
-        /* การ์ดสถิติ: ใช้รูปแบบเดียวกับหน้าเลขานุการ */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 20px;
-            width: 100%;
-        }
+/* ปุ่มรีเซ็ต มุมขวาล่าง */
+.fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:56px;height:56px;border-radius:50%;border:0;background:#991b1b;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s ease,box-shadow .2s ease,background .2s ease}
+.fab-reset svg{width:28px;height:28px;transition:transform .45s ease}
+.fab-reset:hover{background:#7f1d1d;box-shadow:0 8px 22px rgba(15,23,42,.4)}
+.fab-reset:hover svg{transform:rotate(60deg)}
+.fab-reset:active{transform:scale(.94)}
+.fab-reset:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.fab-reset.spin svg{animation:fab-spin .6s ease}
+@keyframes fab-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.fab-reset svg,.fab-reset.spin svg{transition:none;animation:none}}
 
-        .kpi-card {
-            appearance: none;
-            -webkit-appearance: none;
-            position: relative;
-            display: block;
-            width: 100%;
-            min-width: 0;
-            min-height: 125px;
-            padding: 24px 28px;
-            overflow: hidden;
+/* เอกสาร */
+.doc-group{margin-bottom:14px}
+.doc-group h4{margin:0 0 6px;font-size:15px}
+.doc-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:14px;overflow-wrap:anywhere}
 
-            text-align: left;
-            font: inherit;
-            color: #0f172a;
-
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-
-            cursor: pointer;
-            transition:
-                transform 0.16s ease,
-                box-shadow 0.16s ease,
-                background 0.16s ease;
-        }
-
-        /* แถบสีแดงไล่ไปสีทอง */
-        .kpi-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #991b1b, #c79a24);
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-        }
-
-        .kpi-card:focus-visible {
-            outline: 3px solid #2563eb;
-            outline-offset: 3px;
-        }
-
-        .kpi-card[aria-pressed="true"] {
-            background: #fffaf0;
-            box-shadow:
-                0 0 0 2px rgba(183, 138, 34, 0.25),
-                0 4px 12px rgba(15, 23, 42, 0.06);
-        }
-
-        .kpi-card__value {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 36px;
-            line-height: 1.15;
-            font-weight: 700;
-        }
-
-        .kpi-card__label {
-            display: block;
-            font-size: 15px;
-            line-height: 1.45;
-            color: #334155;
-        }
-
-        @media (max-width: 1000px) {
-            .kpi-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 560px) {
-            .kpi-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .kpi-card {
-                min-height: 110px;
-                padding: 20px;
-            }
-
-            .review-actions > * {
-                flex: 1 1 100%;
-                justify-content: center;
-                text-align: center;
-            }
-        }
-    </style>
+@media (max-width:1000px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){
+.kpi-grid{grid-template-columns:1fr}
+.kpi-card{min-height:110px;padding:20px}
+.review-actions>*{flex:1 1 100%;justify-content:center;text-align:center}
+}
+</style>
 </head>
-
 <body>
 
 <div id="app-nav-root"></div>
 
-<main class="section">
-    <div class="container stack gap-5">
-
-        <!-- ส่วนหัว -->
-        <div class="page-head">
-            <span class="text-overline">
-                เฟส 1 · เปิดรับและพิจารณา · การรับรองระดับสำนักวิชา (FR-74)
+<!-- แจ้งเตือน -->
+<div class="notif" id="notif">
+    <button type="button" class="notif__btn" id="notif-btn" aria-label="การแจ้งเตือน" aria-expanded="false" aria-controls="notif-panel">
+        🔔<span class="notif__badge" id="notif-badge" hidden>0</span>
+    </button>
+    <div class="notif__panel" id="notif-panel" hidden>
+        <div class="notif__head">
+            <span>การแจ้งเตือน</span>
+            <span>
+                <button type="button" id="notif-read">อ่านทั้งหมด</button>
+                <button type="button" id="notif-clear">ล้าง</button>
             </span>
-
-            <h1 class="text-headline">
-                รับรองข้อเสนอโครงการ (สำนักวิชา)
-            </h1>
-
-            <p class="text-muted" id="sub"></p>
         </div>
-
-        <!-- สถิติ -->
-        <div
-            class="kpi-grid"
-            id="kpis"
-            aria-label="สรุปการรับรอง กดการ์ดเพื่อกรองรายการ">
-        </div>
-
-        <!-- รายการรอรับรอง -->
-        <section
-            id="pending-section"
-            class="card card--featured card--pad-sm review-section"
-            aria-labelledby="pending-heading">
-
-            <div class="card__header">
-                <div>
-                    <h2 class="text-subhead" id="pending-heading">
-                        รอประธานวิจัย/คณบดีพิจารณา
-                    </h2>
-
-                    <p class="text-sm text-muted">
-                        ข้อเสนอที่นักวิจัยยื่นเข้ามา
-                        สามารถรับรองเพื่อส่งต่อส่วนบริหารงานวิจัย
-                        หรือส่งกลับให้นักวิจัยแก้ไข
-                    </p>
-                </div>
-            </div>
-
-            <div class="stack gap-3" id="pending" aria-live="polite"></div>
-        </section>
-
-        <!-- รายการที่ดำเนินการแล้ว -->
-        <section
-            id="done-section"
-            class="card card--featured card--pad-sm review-section"
-            aria-labelledby="done-heading">
-
-            <div class="card__header">
-                <div>
-                    <h2 class="text-subhead" id="done-heading">
-                        ดำเนินการแล้ว
-                    </h2>
-
-                    <p class="text-sm text-muted">
-                        รายการที่รับรองแล้วหรือส่งกลับให้นักวิจัยแก้ไข
-                    </p>
-                </div>
-            </div>
-
-            <div class="stack gap-2" id="done" aria-live="polite"></div>
-        </section>
-
+        <div id="notif-list" aria-live="polite"></div>
     </div>
+</div>
+
+<main class="section">
+<div class="container stack gap-5">
+
+    <div class="page-head">
+        <span class="text-overline">เฟส 1 · เปิดรับและพิจารณา · การรับรองระดับสำนักวิชา (FR-74)</span>
+        <h1 class="text-headline">รับรองข้อเสนอโครงการ (สำนักวิชา)</h1>
+        <p class="text-muted" id="sub"></p>
+    </div>
+
+    <div class="kpi-grid" id="kpis" aria-label="สรุปการรับรอง กดการ์ดเพื่อกรองรายการ กดซ้ำเพื่อกลับมุมมองเดิม"></div>
+
+    <div class="filter-bar" id="filter-bar" hidden>
+        <span class="text-sm text-muted" id="filter-label"></span>
+    </div>
+
+    <section id="pending-section" class="card card--featured card--pad-sm review-section" aria-labelledby="pending-heading">
+        <div class="card__header">
+            <div>
+                <h2 class="text-subhead" id="pending-heading">รอประธานวิจัย/คณบดีพิจารณา</h2>
+                <p class="text-sm text-muted">ข้อเสนอที่นักวิจัยยื่นเข้ามา สามารถรับรองเพื่อส่งต่อส่วนบริหารงานวิจัย หรือส่งกลับให้นักวิจัยแก้ไข</p>
+            </div>
+        </div>
+        <div class="stack gap-3" id="pending" aria-live="polite"></div>
+    </section>
+
+    <section id="done-section" class="card card--featured card--pad-sm review-section" aria-labelledby="done-heading">
+        <div class="card__header">
+            <div>
+                <h2 class="text-subhead" id="done-heading">ดำเนินการแล้ว</h2>
+                <p class="text-sm text-muted">รายการที่รับรองแล้วหรือส่งกลับให้นักวิจัยแก้ไข</p>
+            </div>
+        </div>
+        <div class="stack gap-2" id="done" aria-live="polite"></div>
+    </section>
+
+</div>
 </main>
 
-<script src="shared.js"></script>
+<button type="button" class="fab-reset" id="fab-reset" aria-label="รีเซ็ตมุมมอง กลับจุดเดิม" title="รีเซ็ต / กลับจุดเดิม">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+</button>
 
+<script src="shared.js"></script>
 <script>
 (function () {
     "use strict";
 
     if (typeof RGMS === "undefined") {
-        document.getElementById("sub").textContent =
-            "ไม่สามารถโหลด RGMS ได้ กรุณาตรวจสอบ shared.js";
+        document.getElementById("sub").textContent = "ไม่สามารถโหลด RGMS ได้ กรุณาตรวจสอบ shared.js";
         return;
     }
 
@@ -221,550 +154,583 @@
 
     var role = RGMS.currentRole() || {};
     var school = role.school || "สำนักวิชาเทคโนโลยีสารสนเทศ";
+    var pendingEl = document.getElementById("pending");
+    var doneEl = document.getElementById("done");
+    var kpiEl = document.getElementById("kpis");
 
-    var pendingElement = document.getElementById("pending");
-    var doneElement = document.getElementById("done");
-    var kpiElement = document.getElementById("kpis");
+    var KEY_STATE = "rgms_chair_state_v1";   // สถานะ + เหตุผลที่หน้านี้บันทึกเอง
+    var KEY_NOTIF = "rgms_chair_notif_v1";
+    var KEY_SEEN = "rgms_chair_seen_v1";     // ข้อเสนอที่เคยเห็นแล้ว
+    var KEY_LAST = "rgms_chair_last_v1";     // สถานะโครงการล่าสุดที่เห็น
 
     var selectedKPI = "all";
+    var savedScroll = 0;
     var busyIds = new Set();
+    var lastSig = "";
 
-    document.getElementById("sub").textContent =
-        (role.name || "ผู้ใช้งาน") + " · " + school;
+    document.getElementById("sub").textContent = (role.name || "ผู้ใช้งาน") + " · " + school;
 
-
-    // ป้องกันข้อมูลข้อความถูกแปลความหมายเป็น HTML
+    /* ---------- ตัวช่วย ---------- */
+    function load(key, fallback) {
+        try {
+            var v = localStorage.getItem(key);
+            return v ? JSON.parse(v) : fallback;
+        } catch (e) { return fallback; }
+    }
+    function save(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    }
     function escapeHTML(value) {
-        return String(value == null ? "" : value).replace(
-            /[&<>"']/g,
-            function (char) {
-                return {
-                    "&": "&amp;",
-                    "<": "&lt;",
-                    ">": "&gt;",
-                    '"': "&quot;",
-                    "'": "&#39;"
-                }[char];
-            }
-        );
+        return String(value == null ? "" : value).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
     }
 
 
-    // ดึงโครงการของสำนักวิชาปัจจุบัน
+    /* ---------- ป้ายสถานะแบบเดียวกันทั้งหน้า ---------- */
+    function chip(cls, text) {
+        return '<span class="badge ' + (cls || "") + ' chip"><span class="chip__dot" aria-hidden="true"></span>' +
+            escapeHTML(text) + "</span>";
+    }
+    // ดึงข้อความและโทนสีจาก RGMS.badgeHTML แล้ววาดใหม่ด้วยจุดมาตรฐาน
+    function statusChip(status) {
+        var box = document.createElement("div");
+        box.innerHTML = RGMS.badgeHTML(status);
+        var b = box.querySelector(".badge") || box.firstElementChild;
+        if (!b) return chip("", status);
+        var cls = (b.className || "").split(/\s+/).filter(function (c) {
+            return /^badge[-_]/.test(c);
+        }).join(" ");
+        return chip(cls, (b.textContent || "").replace(/\s+/g, " ").trim());
+    }
+
+    var local = load(KEY_STATE, {});
+
+    /* ---------- ข้อมูลโครงการ ---------- */
     function getProjects() {
-        if (!Array.isArray(RGMS.PROJECTS)) {
-            return [];
-        }
+        if (!Array.isArray(RGMS.PROJECTS)) return [];
+        return RGMS.PROJECTS.filter(function (p) { return p && p.school === school; });
+    }
+    function isEligible(p) {
+        var l = local[String(p.id)];
+        if (l && l.restored && l.status === "pending") return true;   // ถูกรีเซ็ตกลับมารอรับรอง
+        return ["submitted", "screening"].indexOf(p.status) >= 0;
+    }
+    // สถานะที่บันทึกในหน้านี้มาก่อน แล้วค่อยใช้ของ shared.js
+    function getStatus(p) {
+        var l = local[String(p.id)];
+        return l ? l.status : RGMS.endorseStatus(p.id);
+    }
+    function findProject(id) {
+        return getProjects().find(function (p) { return String(p.id) === String(id); });
+    }
+    function canEndorse(id) {
+        var p = findProject(id);
+        return !!p && isEligible(p) && getStatus(p) === "pending";
+    }
 
-        return RGMS.PROJECTS.filter(function (project) {
-            return project && project.school === school;
+    /* ---------- แจ้งเตือน ---------- */
+    var notifs = load(KEY_NOTIF, []);
+    var notifBtn = document.getElementById("notif-btn");
+    var notifPanel = document.getElementById("notif-panel");
+
+    function addNotif(text) {
+        notifs.unshift({ text: text, at: Date.now(), read: false });
+        notifs = notifs.slice(0, 30);
+        save(KEY_NOTIF, notifs);
+        renderNotifs();
+    }
+    function renderNotifs() {
+        var unread = notifs.filter(function (n) { return !n.read; }).length;
+        var badge = document.getElementById("notif-badge");
+        badge.textContent = unread > 99 ? "99+" : unread;
+        badge.hidden = unread === 0;
+
+        document.getElementById("notif-list").innerHTML = notifs.length === 0
+            ? '<div class="notif__empty">ยังไม่มีการแจ้งเตือน</div>'
+            : notifs.map(function (n) {
+                var t = new Date(n.at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+                return '<div class="notif__item' + (n.read ? "" : " unread") + '">' +
+                    escapeHTML(n.text) + '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
+            }).join("");
+    }
+    function setPanel(open) {
+        notifPanel.hidden = !open;
+        notifBtn.setAttribute("aria-expanded", String(open));
+        if (open) {
+            notifs.forEach(function (n) { n.read = true; });
+            save(KEY_NOTIF, notifs);
+            // คงจุด "ยังไม่อ่าน" ไว้ให้เห็นก่อนปิดแผง
+            renderNotifs();
+        }
+    }
+    notifBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setPanel(notifPanel.hidden);
+    });
+    document.getElementById("notif-read").addEventListener("click", function () {
+        notifs.forEach(function (n) { n.read = true; });
+        save(KEY_NOTIF, notifs);
+        renderNotifs();
+    });
+    document.getElementById("notif-clear").addEventListener("click", function () {
+        notifs = [];
+        save(KEY_NOTIF, notifs);
+        renderNotifs();
+    });
+    document.addEventListener("click", function (e) {
+        if (!notifPanel.hidden && !document.getElementById("notif").contains(e.target)) setPanel(false);
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !notifPanel.hidden) { setPanel(false); notifBtn.focus(); }
+    });
+
+    // ตรวจหาข้อเสนอใหม่/สถานะที่เปลี่ยนจากส่วนอื่น
+    function detectChanges() {
+        var projects = getProjects();
+        var seen = load(KEY_SEEN, null);
+        var last = load(KEY_LAST, null);
+        var ids = projects.map(function (p) { return String(p.id); });
+        var map = {};
+        projects.forEach(function (p) { map[String(p.id)] = p.status; });
+
+        if (seen && last) {
+            projects.forEach(function (p) {
+                var id = String(p.id);
+                var title = p.title || "ไม่ระบุชื่อโครงการ";
+                if (seen.indexOf(id) < 0 && isEligible(p)) {
+                    addNotif("มีข้อเสนอใหม่รอรับรอง: " + id + " · " + title);
+                } else if (last[id] && last[id] !== p.status) {
+                    addNotif("สถานะโครงการ " + id + " เปลี่ยนจาก " + last[id] + " เป็น " + p.status);
+                }
+            });
+        }
+        save(KEY_SEEN, ids);
+        save(KEY_LAST, map);
+    }
+
+    /* ---------- เอกสารของโครงการ ---------- */
+    // รวมเอกสารที่ role อื่นแนบไว้ (รองรับหลายรูปแบบข้อมูล)
+    function getDocs(p) {
+        var raw = p.documents || p.docs || p.attachments || p.files || [];
+        if (!raw.length && typeof RGMS.docsOf === "function") raw = RGMS.docsOf(p.id) || [];
+        if (!raw.length && Array.isArray(RGMS.DOCS)) {
+            raw = RGMS.DOCS.filter(function (d) { return String(d.projectId || d.project) === String(p.id); });
+        }
+        return (Array.isArray(raw) ? raw : []).map(function (d) {
+            if (typeof d === "string") d = { name: d };
+            return {
+                name: d.name || d.title || d.filename || d.label || "เอกสารไม่ระบุชื่อ",
+                by: d.byRole || d.role || d.by || d.owner || d.uploader || d.source || "ไม่ระบุผู้แนบ",
+                date: d.date || d.uploadedAt || d.at || "",
+                url: d.url || d.href || ""
+            };
         });
     }
 
+    // เนื้อหาเอกสารของโครงการ สร้างจากข้อมูลโครงการโดยตรง — ดูได้ในหน้านี้ ไม่ต้องเปิดหน้านักวิจัย
+    function docViewHTML(p, chipsHTML) {
+        function card(t, inner, wide) {
+            return '<section class="docview__card' + (wide ? " docview__card--wide" : "") + '"><h4>' + t + "</h4>" + inner + "</section>";
+        }
+        var none = '<p class="text-sm text-muted" style="margin:0;">ไม่มีข้อมูล</p>';
 
-    // สถานะโครงการที่อยู่ในขั้นตอนรับรอง
-    function isEligibleForEndorsement(project) {
-        return ["submitted", "screening"].indexOf(project.status) >= 0;
+        var head = '<div class="docview__head"><div style="font-weight:600;overflow-wrap:anywhere;">' + escapeHTML(p.title || "ไม่ระบุชื่อโครงการ") + "</div>" +
+            '<div class="text-sm text-muted" style="margin-top:4px;">' + escapeHTML(p.id) + " · " + escapeHTML(p.pi || "ไม่ระบุผู้วิจัย") +
+            " · " + escapeHTML(p.school || "") + (p.round ? " · " + escapeHTML(p.round) : "") +
+            (p.duration ? " · ระยะเวลา " + escapeHTML(p.duration) : "") + "</div>" +
+            (chipsHTML ? '<div class="docview__chips">' + chipsHTML + "</div>" : "") + "</div>";
+
+        var abs = card("บทคัดย่อ", p.abstract
+            ? '<p class="text-sm" style="margin:0;overflow-wrap:anywhere;">' + escapeHTML(p.abstract) + "</p>" : none);
+
+        var items = Array.isArray(p.budget) ? p.budget : [];
+        var total = 0;
+        items.forEach(function (b) { total += Number(b.amount) || 0; });
+        if (!total) total = Number(p.budgetReq) || 0;
+        var bud = card("งบประมาณ · รวม " + escapeHTML(RGMS.fmtBaht(total)), items.length
+            ? items.map(function (b) {
+                return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span>' +
+                    escapeHTML(b.item) + '</span><span class="num">' + escapeHTML(RGMS.fmtMoney(Number(b.amount) || 0)) + "</span></div>";
+            }).join("") : none);
+
+        var cl = Array.isArray(p.checklist) ? p.checklist : [];
+        var docRows = cl.map(function (c) {
+            return '<div class="text-sm" style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere;">' +
+                '<span aria-hidden="true">' + (c.ok ? "✅" : "⚠️") + "</span><span>" + escapeHTML(c.label) +
+                (c.note ? ' <span class="text-muted">— ' + escapeHTML(c.note) + "</span>" : "") + "</span></div>";
+        }).concat(getDocs(p).map(function (d) {
+            var openable = d.url && !/\.html?(\?|#|$)/i.test(d.url);
+            return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere;"><span>📄 ' +
+                escapeHTML(d.name) + ' <span class="text-muted">· แนบโดย ' + escapeHTML(d.by) + "</span></span>" +
+                (openable ? '<a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="' + escapeHTML(d.url) + '">เปิดไฟล์</a>' : "") + "</div>";
+        }));
+        var docs = card("เอกสารแนบ / ความครบถ้วน", docRows.length ? docRows.join("") : none);
+
+        var rv = Array.isArray(p.reviewers) ? p.reviewers : [];
+        var REC = { approve: ["เห็นควรสนับสนุน", "badge-ok"], approve_revise: ["ให้ปรับแก้", "badge-revise"], reject: ["ไม่สนับสนุน", "badge-reject"] };
+        var rev = rv.length ? card("ความเห็นคณะอนุกรรมการ / ผู้ทรงคุณวุฒิ", rv.map(function (r) {
+            if (!r.submitted) return '<div class="text-sm" style="padding:5px 0;">' + escapeHTML(r.name) + ' <span class="text-muted">· ยังไม่ส่งความเห็น</span></div>';
+            var rec = REC[r.recommend] || ["-", ""];
+            return '<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;"><b class="text-sm">' +
+                escapeHTML(r.name) + "</b>" + chip(rec[1], rec[0]) + "</div>" +
+                (r.comment ? '<p class="text-sm text-muted" style="margin:4px 0 0;overflow-wrap:anywhere;">“' + escapeHTML(r.comment) + "”</p>" : "") + "</div>";
+        }).join("")) : "";
+
+        var hist = Array.isArray(p.history) ? p.history.slice().reverse().slice(0, 8) : [];
+        var his = card("ประวัติการดำเนินการ", hist.length ? hist.map(function (x) {
+            return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;"><span>' +
+                escapeHTML(x.action || "มีการอัปเดต") + (x.by ? ' <span class="text-muted">· ' + escapeHTML(x.by) + "</span>" : "") +
+                '</span><span class="text-muted num" style="white-space:nowrap;">' + escapeHTML(x.at || "") + "</span></div>";
+        }).join("") : none, true);
+
+        return '<div class="docview" tabindex="0" aria-label="เอกสารของโครงการ เลื่อนดูได้">' + head +
+            '<div class="docview__grid"><div class="docview__col">' + abs + bud + '</div><div class="docview__col">' + docs + rev + "</div>" + his + "</div></div>";
     }
 
-
-    // สถานะการรับรอง
-    function getEndorsementStatus(project) {
-        return RGMS.endorseStatus(project.id);
+    // ขยายหน้าต่างเป็นแนวนอน (สี่เหลี่ยมผืนผ้า)
+    function widenModal(back) {
+        var d = back && back.querySelector(".docview");
+        if (!d) return;
+        var el = d;
+        while (el.parentElement && el.parentElement !== back) el = el.parentElement;
+        if (el && el !== d) { el.style.width = "min(900px, 94vw)"; el.style.maxWidth = "none"; }
     }
 
-
-    // ตรวจสอบว่าสามารถรับรองหรือส่งกลับได้หรือไม่
-    function canEndorse(projectId) {
-        var project = getProjects().find(function (project) {
-            return String(project.id) === String(projectId);
+    function showDocs(id) {
+        var p = findProject(id);
+        if (!p) return;
+        RGMS.modal({
+            title: "เอกสารของโครงการ",
+            body: docViewHTML(p, statusChip(p.status) + endorsementLabel(getStatus(p))),
+            foot: '<button class="btn btn-secondary btn-md" data-close>ปิด</button>',
+            onMount: function (back) { widenModal(back); }
         });
-
-        return !!project &&
-            isEligibleForEndorsement(project) &&
-            getEndorsementStatus(project) === "pending";
     }
 
-
-    function emptyMessage(message) {
-        return '<div class="text-sm text-muted review-empty">' +
-            escapeHTML(message) +
-            '</div>';
+    /* ---------- วาดหน้า ---------- */
+    function emptyMessage(m) {
+        return '<div class="text-sm text-muted review-empty">' + escapeHTML(m) + "</div>";
     }
-
-
-    function endorsementLabel(status) {
-        if (status === "passed") {
-            return '<span class="badge badge-ok">' +
-                'รับรองแล้ว · ส่งส่วนบริหาร' +
-                '</span>';
-        }
-
-        if (status === "returned") {
-            return '<span class="badge badge-revise">' +
-                'ส่งกลับให้นักวิจัยแก้ไข' +
-                '</span>';
-        }
-
-        return '<span class="badge">รอดำเนินการ</span>';
+    function endorsementLabel(s) {
+        if (s === "passed") return chip("badge-ok", "รับรองแล้ว · ส่งส่วนบริหาร");
+        if (s === "returned") return chip("badge-revise", "ส่งกลับให้นักวิจัยแก้ไข");
+        return chip("", "รอดำเนินการ");
     }
-
-
-    // สร้างการ์ดสถิติ
-    function renderKPIs(pendingCount, passedCount, returnedCount) {
+    function renderKPIs(a, b, c) {
         var cards = [
-            {
-                id: "pending",
-                label: "รอรับรอง",
-                value: pendingCount
-            },
-            {
-                id: "passed",
-                label: "รับรองแล้ว",
-                value: passedCount
-            },
-            {
-                id: "returned",
-                label: "ส่งกลับแก้ไข",
-                value: returnedCount
-            }
+            { id: "pending", label: "รอรับรอง", value: a },
+            { id: "passed", label: "รับรองแล้ว", value: b },
+            { id: "returned", label: "ส่งกลับแก้ไข", value: c }
         ];
-
-        kpiElement.innerHTML = cards.map(function (card) {
-            return `
-                <button
-                    type="button"
-                    class="kpi-card"
-                    data-kpi="${card.id}"
-                    aria-pressed="${selectedKPI === card.id}"
-                    aria-controls="${
-                        card.id === "pending"
-                            ? "pending-section"
-                            : "done-section"
-                    }">
-
-                    <span class="kpi-card__value">
-                        ${card.value}
-                    </span>
-
-                    <span class="kpi-card__label">
-                        ${escapeHTML(card.label)} · โครงการ
-                    </span>
-                </button>
-            `;
+        kpiEl.innerHTML = cards.map(function (card) {
+            return '<button type="button" class="kpi-card" data-kpi="' + card.id + '" aria-pressed="' +
+                (selectedKPI === card.id) + '" aria-controls="' +
+                (card.id === "pending" ? "pending-section" : "done-section") + '">' +
+                '<span class="kpi-card__value">' + card.value + "</span>" +
+                '<span class="kpi-card__label">' + escapeHTML(card.label) + " · โครงการ</span></button>";
         }).join("");
     }
 
-
-    // แสดงข้อมูลทั้งหมด
-    function render() {
-        var projects = getProjects();
-
-        // โครงการที่รอรับรอง
-        var pending = projects.filter(function (project) {
-            return isEligibleForEndorsement(project) &&
-                getEndorsementStatus(project) === "pending";
-        });
-
-        // โครงการที่ดำเนินการแล้ว
-        var allDone = projects.filter(function (project) {
-            var status = getEndorsementStatus(project);
-
-            return status === "passed" || status === "returned";
-        });
-
-        var passedCount = allDone.filter(function (project) {
-            return getEndorsementStatus(project) === "passed";
-        }).length;
-
-        var returnedCount = allDone.filter(function (project) {
-            return getEndorsementStatus(project) === "returned";
-        }).length;
-
-        // กรองรายการตามการ์ดที่เลือก
-        var visibleDone = allDone.filter(function (project) {
-            var status = getEndorsementStatus(project);
-
-            if (selectedKPI === "passed") {
-                return status === "passed";
+    // อัปเดตเลขที่เมนู "รับรองข้อเสนอ (สำนักวิชา)" ในแถบนำทาง
+    function syncNavBadge(count) {
+        try { RGMS.renderAppNav("chair-review"); } catch (e) {}
+        var root = document.getElementById("app-nav-root");
+        if (!root) return;
+        var all = root.querySelectorAll("*");
+        for (var i = 0; i < all.length; i++) {
+            var el = all[i];
+            if (el.children.length === 0 && /^\s*\d+\s*$/.test(el.textContent)) {
+                var host = el.parentElement;
+                for (var d = 0; host && d < 3; d++, host = host.parentElement) {
+                    if (host.textContent.indexOf("รับรองข้อเสนอ") >= 0) {
+                        el.textContent = String(count);
+                        return;
+                    }
+                }
             }
-
-            if (selectedKPI === "returned") {
-                return status === "returned";
-            }
-
-            return true;
-        });
-
-        // วาดการ์ดสถิติ
-        renderKPIs(
-            pending.length,
-            passedCount,
-            returnedCount
-        );
-
-        // แสดงส่วนที่สัมพันธ์กับการ์ดที่เลือก
-        document.getElementById("pending-section").hidden =
-            selectedKPI === "passed" || selectedKPI === "returned";
-
-        document.getElementById("done-section").hidden =
-            selectedKPI === "pending";
-
-
-        // แสดงรายการรอรับรอง
-        if (pending.length === 0) {
-            pendingElement.innerHTML = emptyMessage(
-                "ไม่มีข้อเสนอรอรับรองในสำนักวิชานี้"
-            );
-        } else {
-            pendingElement.innerHTML = pending.map(function (project) {
-                var tier = RGMS.tierOf(project) || {};
-                var id = String(project.id);
-
-                var detailURL =
-                    "project-detail.html?id=" +
-                    encodeURIComponent(id);
-
-                return `
-                    <article class="card card--alt card--pad-sm review-item">
-
-                        <div class="stack gap-1">
-
-                            <div class="cluster gap-2">
-                                <span class="text-mono text-muted">
-                                    ${escapeHTML(project.id)}
-                                </span>
-
-                                ${RGMS.badgeHTML(project.status)}
-
-                                <span class="tag">
-                                    ${escapeHTML(tier.short || "ไม่ระบุระดับทุน")}
-                                </span>
-                            </div>
-
-                            <div style="font-weight:600;">
-                                ${escapeHTML(project.title || "ไม่ระบุชื่อโครงการ")}
-                            </div>
-
-                            <div class="text-sm text-muted">
-                                ${escapeHTML(project.pi || "ไม่ระบุผู้วิจัย")}
-                                · งบที่ขอ
-                                ${escapeHTML(RGMS.fmtBaht(project.budgetReq))}
-                            </div>
-
-                        </div>
-
-                        <div class="review-actions">
-
-                            <a
-                                class="btn btn-secondary btn-sm"
-                                href="${detailURL}">
-                                ดูเอกสาร
-                            </a>
-
-                            <button
-                                type="button"
-                                class="btn btn-ok btn-sm"
-                                data-pass="${escapeHTML(id)}"
-                                ${busyIds.has(id) ? "disabled" : ""}>
-                                รับรอง → ส่งส่วนบริหาร
-                            </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-secondary btn-sm"
-                                data-return="${escapeHTML(id)}"
-                                ${busyIds.has(id) ? "disabled" : ""}>
-                                ส่งกลับแก้ไข
-                            </button>
-
-                        </div>
-                    </article>
-                `;
-            }).join("");
-        }
-
-
-        // แสดงรายการที่ดำเนินการแล้ว
-        if (visibleDone.length === 0) {
-            var message = "ยังไม่มีรายการที่ดำเนินการแล้ว";
-
-            if (selectedKPI === "passed") {
-                message = "ยังไม่มีโครงการที่รับรองแล้ว";
-            } else if (selectedKPI === "returned") {
-                message = "ยังไม่มีโครงการที่ส่งกลับแก้ไข";
-            }
-
-            doneElement.innerHTML = emptyMessage(message);
-        } else {
-            doneElement.innerHTML = visibleDone.map(function (project) {
-                return `
-                    <div
-                        class="between wrap gap-2 review-item"
-                        style="padding:8px 0; border-bottom:1px solid var(--color-divider);">
-
-                        <span class="text-sm">
-                            <span class="text-mono text-muted">
-                                ${escapeHTML(project.id)}
-                            </span>
-
-                            · ${escapeHTML(project.title || "ไม่ระบุชื่อโครงการ")}
-                        </span>
-
-                        ${endorsementLabel(getEndorsementStatus(project))}
-
-                    </div>
-                `;
-            }).join("");
         }
     }
 
+    function render() {
+        var projects = getProjects();
+        var pending = projects.filter(function (p) { return isEligible(p) && getStatus(p) === "pending"; });
+        var allDone = projects.filter(function (p) {
+            var s = getStatus(p);
+            return s === "passed" || s === "returned";
+        });
+        var passedCount = allDone.filter(function (p) { return getStatus(p) === "passed"; }).length;
+        var returnedCount = allDone.length - passedCount;
+        var visibleDone = allDone.filter(function (p) {
+            return selectedKPI === "all" || getStatus(p) === selectedKPI;
+        });
 
-    // คลิกการ์ดสถิติเพื่อกรองและเลื่อนไปยังรายการ
-    kpiElement.addEventListener("click", function (event) {
-        var card = event.target.closest("[data-kpi]");
+        renderKPIs(pending.length, passedCount, returnedCount);
+        syncNavBadge(pending.length);
 
-        if (!card) {
+        document.getElementById("pending-section").hidden = selectedKPI === "passed" || selectedKPI === "returned";
+        document.getElementById("done-section").hidden = selectedKPI === "pending";
+
+        var bar = document.getElementById("filter-bar");
+        bar.hidden = selectedKPI === "all";
+        document.getElementById("filter-label").textContent = "กำลังกรอง: " +
+            ({ pending: "รอรับรอง", passed: "รับรองแล้ว", returned: "ส่งกลับแก้ไข" }[selectedKPI] || "");
+
+        if (!pending.length) {
+            pendingEl.innerHTML = emptyMessage("ไม่มีข้อเสนอรอรับรองในสำนักวิชานี้");
+        } else {
+            pendingEl.innerHTML = pending.map(function (p) {
+                var tier = RGMS.tierOf(p) || {};
+                var id = String(p.id);
+                var dis = busyIds.has(id) ? "disabled" : "";
+                return '<article class="card card--alt card--pad-sm review-item"><div class="stack gap-1">' +
+                    '<div class="cluster gap-2"><span class="text-mono text-muted">' + escapeHTML(p.id) + "</span>" +
+                    statusChip(p.status) +
+                    '<span class="tag">' + escapeHTML(tier.short || "ไม่ระบุระดับทุน") + "</span></div>" +
+                    '<div style="font-weight:600;">' + escapeHTML(p.title || "ไม่ระบุชื่อโครงการ") + "</div>" +
+                    '<div class="text-sm text-muted">' + escapeHTML(p.pi || "ไม่ระบุผู้วิจัย") +
+                    " · งบที่ขอ " + escapeHTML(RGMS.fmtBaht(p.budgetReq)) + "</div></div>" +
+                    '<div class="review-actions">' +
+                    '<button type="button" class="btn btn-secondary btn-sm" data-docs="' + escapeHTML(id) + '">ดูเอกสาร</button>' +
+                    '<button type="button" class="btn btn-ok btn-sm" data-pass="' + escapeHTML(id) + '" ' + dis + ">รับรอง → ส่งส่วนบริหาร</button>" +
+                    '<button type="button" class="btn btn-secondary btn-sm" data-return="' + escapeHTML(id) + '" ' + dis + ">ส่งกลับแก้ไข</button>" +
+                    "</div></article>";
+            }).join("");
+        }
+
+        if (!visibleDone.length) {
+            var m = "ยังไม่มีรายการที่ดำเนินการแล้ว";
+            if (selectedKPI === "passed") m = "ยังไม่มีโครงการที่รับรองแล้ว";
+            else if (selectedKPI === "returned") m = "ยังไม่มีโครงการที่ส่งกลับแก้ไข";
+            doneEl.innerHTML = emptyMessage(m);
+        } else {
+            doneEl.innerHTML = visibleDone.map(function (p) {
+                var l = local[String(p.id)];
+                var reason = l && l.reason
+                    ? '<div class="text-sm text-muted" style="width:100%;">เหตุผล: ' + escapeHTML(l.reason) + "</div>" : "";
+                return '<div class="between wrap gap-2 review-item" style="padding:8px 0; border-bottom:1px solid var(--color-divider);">' +
+                    '<span class="text-sm"><span class="text-mono text-muted">' + escapeHTML(p.id) + "</span> · " +
+                    escapeHTML(p.title || "ไม่ระบุชื่อโครงการ") + "</span>" +
+                    endorsementLabel(getStatus(p)) + reason +
+                    '<button type="button" class="btn btn-secondary btn-sm" data-docs="' + escapeHTML(p.id) + '">ดูเอกสาร</button></div>';
+            }).join("");
+        }
+
+        lastSig = signature();
+    }
+
+    function signature() {
+        return getProjects().map(function (p) {
+            return p.id + ":" + p.status + ":" + getStatus(p);
+        }).join("|") + "#" + selectedKPI;
+    }
+
+    // อัปเดตทั้งหน้า: อ่านสถานะใหม่ → แจ้งเตือน → วาดใหม่เมื่อมีการเปลี่ยนแปลง
+    function refresh(force) {
+        local = load(KEY_STATE, {});
+        detectChanges();
+        if (force || signature() !== lastSig) render();
+    }
+
+    /* ---------- กรอง / รีเซ็ต ---------- */
+    function resetFilter() {
+        selectedKPI = "all";
+        render();
+        window.scrollTo({ top: savedScroll, behavior: "smooth" });
+    }
+    var fab = document.getElementById("fab-reset");
+    function scrollToPending() {
+        var t = document.getElementById("pending-section");
+        if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // รีเซ็ต = ย้ายโครงการที่รับรองแล้ว/ส่งกลับแล้ว กลับไปอยู่หน้ารอรับรอง
+    fab.addEventListener("click", function () {
+        fab.classList.remove("spin");
+        void fab.offsetWidth;
+        fab.classList.add("spin");
+        setPanel(false);
+
+        var done = getProjects().filter(function (p) {
+            var s = getStatus(p);
+            return s === "passed" || s === "returned";
+        });
+
+        if (!done.length) {
+            selectedKPI = "all";
+            refresh(true);
+            scrollToPending();
+            RGMS.toast("ทุกโครงการอยู่ในรายการรอรับรองอยู่แล้ว", "accent");
             return;
         }
 
-        selectedKPI = card.getAttribute("data-kpi");
+        RGMS.modal({
+            title: "รีเซ็ตการรับรอง",
+            body: "<p>ย้ายโครงการที่ดำเนินการแล้ว <b>" + done.length + "</b> รายการ กลับไปอยู่ในรายการรอรับรอง?</p>" +
+                '<p class="text-sm text-muted" style="margin-top:8px;">ผลการรับรองและเหตุผลที่ส่งกลับของรายการเหล่านี้จะถูกล้าง</p>',
+            foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button>' +
+                '<button class="btn btn-primary btn-md" id="confirm-reset">ยืนยันรีเซ็ต</button>',
+            onMount: function (back, close) {
+                back.querySelector("#confirm-reset").addEventListener("click", function () {
+                    done.forEach(function (p) {
+                        local[String(p.id)] = { status: "pending", reason: "", at: Date.now(), restored: true };
+                    });
+                    save(KEY_STATE, local);
+                    selectedKPI = "all";
+                    close();
+                    addNotif("รีเซ็ตแล้ว: ย้าย " + done.length + " โครงการกลับไปรอรับรอง");
+                    render();
+                    scrollToPending();
+                    RGMS.toast("ย้ายกลับไปรอรับรอง " + done.length + " รายการแล้ว", "ok");
+                    done.forEach(function (p) { syncShared(String(p.id), "pending"); });
+                });
+            }
+        });
+    });
 
+    kpiEl.addEventListener("click", function (e) {
+        var card = e.target.closest("[data-kpi]");
+        if (!card) return;
+        var next = card.getAttribute("data-kpi");
+
+        // กดการ์ดเดิมซ้ำ = ยกเลิกตัวกรอง กลับจุดเดิม
+        if (next === selectedKPI) { resetFilter(); return; }
+
+        if (selectedKPI === "all") savedScroll = window.pageYOffset;
+        selectedKPI = next;
         render();
 
-        var targetId = selectedKPI === "pending"
-            ? "pending-section"
-            : "done-section";
-
-        var target = document.getElementById(targetId);
-
-        if (target && !target.hidden) {
-            target.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-        }
+        var target = document.getElementById(next === "pending" ? "pending-section" : "done-section");
+        if (target && !target.hidden) target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
+    /* ---------- บันทึกผลการพิจารณา ---------- */
+    function commit(id, status, reason) {
+        var p = findProject(id);
+        var title = p ? (p.title || "ไม่ระบุชื่อโครงการ") : "";
+        local[id] = { status: status, reason: reason || "", at: Date.now() };
+        save(KEY_STATE, local);
 
-    // รับรองหรือส่งกลับแก้ไข
-    pendingElement.addEventListener("click", function (event) {
-        var passButton = event.target.closest("[data-pass]");
-        var returnButton = event.target.closest("[data-return]");
+        addNotif(status === "passed"
+            ? "รับรองโครงการ " + id + " แล้ว · ส่งต่อส่วนบริหารงานวิจัย (" + title + ")"
+            : "ส่งโครงการ " + id + " กลับให้นักวิจัยแก้ไข (" + title + ")");
 
+        render();   // อัปเดตตัวเลข KPI และรายการทันที
+    }
+    // แจ้งระบบกลาง (shared.js) ภายหลัง เพื่อไม่ให้หน้าค้างหากฟังก์ชันนั้นมีการเปลี่ยนหน้า
+    function syncShared(id, status) {
+        try { RGMS.setEndorse(id, status); } catch (err) { console.error(err); }
+    }
 
-        // รับรองข้อเสนอ
-        if (passButton) {
-            var passId = passButton.getAttribute("data-pass");
+    pendingEl.addEventListener("click", function (e) {
+        var docBtn = e.target.closest("[data-docs]");
+        var passBtn = e.target.closest("[data-pass]");
+        var returnBtn = e.target.closest("[data-return]");
 
-            if (busyIds.has(passId)) {
-                return;
-            }
+        if (docBtn) { showDocs(docBtn.getAttribute("data-docs")); return; }
 
+        if (passBtn) {
+            var passId = passBtn.getAttribute("data-pass");
+            if (busyIds.has(passId)) return;
             if (!canEndorse(passId)) {
-                RGMS.toast(
-                    "โครงการนี้ไม่อยู่ในสถานะที่สามารถรับรองได้",
-                    "accent"
-                );
-                render();
+                RGMS.toast("โครงการนี้ไม่อยู่ในสถานะที่สามารถรับรองได้", "accent");
+                refresh(true);
                 return;
             }
-
             RGMS.modal({
                 title: "ยืนยันการรับรองข้อเสนอ",
-
-                body:
-                    "<p>คุณต้องการรับรองข้อเสนอโครงการนี้ใช่หรือไม่?</p>" +
-                    '<p class="text-sm text-muted" style="margin-top:8px;">' +
-                    "โปรดตรวจสอบเอกสารและข้อมูลโครงการก่อนยืนยัน" +
-                    "</p>",
-
-                foot:
-                    '<button class="btn btn-secondary btn-md" data-close>' +
-                    "ยกเลิก</button>" +
-                    '<button class="btn btn-ok btn-md" id="confirm-pass">' +
-                    "ยืนยันการรับรอง</button>",
-
+                body: "<p>คุณต้องการรับรองข้อเสนอโครงการนี้ใช่หรือไม่?</p>" +
+                    '<p class="text-sm text-muted" style="margin-top:8px;">โปรดตรวจสอบเอกสารและข้อมูลโครงการก่อนยืนยัน</p>',
+                foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button>' +
+                    '<button class="btn btn-ok btn-md" id="confirm-pass">ยืนยันการรับรอง</button>',
                 onMount: function (back, close) {
-                    var confirmButton =
-                        back.querySelector("#confirm-pass");
-
-                    confirmButton.addEventListener("click", function () {
-                        if (busyIds.has(passId)) {
-                            return;
-                        }
-
+                    var btn = back.querySelector("#confirm-pass");
+                    btn.addEventListener("click", function () {
+                        if (busyIds.has(passId)) return;
                         if (!canEndorse(passId)) {
                             close();
-
-                            RGMS.toast(
-                                "สถานะโครงการเปลี่ยนไปแล้ว กรุณาตรวจสอบอีกครั้ง",
-                                "accent"
-                            );
-
-                            render();
+                            RGMS.toast("สถานะโครงการเปลี่ยนไปแล้ว กรุณาตรวจสอบอีกครั้ง", "accent");
+                            refresh(true);
                             return;
                         }
-
                         busyIds.add(passId);
-                        confirmButton.disabled = true;
-
-                        try {
-                            RGMS.setEndorse(passId, "passed");
-                            close();
-
-                            RGMS.toast(
-                                "เปลี่ยนสถานะรับรองแล้ว (ระบบสาธิต)",
-                                "ok"
-                            );
-                        } catch (error) {
-                            console.error(error);
-
-                            RGMS.toast(
-                                "ดำเนินการไม่สำเร็จ กรุณาลองอีกครั้ง",
-                                "accent"
-                            );
-                        } finally {
-                            busyIds.delete(passId);
-                            render();
-                        }
+                        btn.disabled = true;
+                        commit(passId, "passed");
+                        close();
+                        RGMS.toast("รับรองข้อเสนอแล้ว (ระบบสาธิต)", "ok");
+                        busyIds.delete(passId);
+                        syncShared(passId, "passed");
                     });
                 }
             });
-
             return;
         }
 
-
-        // ส่งกลับแก้ไข
-        if (returnButton) {
-            var returnId = returnButton.getAttribute("data-return");
-
-            if (busyIds.has(returnId)) {
-                return;
-            }
-
+        if (returnBtn) {
+            var returnId = returnBtn.getAttribute("data-return");
+            if (busyIds.has(returnId)) return;
             if (!canEndorse(returnId)) {
-                RGMS.toast(
-                    "โครงการนี้ไม่อยู่ในสถานะที่สามารถส่งกลับได้",
-                    "accent"
-                );
-
-                render();
+                RGMS.toast("โครงการนี้ไม่อยู่ในสถานะที่สามารถส่งกลับได้", "accent");
+                refresh(true);
                 return;
             }
-
             RGMS.modal({
                 title: "ส่งกลับให้นักวิจัยแก้ไข",
-
-                body:
-                    '<div class="field" style="margin:0;">' +
-                        '<label class="field__label" for="endorsement-reason">' +
-                            "เหตุผล / ข้อเสนอแนะให้แก้ไข (จำเป็น)" +
-                        "</label>" +
-
-                        '<textarea class="field__control" ' +
-                            'id="endorsement-reason" rows="5" maxlength="1000" ' +
-                            'placeholder="ระบุสิ่งที่ต้องแก้ไขอย่างชัดเจน">' +
-                        "</textarea>" +
-
-                        '<p class="text-sm text-muted" style="margin-top:8px;">' +
-                            "กรอกอย่างน้อย 10 ตัวอักษร และไม่เกิน 1,000 ตัวอักษร" +
-                        "</p>" +
-                    "</div>",
-
-                foot:
-                    '<button class="btn btn-secondary btn-md" data-close>' +
-                    "ยกเลิก</button>" +
-                    '<button class="btn btn-primary btn-md" id="confirm-return">' +
-                    "ส่งกลับแก้ไข</button>",
-
+                body: '<div class="field" style="margin:0;">' +
+                    '<label class="field__label" for="endorsement-reason">เหตุผล / ข้อเสนอแนะให้แก้ไข (จำเป็น)</label>' +
+                    '<textarea class="field__control" id="endorsement-reason" rows="5" maxlength="1000" ' +
+                    'placeholder="ระบุสิ่งที่ต้องแก้ไขอย่างชัดเจน"></textarea>' +
+                    '<p class="text-sm text-muted" style="margin-top:8px;">กรอกอย่างน้อย 10 ตัวอักษร และไม่เกิน 1,000 ตัวอักษร</p></div>',
+                foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button>' +
+                    '<button class="btn btn-primary btn-md" id="confirm-return">ส่งกลับแก้ไข</button>',
                 onMount: function (back, close) {
-                    var reasonInput =
-                        back.querySelector("#endorsement-reason");
-
-                    var confirmButton =
-                        back.querySelector("#confirm-return");
-
-                    confirmButton.addEventListener("click", function () {
-                        var reason = reasonInput.value.trim();
-
+                    var input = back.querySelector("#endorsement-reason");
+                    var btn = back.querySelector("#confirm-return");
+                    btn.addEventListener("click", function () {
+                        var reason = input.value.trim();
                         if (reason.length < 10) {
-                            RGMS.toast(
-                                "กรุณาระบุเหตุผลอย่างน้อย 10 ตัวอักษร",
-                                "accent"
-                            );
-
-                            reasonInput.focus();
+                            RGMS.toast("กรุณาระบุเหตุผลอย่างน้อย 10 ตัวอักษร", "accent");
+                            input.focus();
                             return;
                         }
-
-                        if (reason.length > 1000) {
-                            RGMS.toast(
-                                "เหตุผลต้องไม่เกิน 1,000 ตัวอักษร",
-                                "accent"
-                            );
-
-                            reasonInput.focus();
-                            return;
-                        }
-
-                        if (busyIds.has(returnId)) {
-                            return;
-                        }
-
+                        if (busyIds.has(returnId)) return;
                         if (!canEndorse(returnId)) {
                             close();
-
-                            RGMS.toast(
-                                "สถานะโครงการเปลี่ยนไปแล้ว กรุณาตรวจสอบอีกครั้ง",
-                                "accent"
-                            );
-
-                            render();
+                            RGMS.toast("สถานะโครงการเปลี่ยนไปแล้ว กรุณาตรวจสอบอีกครั้ง", "accent");
+                            refresh(true);
                             return;
                         }
-
                         busyIds.add(returnId);
-                        confirmButton.disabled = true;
-
-                        try {
-                            /*
-                             * ฟังก์ชันเดิมรับเพียง id และ status
-                             * เหตุผลจึงยังไม่ได้บันทึกจริง
-                             * ต้องปรับ shared.js เพื่อจัดเก็บ reason
-                             */
-                            RGMS.setEndorse(returnId, "returned");
-                            close();
-
-                            RGMS.toast(
-                                "เปลี่ยนสถานะเป็นส่งกลับแก้ไขแล้ว " +
-                                "(เหตุผลยังไม่ได้บันทึกโดยฟังก์ชันเดิม)",
-                                "accent"
-                            );
-                        } catch (error) {
-                            console.error(error);
-
-                            RGMS.toast(
-                                "ดำเนินการไม่สำเร็จ กรุณาลองอีกครั้ง",
-                                "accent"
-                            );
-                        } finally {
-                            busyIds.delete(returnId);
-                            render();
-                        }
+                        btn.disabled = true;
+                        commit(returnId, "returned", reason);
+                        close();
+                        RGMS.toast("ส่งกลับให้นักวิจัยแก้ไขแล้ว (บันทึกเหตุผลเรียบร้อย)", "ok");
+                        busyIds.delete(returnId);
+                        syncShared(returnId, "returned");
                     });
                 }
             });
         }
     });
 
+    doneEl.addEventListener("click", function (e) {
+        var docBtn = e.target.closest("[data-docs]");
+        if (docBtn) showDocs(docBtn.getAttribute("data-docs"));
+    });
 
-    // เริ่มต้นหน้า
+    /* ---------- อัปเดตอัตโนมัติ ---------- */
+    window.addEventListener("storage", function () { refresh(false); });
+    window.addEventListener("focus", function () { refresh(false); });
+    window.addEventListener("pageshow", function () { refresh(true); });
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) refresh(false);
+    });
+    setInterval(function () { refresh(false); }, 3000);
+
+    /* ---------- เริ่มต้น ---------- */
+    renderNotifs();
+    detectChanges();
     render();
-
 })();
 </script>
-
 </body>
 </html>
