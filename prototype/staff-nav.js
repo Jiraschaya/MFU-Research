@@ -33,16 +33,41 @@
     if (!nav) return;
     var pending = RGMS.PROJECTS.filter(function (p) { return p.status === "submitted" || p.status === "screening"; }).length;
     var html = '<div class="app-sidebar__group"><span class="app-sidebar__group-label">Research Admin Module</span></div>';
-    ITEMS.forEach(function (it) {
-      var on = it.id === pageId ? " is-active" : "";
-      var cnt = it.count && pending ? '<span class="tag-count" data-nav-count="' + it.id + '">' + pending + '</span>' : "";
-      var attrs = it.href ? 'href="' + it.href + '"' : 'href="#" data-soon="' + it.label + '"';
-      html += '<a class="app-sidebar__link sn-link' + on + '" ' + attrs + (on ? ' aria-current="page"' : '') + '>' +
-        it.icon + '<span class="app-sidebar__link-label">' + (it.n ? it.n + ' ' : '') + it.label + '</span>' + cnt + '</a>';
+    var GROUPS = [
+      { key: "main", title: "1–4 · งานหลัก", from: 0, to: 4 },
+      { key: "admin", title: "5–8 · จัดการ & รายงาน", from: 4, to: ITEMS.length }
+    ];
+    var st = rd("rgms_staff_nav_groups", {});
+    GROUPS.forEach(function (g) {
+      var items = ITEMS.slice(g.from, g.to);
+      var hasActive = items.some(function (it) { return it.id === pageId; });
+      var open = hasActive || st[g.key] !== false;
+      var badge = items.some(function (it) { return it.count && pending; }) ? pending : 0;
+      html += '<div class="sn-grp' + (open ? ' is-open' : '') + '" data-grp="' + g.key + '">' +
+        '<button type="button" class="sn-grp__head" aria-expanded="' + open + '" aria-controls="sn-body-' + g.key + '">' +
+        '<span class="sn-grp__title">' + g.title + '</span>' +
+        (badge ? '<span class="sn-grp__badge">' + badge + '</span>' : '') +
+        '<svg class="sn-grp__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>' +
+        '<div class="sn-grp__body" id="sn-body-' + g.key + '"><div class="sn-grp__inner">';
+      items.forEach(function (it) {
+        var on = it.id === pageId ? " is-active" : "";
+        var cnt = it.count && pending ? '<span class="tag-count" data-nav-count="' + it.id + '">' + pending + '</span>' : "";
+        var attrs = it.href ? 'href="' + it.href + '"' : 'href="#" data-soon="' + it.label + '"';
+        html += '<a class="app-sidebar__link sn-link' + on + '" ' + attrs + (on ? ' aria-current="page"' : '') + '>' +
+          it.icon + '<span class="app-sidebar__link-label">' + (it.n ? it.n + ' ' : '') + it.label + '</span>' + cnt + '</a>';
+      });
+      html += '</div></div></div>';
     });
     nav.classList.add("sn-nav");
     nav.innerHTML = html;
     nav.addEventListener("click", function (e) {
+      var h = e.target.closest(".sn-grp__head");
+      if (h) {
+        var g = h.parentElement, o = !g.classList.contains("is-open");
+        g.classList.toggle("is-open", o); h.setAttribute("aria-expanded", o);
+        var m = rd("rgms_staff_nav_groups", {}); m[g.getAttribute("data-grp")] = o; wr("rgms_staff_nav_groups", m);
+        return;
+      }
       var a = e.target.closest("[data-soon]"); if (!a) return;
       e.preventDefault(); RGMS.toast("“" + a.getAttribute("data-soon") + "” ยังไม่อยู่ในต้นแบบนี้", "accent");
     });
