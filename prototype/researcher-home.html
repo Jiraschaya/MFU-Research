@@ -6,16 +6,21 @@
 <title>โครงการของฉัน — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* .notice ใน style.css ตั้ง display:flex ไว้ ทำให้ attribute hidden ไม่ทำงาน — ต้องบังคับเอง */
   [hidden] { display:none !important; }
-  /* notice--wait ถูกประกาศไว้แค่ใน exec.css (หน้านี้ไม่ได้โหลด) จึงเคยไม่มีสี — ประกาศซ้ำด้วย token เดิมของระบบ */
   .notice--wait { border-left-color: var(--st-wait); background: var(--st-wait-tint); }
-
-  /* การ์ดรอบทุนที่เปิดรับ: ย้ายจาก inline style มาเป็นคลาส */
   .call-card { border: 1px solid var(--color-primary); background: var(--color-primary-tint); }
   .call-card .call-meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); }
-
   .proj-title { font-weight: 600; color: var(--color-text-strong); line-height: 1.4; }
+
+  /* ป้ายสถานะ: ใช้ชุดเดียวกับหน้าเลขานุการ/ประธาน (จุด ขนาด ฟอนต์ เท่ากันทุกป้าย) */
+  .badge.chip{display:inline-flex;align-items:center;gap:8px;box-sizing:border-box;min-height:32px;padding:0 14px;font-size:14px;line-height:1.2;font-weight:600;white-space:nowrap}
+  .badge.chip::before,.badge.chip::after{content:none!important;display:none!important}
+  .badge.chip--review{background:#ede9fe!important;border-color:#ddd6fe!important;color:#5b21b6!important}
+  .badge.chip--active{background:#e0f2fe!important;border-color:#bae6fd!important;color:#075985!important}
+  .chip__dot{flex:none;width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:none!important;animation:none!important}
+  .badge, .badge::before, .badge::after, .table .badge *{animation:none!important}
+
+  .returned-list{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -33,13 +38,17 @@
       </div>
     </div>
 
-    <!-- เตือนเมื่อมีโครงการที่ต้องแก้ตามมติ — เรื่องที่นักวิจัยต้องลงมือ -->
+    <!-- ถูกประธาน/คณบดีส่งกลับให้แก้ไข (อ่านจากผลที่หน้าประธานบันทึก) -->
+    <div class="notice notice--wait" id="returned-note" role="status" hidden>
+      <span class="notice__title" id="returned-title"></span>
+      <ul class="returned-list" id="returned-list"></ul>
+    </div>
+
     <div class="notice notice--wait" id="revise-note" role="status" hidden>
       <span class="notice__title" id="revise-title"></span>
       <span class="notice__body">เปิดโครงการเพื่อดูเงื่อนไขตามมติ แล้วส่งฉบับแก้ไขกลับ</span>
     </div>
 
-    <!-- ยังไม่บันทึกโปรไฟล์ (ใช้ RGMS.profileSaved() เหมือนหน้ายื่นข้อเสนอ) -->
     <div class="notice notice--wait" id="profile-warn" hidden>
       <span class="notice__title">ยังไม่ได้บันทึกโปรไฟล์นักวิจัย</span>
       <span class="notice__body">ข้อมูลหัวหน้าโครงการและประวัติ (ส่วน ข) ในข้อเสนอจะดึงจากโปรไฟล์ — <a href="researcher-profile.html">กรอกโปรไฟล์ก่อนยื่น</a></span>
@@ -67,7 +76,6 @@
 
 <script src="shared.js"></script>
 <script>
-  // shared.js โหลดไม่ขึ้น → บอกสาเหตุแทนหน้าโล่ง
   if (!window.RGMS) {
     document.getElementById("app-nav-root").innerHTML =
       '<div style="padding:16px;background:#fdecea;color:#b71c1c">โหลด shared.js ไม่สำเร็จ — ตรวจว่าไฟล์อยู่โฟลเดอร์เดียวกับหน้านี้</div>';
@@ -84,12 +92,32 @@
   function $(id) { return document.getElementById(id); }
   function detailHref(id) { return "project-detail.html?id=" + encodeURIComponent(id); }
 
-  // ---------- วันที่: ข้อมูลเก็บเป็น "พ.ศ.-เดือน-วัน" (เช่น 2569-11-30) แสดงเป็นไทยอ่านง่าย ----------
-  var TH_M = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-  function parseDate(s) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
-    return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+  /* ---------- ป้ายสถานะแบบเดียวกับหน้าเลขานุการ ---------- */
+  var STATUS_NAME = {
+    draft: "ฉบับร่าง", submitted: "ยื่นข้อเสนอโครงการแล้ว", endorse: "รอรับรองสำนักวิชา", screening: "ตรวจสอบเบื้องต้น",
+    revise: "ให้ปรับแก้ตามมติ", review: "อยู่ระหว่างพิจารณา", committee: "เสนอคณะกรรมการ", approved: "อนุมัติแล้ว",
+    rejected: "ไม่อนุมัติ", announced: "ประกาศผลแล้ว", ongoing: "กำลังดำเนินโครงการ", progress: "รายงานความก้าวหน้า",
+    financial: "รายงานการเงิน", final: "รายงานฉบับสมบูรณ์", closed: "ปิดโครงการ"
+  };
+  function chip(cls, text) {
+    return '<span class="badge ' + (cls || "") + ' chip"><span class="chip__dot" aria-hidden="true"></span>' + esc(text) + "</span>";
   }
+  function statusChip(status) {
+    var box = document.createElement("div");
+    box.innerHTML = RGMS.badgeHTML(status);
+    var b = box.querySelector(".badge") || box.firstElementChild;
+    if (!b) return chip("", STATUS_NAME[status] || status);
+    var cls = (b.className || "").split(/\s+/).filter(function (c) { return /^badge[-_]/.test(c); }).join(" ");
+    var text = (b.textContent || "").replace(/\s+/g, " ").trim();
+    if (STATUS_NAME[status] && (!text || /^[A-Za-z][A-Za-z _-]*$/.test(text))) text = STATUS_NAME[status];  // รหัสอังกฤษ → ไทย
+    if (status === "review" || status === "committee") cls = "chip--review";
+    else if (["ongoing", "progress", "financial", "final"].indexOf(status) >= 0) cls = "chip--active";
+    return chip(cls, text);
+  }
+
+  /* ---------- วันที่ ---------- */
+  var TH_M = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  function parseDate(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? { y: +m[1], m: +m[2], d: +m[3] } : null; }
   function fmtDate(s) { var p = parseDate(s); return p ? p.d + " " + TH_M[p.m - 1] + " " + p.y : (s || "—"); }
   function daysLeft(s) {
     var p = parseDate(s); if (!p) return null;
@@ -97,29 +125,45 @@
     return Math.ceil((new Date(ce, p.m - 1, p.d, 23, 59, 59) - new Date()) / 86400000);
   }
 
-  // ---------- ข้อมูลของฉัน ----------
   var me = (RGMS.currentRole() || {}).name || "";
   $("greet").textContent = "สวัสดี " + (me || "นักวิจัย") + " — โครงการที่คุณเป็นหัวหน้าโครงการ";
-
   if (!RGMS.profileSaved()) $("profile-warn").hidden = false;
 
-  // ใช้สถานะ "จริง" (รวมมติ/ประกาศ) ทั้งป้ายสถานะ ตัวนับ และปุ่ม — เดิมป้ายใช้ effectiveStatus แต่ปุ่ม/ตัวนับใช้ p.status ดิบ
-  // ทำให้เมื่อ คกก. มีมติ "ให้ปรับแก้" ป้ายขึ้น "ให้ปรับแก้ตามมติ" แต่ปุ่ม "ปรับแก้ตามมติ" ไม่ขึ้น
   var mine = (RGMS.PROJECTS || [])
     .filter(function (p) { return me && p.pi === me; })
     .map(function (p, i) { return { p: p, st: RGMS.effectiveStatus(p), i: i }; })
-    .sort(function (a, b) {                       // โครงการที่ต้องแก้ตามมติขึ้นก่อน ที่เหลือคงลำดับเดิม
-      return ((b.st === "revise") - (a.st === "revise")) || (a.i - b.i);
-    });
+    .sort(function (a, b) { return ((b.st === "revise") - (a.st === "revise")) || (a.i - b.i); });
 
-  // ---------- เตือนโครงการที่ต้องปรับแก้ ----------
+  /* ---------- ถูกส่งกลับจากประธาน/คณบดี ---------- */
+  var KEY_CHAIR = "rgms_chair_state_v1";
+  function chairState() {
+    try { return JSON.parse(localStorage.getItem(KEY_CHAIR) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function renderReturned() {
+    var cs = chairState();
+    var list = mine.filter(function (x) { var l = cs[String(x.p.id)]; return l && l.status === "returned"; });
+    $("returned-note").hidden = !list.length;
+    if (!list.length) return;
+    $("returned-title").textContent = "มี " + list.length + " โครงการที่ประธาน/คณบดีส่งกลับให้แก้ไข";
+    $("returned-list").innerHTML = list.map(function (x) {
+      var l = cs[String(x.p.id)];
+      return "<li><a href=\"" + esc(detailHref(x.p.id)) + "\">" + esc(x.p.id) + "</a> · " + esc(x.p.title || "") +
+        (l.reason ? '<br><span class="text-muted">เหตุผล: ' + esc(l.reason) + "</span>" : "") + "</li>";
+    }).join("");
+  }
+  renderReturned();
+  window.addEventListener("storage", renderReturned);
+  window.addEventListener("focus", renderReturned);
+  window.addEventListener("pageshow", renderReturned);
+  setInterval(renderReturned, 3000);
+
   var reviseN = mine.filter(function (x) { return x.st === "revise"; }).length;
   if (reviseN) {
     $("revise-title").textContent = "มี " + reviseN + " โครงการที่ต้องปรับแก้ตามมติ";
     $("revise-note").hidden = false;
   }
 
-  // ---------- ทุนที่เปิดรับสมัคร ----------
+  /* ---------- ทุนที่เปิดรับสมัคร ---------- */
   var calls = RGMS.CALLS || [];
   var openCalls = calls.filter(function (c) { return RGMS.callStatus(c) === "open"; });
   var ocEl = $("open-calls");
@@ -135,7 +179,6 @@
           left = '<span class="badge ' + (n <= 7 ? "badge-wait" : "badge-draft") + '">' +
             (n === 0 ? "ปิดรับวันนี้" : "ปิดรับอีก " + n + " วัน") + '</span>';
         }
-        // หน้ายื่นข้อเสนอเลือกรอบที่เปิดอยู่ให้เอง (RGMS.openCall) จึงไม่ต้องส่งรหัสรอบไป
         return '<div class="card stack gap-2 call-card">' +
           '<div class="between wrap gap-2"><span class="text-subhead">' + esc(c.title) + '</span><span class="badge badge-ok">เปิดรับ</span></div>' +
           '<div class="call-meta text-sm text-muted"><span>รับข้อเสนอ ' + esc(fmtDate(c.open)) + ' – ' + esc(fmtDate(c.close)) + '</span>' + left + '</div>' +
@@ -149,8 +192,8 @@
       '<span class="notice__body">' + (up ? ('รอบถัดไป: ' + esc(up.title) + ' · เปิดรับ ' + esc(fmtDate(up.open)) + ' ถึง ' + esc(fmtDate(up.close))) : 'โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย') + '</span></div>';
   }
 
-  // ---------- KPI ----------
-  var REVIEWING = ["submitted", "endorse", "screening", "review", "committee", "revise", "approved"];  // รวม endorse และ approved (รอประกาศ) ที่เดิมไม่ถูกนับ
+  /* ---------- KPI ---------- */
+  var REVIEWING = ["submitted", "endorse", "screening", "review", "committee", "revise", "approved"];
   var RUNNING   = ["ongoing", "progress", "final", "financial", "announced"];
   var inReview = mine.filter(function (x) { return REVIEWING.indexOf(x.st) >= 0; }).length;
   var running  = mine.filter(function (x) { return RUNNING.indexOf(x.st) >= 0; }).length;
@@ -164,14 +207,13 @@
            '<span class="stat__label">' + esc(k[0]) + ' · ' + esc(k[2]) + '</span></div>';
   }).join("");
 
-  // ---------- ตารางโครงการ ----------
+  /* ---------- ตารางโครงการ ---------- */
   function actionFor(x) {
     var label, cls;
     if (x.st === "revise")       { label = "ปรับแก้ตามมติ";     cls = "btn-primary"; }
     else if (x.st === "ongoing") { label = "ส่งรายงานก้าวหน้า"; cls = "btn-secondary"; }
     else if (x.st === "final")   { label = "ดูสถานะการเงิน";   cls = "btn-secondary"; }
     else                         { label = "รายละเอียด →";      cls = "btn-ghost"; }
-    // ลิงก์ชื่อซ้ำกันทุกแถว → ใส่รหัสโครงการใน aria-label ให้ screen reader แยกออก
     return '<a class="btn ' + cls + ' btn-sm" href="' + esc(detailHref(x.p.id)) + '" aria-label="' + esc(label + " โครงการ " + x.p.id) + '">' + esc(label) + '</a>';
   }
 
@@ -186,7 +228,7 @@
         '<td><div class="proj-title">' + esc(p.title) + '</div>' + (p.duration ? '<div class="text-sm text-muted">ระยะเวลา ' + esc(p.duration) + '</div>' : '') + '</td>' +
         '<td><span class="pill-round">' + esc(p.round) + '</span></td>' +
         '<td class="right num">' + esc(RGMS.fmtMoney(Number(p.budgetReq) || 0)) + '</td>' +
-        '<td>' + RGMS.badgeHTML(x.st) + '</td>' +
+        '<td>' + statusChip(x.st) + '</td>' +
         '<td class="right">' + actionFor(x) + '</td>' +
       '</tr>';
     }).join("");
