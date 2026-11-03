@@ -45,6 +45,14 @@
   @media (max-width:640px){ .bline__top{ grid-template-columns:1fr; } .tier-grid{ grid-template-columns:1fr; } }
   .doc-row.is-over { outline: 2px dashed var(--color-primary); background: var(--color-primary-tint); }
   .needs-fix{outline:3px solid #f59e0b;outline-offset:3px}
+  /* ไฮไลต์ตอนเด้งจากเช็กลิสต์: แดงเข้มก่อน แล้วอ่อนลงและค้างไว้ (เหมือนสถานะโฟกัสของช่อง) */
+  @keyframes jump-in-field { 0%{border-color:#450a0a;box-shadow:0 0 0 7px rgba(153,27,27,.45)} 100%{border-color:#7f1d1d;box-shadow:0 0 0 4px rgba(153,27,27,.16)} }
+  @keyframes jump-in-box { 0%{box-shadow:0 0 0 2px #450a0a,0 0 0 9px rgba(153,27,27,.45)} 100%{box-shadow:0 0 0 2px #7f1d1d,0 0 0 6px rgba(153,27,27,.16)} }
+  .jump-hl { border-radius:10px; animation:jump-in-box 1.4s ease forwards; }
+  @keyframes jump-in-row { 0%{outline-color:#450a0a;background-color:rgba(153,27,27,.12)} 100%{outline-color:#7f1d1d;background-color:rgba(153,27,27,.04)} }
+  .jump-hl-row { outline:1.5px solid #7f1d1d; outline-offset:4px; border-radius:10px; animation:jump-in-row 1.4s ease forwards; }
+  .jump-hl-field { border-color:#7f1d1d !important; animation:jump-in-field 1.4s ease forwards; }
+  @media (prefers-reduced-motion:reduce){ .jump-hl,.jump-hl-field,.jump-hl-row{animation:none} .jump-hl{box-shadow:0 0 0 2px #7f1d1d,0 0 0 6px rgba(153,27,27,.16)} .jump-hl-field{box-shadow:0 0 0 4px rgba(153,27,27,.16)} }
 </style>
 </head>
 <body>
@@ -229,15 +237,7 @@
 
      <div class="card card--featured" style="position:sticky; top:var(--space-4);">
         <h3 class="text-subhead" style="margin-bottom:var(--space-3);">ตรวจความพร้อมก่อนยื่น</h3>
-        <nav class="form-stepper">
-          <span class="text-overline" style="margin-bottom:4px;">ทางลัดไปยังส่วนต่างๆ</span>
-          <a href="#sec-0" class="stepper-item">0. นำเข้าไฟล์ RS-01</a>
-          <a href="#sec-1" class="stepper-item">1. หัวหน้าโครงการ</a>
-          <a href="#sec-2" class="stepper-item">2. ข้อมูลโครงการ</a>
-          <a href="#sec-3" class="stepper-item">3. งบประมาณ</a>
-          <a href="#sec-4" class="stepper-item">4. มาตรฐานการวิจัย</a>
-          <a href="#sec-5" class="stepper-item">5. เอกสารแนบ</a>
-        </nav>
+        <p id="ready-status" role="status" aria-live="polite" style="margin:0 0 var(--space-3); padding:14px 16px; border:2px solid; border-radius:12px; text-align:center; font-weight:700; font-size:22px; line-height:1.3;"></p>
         <div class="stack gap-3">
           <div>
             <div class="between text-sm"><span>ความครบถ้วน</span><span class="num" id="ready-count">0/0</span></div>
@@ -247,7 +247,7 @@
         </div>
         <hr class="divider">
         <button class="btn btn-primary btn-lg btn-block" id="submit-btn" disabled>ยื่นข้อเสนอ</button>
-        <p class="text-sm text-muted text-center" style="margin-top:var(--space-2);" id="submit-hint">กรอกข้อมูลให้ครบเพื่อยื่น</p>
+        <p class="text-sm text-muted text-center" style="margin-top:var(--space-2);" id="submit-hint" hidden></p>
       </div>
     </div>
 
@@ -1130,29 +1130,62 @@
   function recompute() {
     var items = activeBudget(), hasBudget = items.length > 0;
     var checks = [
-      { label: "เลือกประเภททุน", ok: !!currentTier },
-      { label: "กรอกชื่อโครงการ", ok: !!document.getElementById("f-title").value.trim() },
-      { label: "เลือกสำนักวิชา", ok: !!document.getElementById("f-school").value },
-      { label: "เลือกระยะเวลา", ok: !!document.getElementById("f-duration").value },
-      { label: "กรอกความสำคัญ/ที่มา", ok: document.getElementById("f-abstract").value.trim().length >= 20 },
-      { label: "กรอกวัตถุประสงค์", ok: document.getElementById("f-objective").value.trim().length >= 5 },
-      { label: mode === "upload" ? "อัปโหลดตารางงบประมาณ (17.2)" : "มีรายการงบประมาณครบถ้วน", ok: hasBudget },
-      { label: "งบผ่านกฎอัตโนมัติ (เพดาน + 25%)", ok: hasBudget && budgetChecks(items).rulesOk }
+      { label: "เลือกประเภททุน", ok: !!currentTier, to: "#tier-grid" },
+      { label: "กรอกชื่อโครงการ", ok: !!document.getElementById("f-title").value.trim(), to: "#f-title" },
+      { label: "เลือกสำนักวิชา", ok: !!document.getElementById("f-school").value, to: "#f-school" },
+      { label: "เลือกระยะเวลา", ok: !!document.getElementById("f-duration").value, to: "#f-duration" },
+      { label: "กรอกความสำคัญ/ที่มา", ok: document.getElementById("f-abstract").value.trim().length >= 20, to: "#f-abstract" },
+      { label: "กรอกวัตถุประสงค์", ok: document.getElementById("f-objective").value.trim().length >= 5, to: "#f-objective" },
+      { label: mode === "upload" ? "อัปโหลดตารางงบประมาณ (17.2)" : "มีรายการงบประมาณครบถ้วน", ok: hasBudget, to: "#sec-3" },
+      { label: "งบผ่านกฎอัตโนมัติ (เพดาน + 25%)", ok: hasBudget && budgetChecks(items).rulesOk, to: "#sec-3" }
     ];
     docList().forEach(function (d) {
-      checks.push({ label: "แนบ: " + d.label.replace(/\s*\(.*\)/, ""), ok: d.auto || !!manualDocsOn[d.key] });
+      checks.push({ label: "แนบ: " + d.label.replace(/\s*\(.*\)/, ""), ok: d.auto || !!manualDocsOn[d.key], to: '.doc-row[data-key="' + d.key + '"]' });
     });
     var pass = checks.filter(function (c) { return c.ok; }).length;
     document.getElementById("ready-count").textContent = pass + "/" + checks.length;
     document.getElementById("ready-bar").style.width = Math.round(pass / checks.length * 100) + "%";
     document.getElementById("ready-bar").className = "progress__fill" + (pass === checks.length ? " progress__fill--ok" : "");
     document.getElementById("ready-list").innerHTML = checks.map(function (c) {
-      return '<li class="checklist__item ' + (c.ok ? 'checklist__item--ok' : 'checklist__item--fail') + '"><span class="mark">' + (c.ok ? '✓' : '!') + '</span><span class="checklist__label">' + c.label + '</span></li>';
+      var jump = c.ok ? '' : ' data-to="' + String(c.to || "").replace(/"/g, "&quot;") + '" role="button" tabindex="0" title="คลิกเพื่อไปยังหัวข้อนี้" style="cursor:pointer;"';
+      return '<li class="checklist__item ' + (c.ok ? 'checklist__item--ok' : 'checklist__item--fail') + '"' + jump + '><span class="mark">' + (c.ok ? '✓' : '!') + '</span><span class="checklist__label">' + c.label + '</span></li>';
     }).join("");
     var allOk = pass === checks.length;
     document.getElementById("submit-btn").disabled = !allOk || !__callOpen;
-    document.getElementById("submit-hint").textContent = !__callOpen ? "ปิดรับข้อเสนอ — ยื่นไม่ได้ในขณะนี้" : (allOk ? "พร้อมยื่น — ระบบตรวจครบถ้วนแล้ว" : "ยังขาด " + (checks.length - pass) + " รายการ");
+    var rs = document.getElementById("ready-status");
+    rs.textContent = allOk ? "เอกสารครบถ้วน" : "ยังขาด " + (checks.length - pass) + " รายการ";
+    rs.style.color = allOk ? "var(--st-ok, #166534)" : "var(--st-reject, #991b1b)";
+    rs.style.borderColor = rs.style.color;
+    rs.style.background = allOk ? "var(--st-ok-tint, #dcfce7)" : "var(--st-reject-tint, #fee2e2)";
+    var sh = document.getElementById("submit-hint");
+    sh.textContent = !__callOpen ? "ปิดรับข้อเสนอ — ยื่นไม่ได้ในขณะนี้" : "";
+    sh.hidden = __callOpen;
   }
+  /* คลิกรายการที่ยังแดงในเช็กลิสต์ → เลื่อนไปยังหัวข้อ/ช่องนั้น */
+  function jumpTo(li) {
+    var sel = li.getAttribute("data-to"); if (!sel) return;
+    var el = document.querySelector(sel); if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    var focusable = /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) ? el : null;
+    if (focusable) setTimeout(function () { try { focusable.focus({ preventScroll: true }); } catch (e) { focusable.focus(); } }, 350);
+    /* ไฮไลต์: แดงเข้ม → อ่อนลงแล้วค้างไว้ จนกดที่อื่น/แก้ไขเสร็จ */
+    document.querySelectorAll(".jump-hl,.jump-hl-field,.jump-hl-row").forEach(function (n) { n.classList.remove("jump-hl", "jump-hl-field", "jump-hl-row"); });
+    var isField = /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName), cls = isField ? "jump-hl-field" : (el.classList.contains("doc-row") ? "jump-hl-row" : "jump-hl");
+    void el.offsetWidth;
+    el.classList.add(cls);
+    function clear() { el.classList.remove(cls); document.removeEventListener("pointerdown", onAway, true); el.removeEventListener("change", clear); el.removeEventListener("input", clear); }
+    function onAway(ev) { if (!el.contains(ev.target)) clear(); }
+    setTimeout(function () { document.addEventListener("pointerdown", onAway, true); }, 50);
+    el.addEventListener("change", clear); el.addEventListener("input", clear);
+  }
+  (function () {
+    var rl = document.getElementById("ready-list");
+    rl.addEventListener("click", function (e) { var li = e.target.closest("li[data-to]"); if (li) jumpTo(li); });
+    rl.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var li = e.target.closest("li[data-to]"); if (li) { e.preventDefault(); jumpTo(li); }
+    });
+  })();
   ["f-title", "f-title-en", "f-school", "f-duration", "f-rtype", "f-keywords", "f-strategy", "f-abstract", "f-objective", "f-scope", "f-outcome"].forEach(function (id) {
     var el = document.getElementById(id); el.addEventListener("input", recompute); el.addEventListener("change", recompute);
   });
