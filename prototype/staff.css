@@ -96,3 +96,90 @@
   .sn-grp__head { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .sn-grp__body, .sn-grp__chev { transition: none; } }
+
+/* =========================================================================
+   Clean pass (staff) — พื้นขาว เส้นบาง เงานิ่ง เหลือสีแบรนด์เฉพาะจุดสำคัญ
+   ========================================================================= */
+.card, .card--featured {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04) !important;
+  border-radius: 14px;
+}
+.card--featured::before { display: none; }
+.stat-card { padding: 18px 20px; }
+.stat-card .stat__value, .stat-card .num { letter-spacing: -.01em; }
+.kpi-btn:hover { box-shadow: 0 8px 20px -10px rgba(16, 24, 40, .25) !important; }
+.kpi-btn.is-active { outline: 2px solid var(--color-primary); outline-offset: -1px; }
+.pipe { height: 8px; gap: 3px; }
+.pipe-legend { gap: 6px 18px; }
+.chip { min-height: 34px; padding: 0 14px; font-size: 13.5px; border-color: var(--color-border); }
+.chip.is-active { box-shadow: none; }
+.text-overline { color: var(--color-text-subtle); letter-spacing: .08em; }
+.table thead th { background: transparent !important; color: var(--color-text-subtle); font-size: 12px; font-weight: 600; letter-spacing: .04em; border-bottom: 1px solid var(--color-border); }
+.table tbody tr { transition: background-color .12s; }
+.table tbody tr:hover { background: var(--color-surface-alt); }
+.table td { border-bottom: 1px solid var(--color-divider); padding-block: 14px; }
+.page-head { margin-bottom: 4px; }
+.container.stack.gap-5 { gap: 20px; }
+.stat-card::before, .stat-card::after { display: none !important; }
+
+/* =========================================================================
+   Hover แบบเด้งยกตัว (เหมือนหน้าเลขา) — เฉพาะส่วนที่กดได้
+   ========================================================================= */
+.kpi-btn, .call-card, .btn, .chip, .pipe-legend button, .sn-link {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background-color .16s ease, color .16s ease !important;
+}
+.kpi-btn:hover:not(:disabled), .call-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(15, 23, 42, .12) !important; }
+.kpi-btn:active, .call-card:active { transform: translateY(-1px); }
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 14px -4px rgba(15, 23, 42, .22); }
+.btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.chip:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 10px -4px rgba(15, 23, 42, .25); }
+.pipe__seg:hover { transform: scaleY(1.6); }
+
+.pipe__seg { transition: transform .16s ease, filter .15s ease, opacity .15s ease; }
+.pipe-legend button:hover { transform: translateY(-1px); }
+.sn-link:hover { transform: translateX(3px); }
+.table tbody tr { transition: background-color .15s ease, box-shadow .15s ease; }
+.table tbody tr:hover { box-shadow: inset 3px 0 0 var(--color-primary); }
+@media (prefers-reduced-motion: reduce) {
+  .kpi-btn:hover, .call-card:hover, .btn:hover, .chip:hover, .pipe__seg:hover, .pipe-legend button:hover, .sn-link:hover { transform: none !important; }
+}
+
+/* แก้: แอนิเมชันตอนเข้าหน้าไม่ค้างค่า transform (เพื่อให้ hover ยกตัวได้) */
+.s-enter, .s-row { animation-fill-mode: backwards; }
+.pipe__seg { animation-fill-mode: backwards; }
+.pipe { align-items: stretch; }
+.pipe__seg:hover { transform: scaleY(1.5); }
+
+/* =========================================================================
+   สไตล์เดียวกับหน้าเลขา (secretary-home): KPI การ์ด + ปุ่มรีเซ็ตมุมขวาล่าง
+   ========================================================================= */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.kpi-card {
+  appearance: none; -webkit-appearance: none; width: 100%; min-width: 0; text-align: left; font: inherit; color: inherit;
+  display: block; background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid #b78a22; border-radius: 12px;
+  padding: 24px 28px; box-shadow: 0 4px 12px rgba(15, 23, 42, .06); cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+}
+.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(15, 23, 42, .12); }
+.kpi-card:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.kpi-card[aria-pressed="true"] { border-color: #b78a22; background: #fffaf0; box-shadow: 0 0 0 2px rgba(183, 138, 34, .18); }
+.kpi-card--static { cursor: default; }
+.kpi-card--static:hover { transform: none; box-shadow: 0 4px 12px rgba(15, 23, 42, .06); }
+.kpi-card__value { display: block; font-family: var(--font-mono); font-size: 36px; line-height: 1.15; font-weight: 700; margin-bottom: 6px; color: var(--color-text-strong); }
+.kpi-card__label { display: block; font-size: 15px; line-height: 1.45; }
+.kpi-card .kpi-hint { display: block; margin-top: 4px; font-size: 12px; color: var(--color-text-muted); }
+.kpi-card[aria-pressed="true"] .kpi-hint { color: #8a670b; font-weight: 600; }
+@media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } .kpi-card { padding: 18px 20px; } }
+
+.fab-reset { position: fixed; right: 24px; bottom: 24px; z-index: 900; width: 56px; height: 56px; border-radius: 50%; border: 0; background: #991b1b; color: #fff; box-shadow: 0 6px 16px rgba(15, 23, 42, .3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .25s ease, box-shadow .2s ease, background .2s ease; }
+.fab-reset svg { width: 28px; height: 28px; transition: transform .45s ease; }
+.fab-reset:hover { background: #7f1d1d; box-shadow: 0 8px 22px rgba(15, 23, 42, .4); }
+.fab-reset:hover svg { transform: rotate(60deg); }
+.fab-reset:active { transform: scale(.94); }
+.fab-reset:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.fab-reset.spin svg { animation: fab-spin .6s ease; }
+@keyframes fab-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .fab-reset svg, .fab-reset.spin svg { transition: none; animation: none; } .kpi-card:hover { transform: none; } }
