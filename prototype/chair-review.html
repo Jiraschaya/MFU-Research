@@ -80,6 +80,13 @@
 .kpi-card{min-height:110px;padding:20px}
 .review-actions>*{flex:1 1 100%;justify-content:center;text-align:center}
 }
+/* รายการ "ดำเนินการแล้ว": คอลัมน์เท่ากันทุกแถว สถานะกว้างเท่ากัน ปุ่มดูเอกสารชิดขวา */
+.done-row{display:grid;grid-template-columns:minmax(0,1fr) 250px 112px;align-items:center;gap:6px 16px;padding:10px 0;border-bottom:1px solid var(--color-divider)}
+.done-row__title{grid-column:1;grid-row:1;min-width:0;overflow-wrap:anywhere}
+.done-row .badge.chip{grid-column:2;grid-row:1;width:100%;justify-content:center}
+.done-row .btn{grid-column:3;grid-row:1;width:100%;justify-content:center}
+.done-row__reason{grid-column:1/-1;grid-row:2}
+@media (max-width:720px){.done-row{grid-template-columns:1fr auto}.done-row__title{grid-column:1/-1}.done-row .badge.chip{grid-column:1;grid-row:2;width:auto}.done-row .btn{grid-column:2;grid-row:2;width:auto}.done-row__reason{grid-row:3}}
 </style>
 </head>
 <body>
@@ -581,11 +588,11 @@
             doneEl.innerHTML = visibleDone.map(function (p) {
                 var l = local[String(p.id)];
                 var reason = l && (l.reason || (l.sections && l.sections.length))
-                    ? '<div class="text-sm text-muted" style="width:100%;">' +
+                    ? '<div class="text-sm text-muted done-row__reason">' +
                         (l.sections && l.sections.length ? "ส่วนที่ต้องแก้: " + escapeHTML(l.sections.join(", ")) + " · " : "") +
                         (l.reason ? "เหตุผล: " + escapeHTML(l.reason) : "") + "</div>" : "";
-                return '<div class="between wrap gap-2 review-item" style="padding:8px 0; border-bottom:1px solid var(--color-divider);">' +
-                    '<span class="text-sm"><span class="text-mono text-muted">' + escapeHTML(p.id) + "</span> · " +
+                return '<div class="done-row review-item">' +
+                    '<span class="text-sm done-row__title"><span class="text-mono text-muted">' + escapeHTML(p.id) + "</span> · " +
                     escapeHTML(p.title || "ไม่ระบุชื่อโครงการ") + "</span>" +
                     endorsementLabel(getStatus(p)) + reason +
                     '<button type="button" class="btn btn-secondary btn-sm" data-docs="' + escapeHTML(p.id) + '">ดูเอกสาร</button></div>';
