@@ -20,11 +20,49 @@
   .chip__dot{flex:none;width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:none!important;animation:none!important}
   .badge, .badge::before, .badge::after, .table .badge *{animation:none!important}
 
+  .notif{position:fixed;top:12px;right:16px;z-index:1000}
+  .notif__btn{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid #e2e8f0;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.15);cursor:pointer;font-size:20px;line-height:1}
+  .notif__btn:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+  .notif__badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#991b1b;color:#fff;font-size:12px;font-weight:700;line-height:20px;text-align:center}
+  .notif__panel{position:absolute;top:52px;right:0;width:min(360px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.2)}
+  .notif__head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e2e8f0;font-weight:600}
+  .notif__head button{border:0;background:none;color:#2563eb;cursor:pointer;font:inherit;font-size:13px}
+  .notif__item{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+  .notif__item.unread{background:#fffaf0}
+  .notif__time{display:block;font-size:12px;color:#64748b}
+  .notif__empty{padding:20px;text-align:center;color:#64748b;font-size:14px}
+  .notif__tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid #e2e8f0}
+  .notif__tabs button{flex:1;border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:6px 8px;font:inherit;font-size:13px;cursor:pointer;color:#334155}
+  .notif__tabs button.is-on{background:#991b1b;color:#fff;border-color:#991b1b}
+  .notif__tabs i{font-style:normal}
+  .notif__src{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;margin-right:6px}
+  .fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:56px;height:56px;border-radius:50%;border:0;background:#991b1b;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s ease,box-shadow .2s ease,background .2s ease}
+  .fab-reset svg{width:28px;height:28px;transition:transform .45s ease}
+  .fab-reset:hover{background:#7f1d1d;box-shadow:0 8px 22px rgba(15,23,42,.4)}
+  .fab-reset:hover svg{transform:rotate(60deg)}
+  .fab-reset:active{transform:scale(.94)}
+  .fab-reset:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+  .fab-reset.spin svg{animation:fab-spin .6s ease}
+  @keyframes fab-spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.fab-reset svg,.fab-reset.spin svg{transition:none;animation:none}}
   .returned-list{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <div id="app-nav-root"></div>
+
+<div class="notif" id="notif">
+  <button type="button" class="notif__btn" id="notif-btn" aria-label="การแจ้งเตือน" aria-expanded="false" aria-controls="notif-panel">🔔<span class="notif__badge" id="notif-badge" hidden>0</span></button>
+  <div class="notif__panel" id="notif-panel" hidden>
+    <div class="notif__head"><span>การแจ้งเตือน</span><span><button type="button" id="notif-read">อ่านทั้งหมด</button> <button type="button" id="notif-clear">ล้าง</button></span></div>
+        <div class="notif__tabs" id="notif-tabs">
+            <button type="button" data-tab="all" class="is-on">ทั้งหมด<i></i></button>
+            <button type="button" data-tab="chair">จากประธาน<i></i></button>
+            <button type="button" data-tab="researcher">จากนักวิจัย<i></i></button>
+        </div>
+    <div id="notif-list" aria-live="polite"></div>
+  </div>
+</div>
 <main class="section">
   <div class="container stack gap-5">
 
@@ -39,6 +77,11 @@
     </div>
 
     <!-- ถูกประธาน/คณบดีส่งกลับให้แก้ไข (อ่านจากผลที่หน้าประธานบันทึก) -->
+    <div class="notice notice--reject" id="rejected-note" role="status" hidden>
+      <span class="notice__title" id="rejected-title"></span>
+      <ul class="returned-list" id="rejected-list"></ul>
+    </div>
+
     <div class="notice notice--wait" id="returned-note" role="status" hidden>
       <span class="notice__title" id="returned-title"></span>
       <ul class="returned-list" id="returned-list"></ul>
@@ -73,6 +116,10 @@
 
   </div>
 </main>
+
+<button type="button" class="fab-reset" id="fab-reset" aria-label="รีเซ็ต กลับจุดเดิม" title="รีเซ็ต / กลับจุดเดิม">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+</button>
 
 <script src="shared.js"></script>
 <script>
@@ -131,7 +178,10 @@
 
   var mine = (RGMS.PROJECTS || [])
     .filter(function (p) { return me && p.pi === me; })
-    .map(function (p, i) { return { p: p, st: RGMS.effectiveStatus(p), i: i }; })
+    .map(function (p, i) {
+      var l = chairState()[String(p.id)], back = !!(l && l.status === "returned");
+      return { p: p, st: back ? "revise" : (l && l.status === "rejected" ? "rejected" : RGMS.effectiveStatus(p)), chair: back, i: i };   // ประธานส่งกลับ → สถานะ "รอแก้ไข"
+    })
     .sort(function (a, b) { return ((b.st === "revise") - (a.st === "revise")) || (a.i - b.i); });
 
   /* ---------- ถูกส่งกลับจากประธาน/คณบดี ---------- */
@@ -139,25 +189,42 @@
   function chairState() {
     try { return JSON.parse(localStorage.getItem(KEY_CHAIR) || "{}") || {}; } catch (e) { return {}; }
   }
-  function renderReturned() {
-    var cs = chairState();
-    var list = mine.filter(function (x) { var l = cs[String(x.p.id)]; return l && l.status === "returned"; });
-    $("returned-note").hidden = !list.length;
+  function editHref(id) { return "proposal-new.html?edit=" + encodeURIComponent(id); }
+  function renderRejected(cs) {
+    var list = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && l.status === "rejected"; });
+    $("rejected-note").hidden = !list.length;
     if (!list.length) return;
-    $("returned-title").textContent = "มี " + list.length + " โครงการที่ประธาน/คณบดีส่งกลับให้แก้ไข";
-    $("returned-list").innerHTML = list.map(function (x) {
-      var l = cs[String(x.p.id)];
-      return "<li><a href=\"" + esc(detailHref(x.p.id)) + "\">" + esc(x.p.id) + "</a> · " + esc(x.p.title || "") +
-        (l.reason ? '<br><span class="text-muted">เหตุผล: ' + esc(l.reason) + "</span>" : "") + "</li>";
+    $("rejected-title").textContent = "ประธาน/คณบดีไม่รับรอง " + list.length + " โครงการ";
+    $("rejected-list").innerHTML = list.map(function (p) {
+      var l = cs[String(p.id)];
+      return '<li><a href="' + esc(detailHref(p.id)) + '">' + esc(p.id) + "</a> · " + esc(p.title || "") +
+        (l.reason ? '<br><b>เหตุผล:</b> ' + esc(l.reason) : "") + "</li>";
     }).join("");
   }
+  function renderReturned() {
+    var cs = chairState();
+    renderRejected(cs);
+    var list = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && l.status === "returned"; });
+    $("returned-note").hidden = !list.length;
+    if (!list.length) return;
+    $("returned-title").textContent = "ประธาน/คณบดีส่งกลับให้แก้ไข " + list.length + " โครงการ";
+    $("returned-list").innerHTML = list.map(function (p) {
+      var l = cs[String(p.id)];
+      return '<li><a href="' + esc(detailHref(p.id)) + '">' + esc(p.id) + "</a> · " + esc(p.title || "") +
+        (l.sections && l.sections.length ? '<br><b>ส่วนที่ต้องแก้ไข:</b> ' + esc(l.sections.join(", ")) : "") +
+        (l.reason ? '<br><b>รายละเอียด:</b> ' + esc(l.reason) : "") +
+        (l.at ? '<br><span class="text-muted">เมื่อ ' + esc(new Date(l.at).toLocaleString("th-TH")) + "</span>" : "") +
+        '<br><a class="btn btn-primary btn-sm" style="margin-top:6px;" href="' + esc(editHref(p.id)) + '">แก้ไขข้อเสนอ →</a></li>';
+    }).join("");
+  }
+  function myProjects() { return (RGMS.PROJECTS || []).filter(function (p) { return me && p.pi === me; }); }
   renderReturned();
-  window.addEventListener("storage", renderReturned);
-  window.addEventListener("focus", renderReturned);
-  window.addEventListener("pageshow", renderReturned);
-  setInterval(renderReturned, 3000);
+  window.addEventListener("storage", function () { renderReturned(); notifyTick(); });
+  window.addEventListener("focus", function () { renderReturned(); notifyTick(); });
+  window.addEventListener("pageshow", function () { renderReturned(); notifyTick(); });
+  setInterval(function () { renderReturned(); notifyTick(); }, 3000);
 
-  var reviseN = mine.filter(function (x) { return x.st === "revise"; }).length;
+  var reviseN = mine.filter(function (x) { return x.st === "revise" && !x.chair; }).length;
   if (reviseN) {
     $("revise-title").textContent = "มี " + reviseN + " โครงการที่ต้องปรับแก้ตามมติ";
     $("revise-note").hidden = false;
@@ -210,11 +277,12 @@
   /* ---------- ตารางโครงการ ---------- */
   function actionFor(x) {
     var label, cls;
-    if (x.st === "revise")       { label = "ปรับแก้ตามมติ";     cls = "btn-primary"; }
+    if (x.chair)                 { label = "แก้ไขข้อเสนอ"; cls = "btn-primary"; }
+    else if (x.st === "revise")  { label = "ปรับแก้ตามมติ";     cls = "btn-primary"; }
     else if (x.st === "ongoing") { label = "ส่งรายงานก้าวหน้า"; cls = "btn-secondary"; }
     else if (x.st === "final")   { label = "ดูสถานะการเงิน";   cls = "btn-secondary"; }
     else                         { label = "รายละเอียด →";      cls = "btn-ghost"; }
-    return '<a class="btn ' + cls + ' btn-sm" href="' + esc(detailHref(x.p.id)) + '" aria-label="' + esc(label + " โครงการ " + x.p.id) + '">' + esc(label) + '</a>';
+    return '<a class="btn ' + cls + ' btn-sm" href="' + esc(x.chair ? editHref(x.p.id) : detailHref(x.p.id)) + '" aria-label="' + esc(label + " โครงการ " + x.p.id) + '">' + esc(label) + '</a>';
   }
 
   var rowsEl = $("rows");
@@ -238,6 +306,142 @@
     if (e.target.closest("a, button")) return;
     var tr = e.target.closest("[data-id]");
     if (tr) window.location.href = detailHref(tr.getAttribute("data-id"));
+  });
+
+  /* ---------- แจ้งเตือน (แยก จากประธาน / จากนักวิจัย) ---------- */
+  var escapeHTML = esc;
+  function load(key, fallback) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
+  function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
+  var KEY_NOTIF = "rgms_res_notif_v1", KEY_LAST_R = "rgms_res_last_v1";
+  var notifs = load(KEY_NOTIF, []);
+  var notifBtn = $("notif-btn"), notifPanel = $("notif-panel");
+
+  /* ---------- บันทึกเหตุการณ์ร่วม (ทุกบทบาทอ่านชุดเดียวกัน) ---------- */
+  var KEY_EVENTS = "rgms_events_v1";
+  function logEvent(e) {
+      var list = load(KEY_EVENTS, []);
+      e.id = Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+      e.at = Date.now();
+      list.push(e);
+      save(KEY_EVENTS, list.slice(-200));
+  }
+  function pullEvents(seenKey, accept, onNew) {
+      var list = load(KEY_EVENTS, []);
+      var seen = load(seenKey, null);
+      var ids = list.map(function (e) { return e.id; });
+      if (seen === null) { save(seenKey, ids); return; }   // ครั้งแรก: ไม่แจ้งของเก่า
+      list.forEach(function (e) { if (seen.indexOf(e.id) < 0 && accept(e)) onNew(e); });
+      save(seenKey, ids);
+  }
+
+    var notifTab = "all";
+  var SRC_STYLE = { chair: ["ประธาน/คณบดี", "#991b1b", "#fee2e2"], researcher: ["นักวิจัย", "#075985", "#e0f2fe"], system: ["ระบบ", "#475569", "#f1f5f9"] };
+  function addNotif(text, src) {
+      notifs.unshift({ text: text, at: Date.now(), read: false, src: src || "system" });
+      notifs = notifs.slice(0, 40);
+      save(KEY_NOTIF, notifs);
+      renderNotifs();
+  }
+  function inTab(n) { return notifTab === "all" || (n.src || "system") === notifTab; }
+  function renderNotifs() {
+      var unread = notifs.filter(function (n) { return !n.read; }).length;
+      var badge = document.getElementById("notif-badge");
+      badge.textContent = unread > 99 ? "99+" : unread;
+      badge.hidden = unread === 0;
+      ["all", "chair", "researcher"].forEach(function (t) {
+          var btn = document.querySelector('#notif-tabs [data-tab="' + t + '"]');
+          if (!btn) return;
+          var c = notifs.filter(function (n) { return !n.read && (t === "all" || (n.src || "system") === t); }).length;
+          btn.classList.toggle("is-on", notifTab === t);
+          btn.querySelector("i").textContent = c ? " (" + c + ")" : "";
+      });
+      var shown = notifs.filter(inTab);
+      document.getElementById("notif-list").innerHTML = shown.length === 0
+          ? '<div class="notif__empty">ยังไม่มีการแจ้งเตือน</div>'
+          : shown.map(function (n) {
+              var s = SRC_STYLE[n.src || "system"] || SRC_STYLE.system;
+              var t = new Date(n.at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+              return '<div class="notif__item' + (n.read ? "" : " unread") + '"><span class="notif__src" style="color:' + s[1] + ';background:' + s[2] + ';">' +
+                  escapeHTML(s[0]) + "</span>" + escapeHTML(n.text) + '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
+          }).join("");
+  }
+  function markRead() {
+      notifs.forEach(function (n) { if (inTab(n)) n.read = true; });
+      save(KEY_NOTIF, notifs);
+  }
+  document.getElementById("notif-tabs").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-tab]");
+      if (!b) return;
+      notifTab = b.getAttribute("data-tab");
+      markRead();
+      renderNotifs();
+  });
+
+  function setPanel(open) {
+    notifPanel.hidden = !open;
+    notifBtn.setAttribute("aria-expanded", String(open));
+    if (open) { markRead(); renderNotifs(); }
+  }
+  notifBtn.addEventListener("click", function (e) { e.stopPropagation(); setPanel(notifPanel.hidden); });
+  $("notif-read").addEventListener("click", function () { notifs.forEach(function (n) { n.read = true; }); save(KEY_NOTIF, notifs); renderNotifs(); });
+  $("notif-clear").addEventListener("click", function () { notifs = []; save(KEY_NOTIF, notifs); renderNotifs(); });
+  document.addEventListener("click", function (e) { if (!notifPanel.hidden && !$("notif").contains(e.target)) setPanel(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !notifPanel.hidden) { setPanel(false); notifBtn.focus(); } });
+
+  function sigNow() {
+    var cs = chairState();
+    return myProjects().map(function (p) { var l = cs[String(p.id)]; return p.id + ":" + (l ? l.status : ""); }).join("|");
+  }
+  var loadSig = sigNow();
+
+  function notifyTick() {
+    var mineNow = myProjects(), last = load(KEY_LAST_R, null), map = {};
+    mineNow.forEach(function (p) {
+      var id = String(p.id), cur = { s: RGMS.effectiveStatus(p), h: Array.isArray(p.history) ? p.history.length : 0 };
+      map[id] = cur;
+      if (!last || !last[id]) return;
+      if (last[id].s !== cur.s) addNotif("สถานะโครงการ " + id + " เปลี่ยนเป็น " + (STATUS_NAME[cur.s] || cur.s), "researcher");
+      if (last[id].h !== undefined && cur.h > last[id].h) addNotif("ความเคลื่อนไหวใหม่ในโครงการ " + id + ": " + (p.history[cur.h - 1].action || "มีการอัปเดต"), "researcher");
+    });
+    save(KEY_LAST_R, map);
+    pullEvents("rgms_res_seen_ev_v1", function (e) {
+      return mineNow.some(function (p) { return String(p.id) === String(e.pid); });
+    }, function (e) { addNotif(e.text, e.src === "chair" ? "chair" : "researcher"); });
+    if (sigNow() !== loadSig) location.reload();   // ผลจากประธานเปลี่ยน → วาดตารางและสถานะใหม่
+  }
+  renderNotifs();
+  notifyTick();
+
+  /* ---------- ปุ่มรีเซ็ต: ล้างผลตัดสินของประธานในโครงการของฉัน ให้กลับไปรอรับรอง ---------- */
+  var fab = $("fab-reset");
+  fab.addEventListener("click", function () {
+    fab.classList.remove("spin"); void fab.offsetWidth; fab.classList.add("spin");
+    setPanel(false);
+    var cs = chairState();
+    var decided = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && (l.status === "returned" || l.status === "rejected"); });
+    if (!decided.length) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      RGMS.toast("ไม่มีโครงการที่ต้องรีเซ็ต", "accent");
+      return;
+    }
+    RGMS.modal({
+      title: "รีเซ็ตผลการตัดสิน",
+      body: "<p>ย้ายโครงการของคุณ <b>" + decided.length + "</b> รายการ ที่ประธาน/คณบดีส่งกลับหรือไม่รับรอง กลับไปอยู่ในรายการรอรับรอง?</p>" +
+        '<p class="text-sm text-muted" style="margin-top:8px;">เหตุผลและส่วนที่ต้องแก้ไขของรายการเหล่านี้จะถูกล้าง</p>',
+      foot: '<button class="btn btn-secondary btn-md" data-close>ยกเลิก</button><button class="btn btn-primary btn-md" id="confirm-reset">ยืนยันรีเซ็ต</button>',
+      onMount: function (back, close) {
+        back.querySelector("#confirm-reset").addEventListener("click", function () {
+          var st = chairState();
+          decided.forEach(function (p) {
+            st[String(p.id)] = { status: "pending", reason: "", sections: [], at: Date.now(), restored: true };
+            logEvent({ src: "researcher", kind: "reset", pid: String(p.id), text: "นักวิจัยรีเซ็ตโครงการ " + p.id + " กลับไปรอรับรอง" });
+          });
+          save(KEY_CHAIR, st);
+          close();
+          location.reload();
+        });
+      }
+    });
   });
 </script>
 </body>
