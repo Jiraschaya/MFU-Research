@@ -44,6 +44,7 @@
   .review-row__label { font-size:12px; font-weight:600; color:var(--color-text-muted); }
   @media (max-width:640px){ .bline__top{ grid-template-columns:1fr; } .tier-grid{ grid-template-columns:1fr; } }
   .doc-row.is-over { outline: 2px dashed var(--color-primary); background: var(--color-primary-tint); }
+  .needs-fix{outline:3px solid #f59e0b;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -257,13 +258,30 @@
 <script>
   RGMS.renderAppNav("proposal-new");
 
+  /* ---------- โหมดแก้ไข: เปิดจากหน้า "โครงการของฉัน" เมื่อประธานส่งกลับ (?edit=รหัสโครงการ) ---------- */
+  var KEY_PROPS = "rgms_proposals_v1", KEY_CHAIR = "rgms_chair_state_v1", KEY_EVENTS = "rgms_events_v1";
+  function lsGet(k, f) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch (e) { return f; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function escH(v) { return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  var EDIT_ID = new URLSearchParams(location.search).get("edit");
+  var EDIT_P = EDIT_ID ? RGMS.getProject(EDIT_ID) : null;
+  var EDIT = !!EDIT_P;
+  var EDIT_FB = EDIT ? (lsGet(KEY_CHAIR, {})[String(EDIT_ID)] || null) : null;
+
   /* --- gate การยื่นตามรอบที่เปิดรับ (FR-03) --- */
   var __oc = RGMS.openCall();
-  var __callOpen = !!__oc;
+  var __callOpen = !!__oc || EDIT;
   (function () {
     var head = document.querySelector(".page-head");
     var b = document.createElement("div");
-    if (__oc) {
+    if (EDIT) {
+      b.className = "notice"; b.style.cssText = "margin-bottom:var(--space-4);border-left-color:var(--st-wait);background:var(--st-wait-tint);";
+      var fb = EDIT_FB && EDIT_FB.status === "returned" ? EDIT_FB : null;
+      b.innerHTML = '<span class="notice__title">แก้ไขข้อเสนอตามที่ประธาน/คณบดีส่งกลับ · ' + escH(EDIT_ID) + '</span><span class="notice__body">' +
+        (fb && fb.sections && fb.sections.length ? '<b>ส่วนที่ต้องแก้ไข:</b> ' + escH(fb.sections.join(", ")) + '<br>' : '') +
+        (fb && fb.reason ? '<b>รายละเอียด:</b> ' + escH(fb.reason) + '<br>' : '') +
+        'ส่วนที่ต้องแก้จะมีกรอบสีส้ม — แก้ไขข้อมูลหรือเพิ่มเอกสารได้เหมือนตอนยื่นข้อเสนอใหม่ แล้วกด "ส่งฉบับแก้ไขให้ประธาน"</span>';
+    } else if (__oc) {
       b.className = "notice notice--ok"; b.style.marginBottom = "var(--space-4)";
       b.innerHTML = '<span class="notice__title">เปิดรับข้อเสนอ: ' + __oc.title + '</span><span class="notice__body">ปิดรับ ' + __oc.close + ' · เพดานงบสูงสุด ' + RGMS.fmtBaht(__oc.cap) + ' — ยื่นได้ภายในกำหนด</span>';
     } else {
@@ -1085,7 +1103,7 @@
         ? '<span class="badge badge-ok">อัตโนมัติ</span>'
         : (f ? '<button class="btn btn-secondary btn-sm" data-doc-del="' + d.key + '">ลบไฟล์</button>'
              : '<button class="btn btn-primary-solid btn-sm" data-doc="' + d.key + '">แนบไฟล์</button>');
-      var sub = d.auto ? d.note : (f ? '📎 ' + String(f.name).replace(/</g, "&lt;") + ' · ' + fmtSize(f.size) : (d.note ? d.note + ' · ' : '') + 'ลากไฟล์มาวางที่แถวนี้ หรือกด "แนบไฟล์" (PDF/Word/Excel/รูป ไม่เกิน 10 MB)');
+      var sub = d.auto ? d.note : (f ? '📎 ' + String(f.name).replace(/</g, "&lt;") + (f.size ? ' · ' + fmtSize(f.size) : '') : (d.note ? d.note + ' · ' : '') + 'ลากไฟล์มาวางที่แถวนี้ หรือกด "แนบไฟล์" (PDF/Word/Excel/รูป ไม่เกิน 10 MB)');
       return '<div class="doc-row" data-key="' + d.key + '"><span class="doc-row__icon">' + (ok ? '✓' : 'PDF') + '</span>' +
         '<div class="flex-1"><div style="font-weight:600; font-size:14px;">' + d.label + ' <span class="req" style="color:var(--st-reject);">*</span></div>' +
         '<div class="text-sm text-muted">' + sub + '</div></div>' + right + '</div>';
@@ -1139,16 +1157,111 @@
     var el = document.getElementById(id); el.addEventListener("input", recompute); el.addEventListener("change", recompute);
   });
 
+  /* ---------- บันทึก/โหลดข้อมูลข้อเสนอ เพื่อแก้ไขต่อได้ ---------- */
+  var FIELD_IDS = ["f-title", "f-title-en", "f-school", "f-duration", "f-rtype", "f-keywords", "f-strategy", "f-abstract", "f-objective", "f-scope", "f-outcome"];
+  function setField(id, val) {
+    var el = document.getElementById(id);
+    if (!el || val == null || val === "") return;
+    if (el.tagName === "SELECT" && !Array.prototype.some.call(el.options, function (o) { return o.value === val || o.text === val; })) {
+      var op = document.createElement("option"); op.textContent = val; el.appendChild(op);
+    }
+    el.value = val;
+  }
+  function snapshot() {
+    var f = {};
+    FIELD_IDS.forEach(function (id) { f[id] = document.getElementById(id).value; });
+    return { fields: f, tier: currentTier, mode: mode, budget: budget, lines: lines,
+      budgetItems: activeBudget().map(function (b) { return { item: b.item, amount: b.total }; }),
+      std: stdChosen, docs: manualDocsOn, extra: extraDocs, at: Date.now() };
+  }
+  function logEventP(e) {
+    var list = lsGet(KEY_EVENTS, []);
+    e.id = Date.now() + "-" + Math.random().toString(36).slice(2, 7); e.at = Date.now();
+    list.push(e); lsSet(KEY_EVENTS, list.slice(-200));
+  }
+  var SEC_MAP = { "ข้อมูลโครงการ": "sec-2", "บทคัดย่อ/ที่มา": "sec-2", "วัตถุประสงค์": "sec-2", "งบประมาณ": "sec-3", "เอกสารแนบ": "sec-5", "มาตรฐานการวิจัย": "sec-4" };
+  function markTiers() {
+    Array.prototype.forEach.call(document.getElementById("tier-grid").children, function (c) { c.classList.toggle("is-sel", c.getAttribute("data-tier") === currentTier); });
+    setCap();
+  }
+  function applyEdit() {
+    var p = EDIT_P, snap = lsGet(KEY_PROPS, {})[String(EDIT_ID)];
+    document.getElementById("sec-0").style.display = "none";
+    if (snap) {
+      Object.keys(snap.fields || {}).forEach(function (k) { setField(k, snap.fields[k]); });
+      if (snap.tier && RGMS.TIERS[snap.tier]) currentTier = snap.tier;
+      stdChosen = snap.std || stdChosen; manualDocsOn = snap.docs || {}; extraDocs = snap.extra || [];
+      if (Array.isArray(snap.lines) && snap.lines.length) { lines = snap.lines; uid = lines.reduce(function (m, l) { return Math.max(m, Number(l.id) || 0); }, uid); }
+      if (Array.isArray(snap.budget) && snap.budget.length) budget = snap.budget;
+      markTiers(); renderStandards();
+      if (snap.mode === "manual") document.querySelector('#mode-switch [data-mode="manual"]').click();
+      else if (budget) renderParsed("ข้อมูลที่ยื่นไว้เดิม");
+    } else {
+      setField("f-title", p.title); setField("f-school", p.school); setField("f-duration", p.duration); setField("f-abstract", p.abstract);
+      try { var t = RGMS.tierOf(p); Object.keys(RGMS.TIERS).forEach(function (k) { if (t && (RGMS.TIERS[k] === t || RGMS.TIERS[k].short === t.short)) currentTier = k; }); } catch (e) {}
+      markTiers();
+      if (Array.isArray(p.budget) && p.budget.length) {
+        budget = p.budget.map(function (b) {
+          var amt = Number(b.amount) || 0, c = catOf(b.item), i1 = Math.round(amt * INST[0].pct), i2 = Math.round(amt * INST[1].pct);
+          return { cat: c ? c.id : "generaluse", item: b.item, breakdown: "", total: amt, i1: i1, i2: i2, i3: amt - i1 - i2 };
+        });
+        renderParsed("ข้อมูลเดิมของโครงการ " + EDIT_ID);
+      }
+    }
+    // เอกสารที่เคยแนบไว้แล้ว ถือว่าครบ — นักวิจัยเพิ่ม/เปลี่ยนไฟล์ได้
+    docList().forEach(function (d) { if (!d.auto && !manualDocsOn[d.key]) manualDocsOn[d.key] = { name: "แนบไว้แล้วเมื่อยื่นครั้งแรก", size: 0 }; });
+    renderDocs();
+
+    document.querySelector(".page-head h1").textContent = "แก้ไขข้อเสนอโครงการ";
+    document.querySelector(".breadcrumb").innerHTML = '<a href="researcher-home.html">โครงการของฉัน</a> / แก้ไขข้อเสนอ ' + escH(EDIT_ID);
+    document.getElementById("round-line").textContent = EDIT_ID + " · " + (p.title || "");
+    document.getElementById("submit-btn").textContent = "ส่งฉบับแก้ไขให้ประธาน";
+
+    var first = null;
+    ((EDIT_FB && EDIT_FB.sections) || []).forEach(function (name) {
+      var el = SEC_MAP[name] && document.getElementById(SEC_MAP[name]);
+      if (!el) return;
+      el.classList.add("needs-fix");
+      var h = el.querySelector("h2");
+      if (h && !h.querySelector(".fix-tag")) h.insertAdjacentHTML("beforeend", ' <span class="badge badge-revise fix-tag">ต้องแก้ไข: ' + escH(name) + '</span>');
+      if (!first) first = el;
+    });
+    if (first) setTimeout(function () { first.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300);
+  }
+
   renderStandards();
   renderDocs();
+  if (EDIT) applyEdit();
   recompute();
 
   /* ==========================================================
      การส่งข้อเสนอโครงการ ( submit-btn )
      ========================================================== */
 document.getElementById("submit-btn").addEventListener("click", function () {
-    var total = activeBudget().reduce(function (s, b) { return s + b.total; }, 0);
-    
+    var total = activeBudget().reduce(function (sum, b) { return sum + b.total; }, 0);
+
+    if (EDIT) {   // ส่งฉบับแก้ไขกลับให้ประธาน
+      var props = lsGet(KEY_PROPS, {});
+      props[String(EDIT_ID)] = snapshot();
+      var st = lsGet(KEY_CHAIR, {});
+      var fixed = (EDIT_FB && EDIT_FB.sections) ? EDIT_FB.sections.join(", ") : "";
+      st[String(EDIT_ID)] = { status: "pending", reason: "", sections: [], at: Date.now(), restored: true };
+      if (!lsSet(KEY_PROPS, props) || !lsSet(KEY_CHAIR, st)) { RGMS.toast("บันทึกไม่สำเร็จ — ลองอีกครั้ง", "accent"); return; }
+      logEventP({ src: "researcher", kind: "resubmitted", pid: String(EDIT_ID),
+        text: "นักวิจัยส่งฉบับแก้ไขโครงการ " + EDIT_ID + " กลับให้ประธาน/คณบดีตรวจอีกครั้ง" + (fixed ? " (แก้ไขส่วน: " + fixed + ")" : "") });
+      RGMS.modal({
+        title: "ส่งฉบับแก้ไขแล้ว",
+        body: '<div class="notice notice--ok"><span class="notice__title">ส่งโครงการ ' + escH(EDIT_ID) + ' กลับให้ประธาน/คณบดีตรวจอีกครั้งแล้ว</span>' +
+          '<span class="notice__body">งบประมาณรวม ' + RGMS.fmtBaht(total) + ' — ระบบแจ้งเตือนประธานและเลขานุการให้อัตโนมัติ</span></div>',
+        foot: '<a class="btn btn-primary btn-md" href="researcher-home.html" style="width:100%; text-align:center;">กลับหน้าโครงการของฉัน</a>'
+      });
+      return;
+    }
+
+    var props2 = lsGet(KEY_PROPS, {});
+    props2["P-2570-001"] = snapshot();
+    lsSet(KEY_PROPS, props2);
+
     RGMS.modal({
       title: "ยื่นข้อเสนอโครงการสำเร็จ",
       body: '<div class="notice notice--ok" style="margin-bottom:12px;">' +
