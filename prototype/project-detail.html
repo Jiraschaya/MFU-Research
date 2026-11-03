@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>รายละเอียดโครงการ — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="exec.css">
 </head>
 <body>
 <div id="app-nav-root"></div>
@@ -49,14 +48,7 @@
       ownerText = "รอการบันทึกมติจาก: <b>คณะกรรมการส่งเสริมและพัฒนางานวิจัย</b>";
     } else if (raw === "announced") {
       ownerText = "<b>ประกาศผลการจัดสรรทุนเรียบร้อยแล้ว</b>";
-    } else if (raw === "approved" || raw === "rejected") {
-      ownerText = "มีมติแล้ว — รอ <b>" + RGMS.exec.SIGNER + "</b> ลงนามประกาศผล";
-    } else if (raw === "revise" && RGMS.exec.conditionOf(p.id)) {
-      ownerText = "คณะกรรมการอนุมัติแบบมีเงื่อนไข — รอ <b>นักวิจัย</b> ปรับแก้ตามเงื่อนไขแล้วส่งกลับเข้าวาระ";
-    } else if (raw === "revise") {
-      ownerText = "รอ <b>นักวิจัย</b> ปรับแก้ตามข้อคิดเห็นของผู้ตรวจ";
     }
-    document.getElementById("pending-owner-bar").style.display = ownerText ? "" : "none";
     
     document.getElementById("pending-owner-text").innerHTML = ownerText;
 
@@ -88,10 +80,10 @@
 </script>
   
 <script src="shared.js"></script>
-<script src="exec.js"></script>
 <script>
   var role = RGMS.currentRole();
-  RGMS.renderAppNav(role.id === "staff" ? "staff-queue" : role.id === "reviewer" ? "reviewer-list" : role.id === "exec" ? "staff-agenda" : "researcher-home");
+  var isChair = /chair/i.test(String(role.id || "")), isSec = /secret/i.test(String(role.id || ""));
+  RGMS.renderAppNav(isChair ? "chair-review" : isSec ? "secretary-home" : role.id === "staff" ? "staff-queue" : role.id === "reviewer" ? "reviewer-list" : "researcher-home");
 
   var id = new URLSearchParams(location.search).get("id") || "P-2568-014";
   var p = RGMS.getProject(id);
@@ -100,6 +92,8 @@
   else render();
 
   function backHref() {
+    if (isChair) return "chair-review.html";
+    if (isSec) return "secretary-home.html";
     if (role.id === "staff") return "staff-queue.html";
     if (role.id === "reviewer") return "reviewer-list.html";
     if (role.id === "exec") return "staff-agenda.html";
@@ -126,6 +120,7 @@
     html += '<div class="stack gap-4">';
 
     // action panel ตามบทบาท+สถานะ
+    html += chairReturnPanel();
     html += actionPanel();
 
     // บทคัดย่อ
@@ -206,10 +201,6 @@
     html += '</div>';
     root.innerHTML = html;
     bindActions();
-    // แถบผู้รับผิดชอบ + ข้อคิดเห็นที่ต้องแก้ไข: ย้ายเข้ากรอบหน้า (container) แล้วเติมข้อมูล
-    var bar = document.getElementById("pending-owner-bar"), fb = document.getElementById("centralized-feedback-panel");
-    [fb, bar].forEach(function (el) { if (el) { el.style.marginBottom = "0"; root.insertBefore(el, root.children[1] || null); } });
-    renderResponsibilityAndFeedback(p);
   }
 
   /* -------- action panel: ต่างกันตามบทบาท + สถานะ (ขอบเขต MVP: ยื่น → เอนดอร์ส → ตรวจ → พิจารณา → มติ → ประกาศ) -------- */
@@ -217,13 +208,6 @@
     var status = RGMS.effectiveStatus(p);
     // นักวิจัย
     if (role.id === "researcher") {
-      var cond = RGMS.exec.conditionOf(p.id);
-      if (cond) {
-        return '<div class="notice notice--wait"><span class="notice__title">คณะกรรมการอนุมัติแบบมีเงื่อนไข — ต้องปรับแก้</span>' +
-          '<span class="notice__body">มติการประชุมครั้งที่ ' + RGMS.exec.esc(cond.meetingNo || "—") + ' · งบที่เห็นชอบ ' + RGMS.fmtMoney(cond.amount) + ' บาท<br>เงื่อนไข: “' + RGMS.exec.esc(cond.note) + '”</span>' +
-          '<p class="text-sm text-muted" style="margin-top:8px;">เมื่อปรับแก้ตามเงื่อนไขแล้วกดส่ง โครงการจะกลับเข้าวาระ คกก.ส่งเสริมอีกครั้งเพื่อยืนยันมติ (FR-26)</p>' +
-          '<div style="margin-top:10px;"><button class="btn btn-primary btn-md" data-act="resubmit-committee">ส่งฉบับปรับแก้กลับเข้าวาระ</button></div></div>';
-      }
       if (["review", "revise"].indexOf(status) >= 0) {
         var cSt = RGMS.contentTrackStatus(p.id), fSt = RGMS.financeTrackStatus(p.id);
         var cLabel = RGMS.TRACK_STATUS[cSt].label, fLabel = RGMS.TRACK_STATUS[fSt].label;
@@ -290,15 +274,9 @@
         '<a class="btn btn-primary btn-md" href="finance-review-console.html?id=' + p.id + '">' + (fOwner ? "เปิดหน้าตรวจการเงิน →" : "รับตรวจ / เปิดหน้าตรวจการเงิน →") + '</a></div></div>';
     }
     // ผู้บริหาร / คกก.ส่งเสริม
-    if (role.id === "exec") {
-      var er = RGMS.exec.resolutionOf(p.id), es = RGMS.exec.stateOf(p);
-      var resBox = er ? '<div class="notice notice--info" style="margin-bottom:12px;"><span class="notice__title">มติ: ' + RGMS.RESOLUTION[er.code] + (er.code === "reject" ? "" : ' · งบ ' + RGMS.fmtMoney(er.amount) + ' บาท') + '</span>' +
-        '<span class="notice__body">' + RGMS.exec.esc(er.note || "") + (er.meetingNo ? '<br>การประชุมครั้งที่ ' + RGMS.exec.esc(er.meetingNo) : '') + (es === "announced" ? ' · ประกาศผลแล้ว' : es === "conditional" ? ' · รอนักวิจัยปรับแก้' : '') + '</span></div>' : '';
-      if (er || es === "ready" || es === "review" || status === "committee") {
-        return resBox + '<div class="card card--alt"><div class="between"><div><h2 class="text-subhead">มติ คกก.ส่งเสริม / ประกาศผล</h2><p class="text-sm text-muted">' + (es === "review" ? "ยังไม่ครบ 2 แทร็ก — ยังเข้าวาระไม่ได้" : "บันทึกมติและลงนามประกาศผลรวมหลายโครงการได้ที่หน้าเดียว") + '</p></div>' +
+    if (role.id === "exec" && (status === "committee" || status === "approved" || status === "rejected")) {
+      return '<div class="card card--alt"><div class="between"><div><h2 class="text-subhead">มติ คกก.ส่งเสริม / ประกาศผล</h2><p class="text-sm text-muted">บันทึกมติและประกาศผลรวมหลายโครงการได้ที่หน้าเดียว</p></div>' +
         '<a class="btn btn-primary btn-md" href="staff-agenda.html">ไปหน้ามติ / ประกาศผล →</a></div></div>';
-      }
-      return '';
     }
     return '';
   }
@@ -344,12 +322,40 @@ function applyTrackLocking(p) {
   }
 }
   
-  function doAct(act) {
-    if (act === "resubmit-committee") {
-      if (RGMS.exec.resubmitToCommittee(p.id)) { RGMS.toast("ส่งฉบับปรับแก้แล้ว — โครงการกลับเข้าวาระ คกก.ส่งเสริม"); }
-      render();
-      return;
+  /* ---------- ประธาน/คณบดีส่งกลับให้แก้ไข ---------- */
+  var KEY_CHAIR = "rgms_chair_state_v1", KEY_EVENTS = "rgms_events_v1";
+  function chairStateGet() { try { return JSON.parse(localStorage.getItem(KEY_CHAIR) || "{}") || {}; } catch (e) { return {}; } }
+  function escH(v) { return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function chairReturnPanel() {
+    if (role.id !== "researcher") return "";
+    var l = chairStateGet()[String(p.id)];
+    if (l && l.status === "rejected") {
+      return '<div class="notice notice--reject"><span class="notice__title">ประธาน/คณบดีไม่รับรองข้อเสนอนี้</span><span class="notice__body">' +
+        (l.reason ? "<b>เหตุผล:</b> " + escH(l.reason) : "") + "</span></div>";
     }
+    if (!l || l.status !== "returned") return "";
+    return '<div class="notice notice--wait"><span class="notice__title">ประธาน/คณบดีส่งกลับให้แก้ไข</span><span class="notice__body">' +
+      (l.sections && l.sections.length ? "<b>ส่วนที่ต้องแก้ไข:</b> " + escH(l.sections.join(", ")) + "<br>" : "") +
+      (l.reason ? "<b>รายละเอียด:</b> " + escH(l.reason) + "<br>" : "") +
+      (l.at ? '<span class="text-sm text-muted">เมื่อ ' + escH(new Date(l.at).toLocaleString("th-TH")) + "</span>" : "") +
+      '</span><div style="margin-top:10px;"><a class="btn btn-primary btn-md" href="proposal-new.html?edit=' + encodeURIComponent(p.id) + '">แก้ไขข้อเสนอตามที่ประธานแจ้ง →</a></div></div>';
+  }
+  function chairResubmit() {
+    var st = chairStateGet();
+    st[String(p.id)] = { status: "pending", reason: "", sections: [], at: Date.now(), restored: true };
+    try {
+      localStorage.setItem(KEY_CHAIR, JSON.stringify(st));
+      var ev = []; try { ev = JSON.parse(localStorage.getItem(KEY_EVENTS) || "[]") || []; } catch (e) {}
+      ev.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), at: Date.now(), src: "researcher", kind: "resubmitted", pid: String(p.id),
+        text: "นักวิจัยส่งฉบับแก้ไขโครงการ " + p.id + " กลับให้ประธาน/คณบดีตรวจอีกครั้ง" });
+      localStorage.setItem(KEY_EVENTS, JSON.stringify(ev.slice(-200)));
+    } catch (e) { RGMS.toast("ส่งไม่สำเร็จ ลองอีกครั้ง", "accent"); return; }
+    RGMS.toast("ส่งฉบับแก้ไขให้ประธาน/คณบดีแล้ว", "ok");
+    render();
+  }
+
+  function doAct(act) {
+    if (act === "chair-resubmit") { chairResubmit(); return; }
     if (act === "revise") {
       // ส่งฉบับปรับแก้ — อัตโนมัติ ไม่ให้นักวิจัยเลือกแทร็กเอง (FR-84 ฉบับแก้ไข): แทร็กที่ cleared แล้วถูกล็อกไว้
       // แทร็กที่ยังมีข้อคิดเห็นค้างจะถูกส่งกลับ pending ให้อัตโนมัติ
