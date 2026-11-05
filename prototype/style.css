@@ -1344,3 +1344,41 @@ body.sidebar-collapsed .app-sidebar {
 /* ปุ่มสีแดงเข้มอื่น ๆ ที่เป็นลิงก์ <a> — ตัวอักษรขาวตลอดแม้ชี้เมาส์ */
 a.btn-primary, a.btn-primary:hover, a.btn-primary:focus, a.btn-primary:active,
 a.btn-primary-solid, a.btn-primary-solid:hover, a.btn-danger, a.btn-danger:hover { color: #fff !important; }
+/* ==========================================================================
+   Unified Typography — ฟอนต์เดียวทุกหน้า (IBM Plex Sans Thai ทั้งไทย/อังกฤษ/ตัวเลข)
+   แก้ที่ token เดียว: หัวข้อ ตัวเลข รหัส ป้ายสถานะ ปุ่ม ช่องกรอก จึงใช้ฟอนต์เดียวกันหมด
+   ========================================================================== */
+:root {
+  --font-body: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-head: var(--font-body);
+  --font-mono: var(--font-body);   /* เดิมเป็น Plex Mono ทำให้ตัวเลข/ป้ายสถานะดูต่างจากข้อความ */
+}
+html, body, button, input, select, textarea { font-family: var(--font-body); }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea { font-size: 15px; }
+code, kbd, pre, samp { font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: .92em; }
+
+/* หัวข้อหน้า / คำอธิบายหน้า: ขนาดเดียวกันทุกหน้า */
+h1:not(.ix-title), .text-headline { font-size: 26px !important; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
+.page-head p, .page-head > .text-muted { font-size: 15px; line-height: 1.6; }
+
+/* ตัวเลข/รหัส: ใช้ฟอนต์เดียวกับข้อความ แต่ให้ความกว้างเท่ากัน (ตารางเรียงตรง) */
+.num, .mono, .text-mono, .stat__value, .kpi-card__value, .ex-meeting__no, .sec-num, .tier-opt__cap {
+  font-family: var(--font-body) !important; font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.stat__value, .kpi-card__value { font-size: 30px; font-weight: 700; line-height: 1.15; }
+.kpi-card__value { font-size: 30px !important; }
+.kpi-grid--compact .kpi-card__value { font-size: 24px !important; }
+
+/* ป้ายสถานะ / ชิป / ปุ่ม */
+.badge { font-family: var(--font-body); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.badge.chip { font-size: 14px; }
+.chip { font-family: var(--font-body); font-size: 14px; font-weight: 600; }
+.btn { font-family: var(--font-body); letter-spacing: 0; }
+.btn-sm { font-size: 13px; } .btn-md { font-size: 14px; }
+
+/* ตาราง: หัวตารางใช้ฟอนต์เดียวกับเนื้อหา ไม่ตัวเล็กจนอ่านยาก */
+.table thead th { font-family: var(--font-body) !important; font-size: 12px !important; letter-spacing: .04em !important; }
+.table td, .table th { font-size: 14px; }
+.text-overline { font-family: var(--font-body); font-size: 12px; letter-spacing: .06em; }
+.text-sm { font-size: 13px; }
+h1.ix-title{font-family:var(--font-body)}
