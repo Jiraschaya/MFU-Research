@@ -115,3 +115,9 @@
 .timeline__step--current .timeline__dot { background: var(--color-primary); border-color: var(--color-primary); color: #fff; box-shadow: 0 0 0 4px var(--color-primary-tint); }
 .timeline__step > :last-child { padding-bottom: var(--space-3); font-size: 14px; line-height: 1.45; }
 .timeline__step--current > :last-child { font-weight: 700; color: var(--color-text-strong); }
+
+/* ---- แถบตัวกรอง (exec-overview): ให้ช่องเลือกกับปุ่มสูงเท่ากันและเรียงตรงแนวเดียวกัน ---- */
+.ex-filters { align-items: flex-end; }
+.ex-filters .field { margin-bottom: 0; min-width: 220px; flex: 1 1 220px; max-width: 320px; }
+.ex-filters .field__control { height: 44px; min-height: 44px; padding: 0 var(--space-3); box-sizing: border-box; }
+.ex-filters .btn { height: 44px; min-height: 44px; margin-bottom: 0; padding: 0 var(--space-4); }
