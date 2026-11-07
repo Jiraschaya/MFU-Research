@@ -83,7 +83,7 @@
 <script>
   var role = RGMS.currentRole();
   var isChair = /chair/i.test(String(role.id || "")), isSec = /secret/i.test(String(role.id || ""));
-  RGMS.renderAppNav(isChair ? "chair-review" : isSec ? "secretary-home" : role.id === "staff" ? "staff-queue" : role.id === "reviewer" ? "reviewer-list" : "researcher-home");
+  RGMS.renderAppNav(isChair ? "chair-review" : isSec ? "secretary-home" : role.id === "staff" ? "staff-queue" : role.id === "reviewer" ? "reviewer-list" : role.id === "exec" ? "exec-overview" : "researcher-home");
 
   var id = new URLSearchParams(location.search).get("id") || "P-2568-014";
   var p = RGMS.getProject(id);
@@ -96,7 +96,7 @@
     if (isSec) return "secretary-home.html";
     if (role.id === "staff") return "staff-queue.html";
     if (role.id === "reviewer") return "reviewer-list.html";
-    if (role.id === "exec") return "staff-agenda.html";
+    if (role.id === "exec") return "exec-overview.html";
     return "researcher-home.html";
   }
 
@@ -107,7 +107,9 @@
 
     var html = '';
     html += '<div class="page-head">' +
-      '<div class="breadcrumb"><a href="' + backHref() + '">← ย้อนกลับ</a></div>' +
+      (role.id === "exec"
+        ? '<div><a class="btn btn-secondary btn-md" href="' + backHref() + '">← กลับหน้าภาพรวมพอร์ตทุน</a></div>'
+        : '<div class="breadcrumb"><a href="' + backHref() + '">← ย้อนกลับ</a></div>') +
       '<div class="between wrap"><div class="stack gap-1">' +
         '<div class="cluster gap-2"><span class="text-mono text-muted">' + p.id + '</span>' + RGMS.badgeHTML(status) + '</div>' +
         '<h1 class="text-headline">' + p.title + '</h1>' +
