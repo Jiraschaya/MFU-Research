@@ -22,6 +22,19 @@
 
   .page-head { margin-bottom: 0; }
 
+  /* การ์ดสรุปแบบกดกรองได้ (ชุดเดียวกับหน้าประธาน/คณบดี) */
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;width:100%}
+  .kpi-card{appearance:none;-webkit-appearance:none;position:relative;display:flex;flex-direction:column;justify-content:center;width:100%;min-width:0;min-height:125px;padding:24px 28px;overflow:hidden;text-align:left;font:inherit;color:#0f172a;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 12px rgba(15,23,42,.06);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+  .kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#991b1b,#c79a24)}
+  .kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(15,23,42,.12)}
+  .kpi-card:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+  .kpi-card[aria-pressed="true"]{background:#fffaf0;box-shadow:0 0 0 2px rgba(183,138,34,.25),0 4px 12px rgba(15,23,42,.06)}
+  .kpi-card__value{display:block;margin-bottom:6px;font-size:36px;line-height:1.15;font-weight:700}
+  .kpi-card__label{display:block;font-size:15px;line-height:1.45;color:#334155}
+  .filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .filter-bar[hidden],.card[hidden]{display:none}
+  @media (max-width:800px){.kpi-grid{grid-template-columns:1fr}.kpi-card{min-height:110px;padding:20px}}
+
   /* PROTOTYPE: ปุ่มรีเซ็ตวงกลม (ลูกศรตามเข็มนาฬิกา) มุมล่างขวา */
   .reset-fab {
     position: fixed; right: 24px; bottom: 24px; z-index: 40;
@@ -55,19 +68,19 @@
       </div>
     </div>
 
-    <!-- การ์ดสรุป 3 ใบ -->
-    <div class="grid grid-3">
-      <div class="card"><div class="stat"><div class="stat__value" id="stat-unclaimed">0</div><div class="stat__label">รอรับตรวจ · โครงการ</div></div></div>
-      <div class="card"><div class="stat"><div class="stat__value" id="stat-pending">0</div><div class="stat__label">รอตรวจ · โครงการ</div></div></div>
-      <div class="card"><div class="stat"><div class="stat__value" id="stat-done">0</div><div class="stat__label">ตรวจแล้ว · โครงการ</div></div></div>
+    <!-- การ์ดสรุป 3 ใบ: กดเพื่อกรองรายการ กดซ้ำเพื่อกลับมุมมองเดิม -->
+    <div class="kpi-grid" id="kpis" aria-label="สรุปคิวตรวจการเงิน กดการ์ดเพื่อกรองรายการ กดซ้ำเพื่อกลับมุมมองเดิม"></div>
+
+    <div class="filter-bar" id="filter-bar" hidden>
+      <span class="text-sm text-muted" id="filter-label"></span>
     </div>
 
-    <div class="card card--pad-sm">
+    <div class="card card--pad-sm" id="unclaimed-section">
       <div class="card__header"><h2 class="text-subhead">รอรับตรวจ (ยังไม่มีผู้รับผิดชอบ)</h2></div>
       <div class="grid grid-2" id="unclaimed"></div>
     </div>
 
-    <div class="card card--pad-sm">
+    <div class="card card--pad-sm" id="mine-section">
       <div class="card__header"><h2 class="text-subhead">งานของฉัน</h2></div>
       <div class="grid grid-2" id="mine"></div>
     </div>
@@ -145,6 +158,9 @@
     });
   }
 
+  var selectedKPI = "all", savedScroll = 0;
+  var FILTER_NAME = { unclaimed: "รอรับตรวจ", pending: "รอตรวจ", done: "ตรวจแล้ว" };
+
   function render() {
     inPhase = RGMS.PROJECTS.filter(function (p) { return RGMS.inReviewPhase(p.status); });
     unclaimed = inPhase.filter(function (p) { return !RGMS.financeOwnerOf(p.id); });
@@ -157,18 +173,35 @@
       .map(function (x) { return x.p; });
 
     var doneCount = mine.filter(isChecked).length;
-    document.getElementById("stat-unclaimed").textContent = unclaimed.length;
-    document.getElementById("stat-pending").textContent   = mine.length - doneCount;
-    document.getElementById("stat-done").textContent      = doneCount;
+    var cards = [
+      { id: "unclaimed", label: "รอรับตรวจ", value: unclaimed.length, target: "unclaimed-section" },
+      { id: "pending",   label: "รอตรวจ",    value: mine.length - doneCount, target: "mine-section" },
+      { id: "done",      label: "ตรวจแล้ว",  value: doneCount, target: "mine-section" }
+    ];
+    document.getElementById("kpis").innerHTML = cards.map(function (c) {
+      return '<button type="button" class="kpi-card" data-kpi="' + c.id + '" aria-pressed="' + (selectedKPI === c.id) + '" aria-controls="' + c.target + '">' +
+        '<span class="kpi-card__value">' + c.value + '</span>' +
+        '<span class="kpi-card__label">' + c.label + ' · โครงการ</span></button>';
+    }).join("");
+
+    // กรอง: รอรับตรวจ → แสดงเฉพาะส่วนรอรับตรวจ · รอตรวจ/ตรวจแล้ว → แสดงเฉพาะงานของฉันตามสถานะนั้น
+    var mineShown = mine.filter(function (p) {
+      return selectedKPI === "pending" ? !isChecked(p) : selectedKPI === "done" ? isChecked(p) : true;
+    });
+    document.getElementById("unclaimed-section").hidden = selectedKPI === "pending" || selectedKPI === "done";
+    document.getElementById("mine-section").hidden = selectedKPI === "unclaimed";
+    document.getElementById("filter-bar").hidden = selectedKPI === "all";
+    document.getElementById("filter-label").textContent = selectedKPI === "all" ? "" :
+      "กำลังกรอง: " + FILTER_NAME[selectedKPI] + " (" + (selectedKPI === "unclaimed" ? unclaimed.length : mineShown.length) + " โครงการ) — กดการ์ดเดิมอีกครั้งเพื่อแสดงทั้งหมด";
 
     document.getElementById("unclaimed").innerHTML = unclaimed.length ? unclaimed.map(function (p) {
       return card(p, { kind: "unclaimed", action: '<button class="btn btn-primary btn-md btn-block" data-claim="' + p.id + '">รับตรวจ →</button>' });
     }).join("") : '<p class="text-sm text-muted">ไม่มีโครงการรอรับตรวจในขณะนี้</p>';
 
-    document.getElementById("mine").innerHTML = mine.length ? mine.map(function (p) {
+    document.getElementById("mine").innerHTML = mineShown.length ? mineShown.map(function (p) {
       var done = isChecked(p);
       return card(p, { kind: done ? "done" : "wait", owner: me, action: '<a class="btn ' + (done ? 'btn-secondary' : 'btn-primary') + ' btn-md btn-block" href="finance-review-console.html?id=' + p.id + '">' + (done ? 'ตรวจสอบผลตรวจ' : 'เริ่มตรวจการเงิน →') + '</a>' });
-    }).join("") : '<p class="text-sm text-muted">คุณยังไม่ได้รับตรวจโครงการใด</p>';
+    }).join("") : '<p class="text-sm text-muted">' + (selectedKPI === "all" ? 'คุณยังไม่ได้รับตรวจโครงการใด' : 'ยังไม่มีโครงการที่' + FILTER_NAME[selectedKPI]) + '</p>';
 
     document.querySelectorAll("[data-claim]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -185,6 +218,21 @@
     RGMS.refreshNavCounts();   // อัปเดตเลขใน sidebar ให้ตรงกับงานค้าง (รอรับตรวจ + รอตรวจของฉัน)
   }
   render();
+
+  document.getElementById("kpis").addEventListener("click", function (e) {
+    var card = e.target.closest("[data-kpi]");
+    if (!card) return;
+    var next = card.getAttribute("data-kpi");
+    if (next === selectedKPI) {                              // กดการ์ดเดิมซ้ำ = ยกเลิกตัวกรอง กลับจุดเดิม
+      selectedKPI = "all"; render();
+      window.scrollTo({ top: savedScroll, behavior: "smooth" });
+      return;
+    }
+    if (selectedKPI === "all") savedScroll = window.pageYOffset;
+    selectedKPI = next; render();
+    var target = document.getElementById(next === "unclaimed" ? "unclaimed-section" : "mine-section");
+    if (target && !target.hidden) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   // PROTOTYPE ONLY: รีเซ็ตผลตรวจ + ข้อคิดเห็น + การรับตรวจ → ทดสอบระบบซ้ำ
   document.getElementById("reset-fab").addEventListener("click", function () {
