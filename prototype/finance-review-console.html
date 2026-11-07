@@ -132,7 +132,7 @@
 
     var right =
       '<div class="card' + (locked ? ' is-locked' : '') + '" id="form-card" style="position:sticky; top:16px;">' +
-        '<div class="notice notice--ok lock-note"><span class="notice__title">บันทึกผลตรวจแล้ว</span><span class="notice__body">ผลการตรวจและข้อคิดเห็นถูกล็อก ไม่สามารถแก้ไขได้</span></div>' +
+        '<div class="notice notice--ok lock-note"><span class="notice__title">บันทึกผลตรวจแล้ว</span><span class="notice__body">ผลการตรวจและข้อคิดเห็นถูกล็อก <br>ไม่สามารถแก้ไขได้</span></div>' +
         '<h2 class="text-subhead" style="margin-bottom:4px;">แบบตรวจการเงิน (แทร็กการเงิน)</h2>' +
         '<p class="text-sm text-muted" style="margin-bottom:12px;">ผู้รับผิดชอบ: ' + owner + ' — ตรวจเพดานงบ/รายการ/การแบ่งงวด ตามตาราง 17.2</p>' +
         '<span class="text-overline">ประเด็นตรวจการเงิน</span>' +
@@ -182,7 +182,7 @@
       RGMS.modal({
         title: "บันทึกผลตรวจการเงินแล้ว",
         body: '<div class="notice notice--' + (ok ? "ok" : "wait") + '"><span class="notice__title">แทร็กการเงิน: ' + (ok ? "รับรองแล้ว" : "มีข้อคิดเห็น · ต้องแก้ไข") + '</span>' +
-          '<span class="notice__body">แทร็กเนื้อหาทำงานเป็นอิสระ ไม่ต้องรอกัน — โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-85)</span></div>',
+          '<span class="notice__body">แทร็กเนื้อหาทำงานเป็นอิสระ ไม่ต้องรอกัน — โครงการจะพร้อมเข้า คกก.ส่งเสริม เมื่อทั้ง 2 แทร็กรับรองพร้อมกัน (FR-5)</span></div>',
         foot: '<a class="btn btn-primary btn-md" href="finance-review-queue.html">กลับคิวตรวจการเงิน</a>'
       });
       render();   // วาดใหม่ → ฟอร์มถูกล็อก (locked = สถานะไม่ใช่ pending)
