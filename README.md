@@ -110,8 +110,8 @@ draft → submitted
 
 ## วิธีรัน
 
-## (https://mfuresearch.vercel.app/)
-## หรือดาวโหลดไฟล์Prototypeแล้วเปิดตัว index
+## ([https://mfuresearch.vercel.app/](https://rgms-prototype.vercel.app))
+
 
 ---
 
