@@ -31,20 +31,31 @@
   .notif__item.unread{background:#fffaf0}
   .notif__time{display:block;font-size:12px;color:#64748b}
   .notif__empty{padding:20px;text-align:center;color:#64748b;font-size:14px}
-  .notif__tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid #e2e8f0}
-  .notif__tabs button{flex:1;border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:6px 8px;font:inherit;font-size:13px;cursor:pointer;color:#334155}
-  .notif__tabs button.is-on{background:#991b1b;color:#fff;border-color:#991b1b}
-  .notif__tabs i{font-style:normal}
-  .notif__src{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;margin-right:6px}
-  .fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:56px;height:56px;border-radius:50%;border:0;background:#991b1b;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s ease,box-shadow .2s ease,background .2s ease}
-  .fab-reset svg{width:28px;height:28px;transition:transform .45s ease}
-  .fab-reset:hover{background:#7f1d1d;box-shadow:0 8px 22px rgba(15,23,42,.4)}
-  .fab-reset:hover svg{transform:rotate(60deg)}
-  .fab-reset:active{transform:scale(.94)}
+  .notif__tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;margin-bottom:4px}
+  .notif__comment{margin-top:6px;padding:8px 10px;border-left:3px solid #d97706;background:#fffbeb;border-radius:0 8px 8px 0;font-size:13px;line-height:1.55;color:#78350f}
+  .notif__comment--reject{border-left-color:#991b1b;background:#fef2f2;color:#7f1d1d}
+  .fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:52px;height:52px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#96181F 0%,#851419 100%);border:1px solid #680E12;color:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(133,20,25,.35);transition:transform .2s,box-shadow .2s}
+  .fab-reset:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(133,20,25,.4);color:#fff}
+  .fab-reset svg{width:24px;height:24px;transition:transform .5s}
+  .fab-reset:hover svg,.fab-reset.spin svg{transform:rotate(360deg)}
   .fab-reset:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
-  .fab-reset.spin svg{animation:fab-spin .6s ease}
-  @keyframes fab-spin{to{transform:rotate(360deg)}}
-  @media (prefers-reduced-motion:reduce){.fab-reset svg,.fab-reset.spin svg{transition:none;animation:none}}
+  .badge.chip--revise{background:#fef3c7!important;border-color:#fde68a!important;color:#92400e!important}
+  .row-note--reject{border-left-color:#991b1b!important;background:#fef2f2!important;color:#7f1d1d!important}
+  .row-note{margin-top:6px;padding:8px 12px;border-left:3px solid #d97706;background:#fffbeb;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;color:#78350f;overflow-wrap:anywhere}
+
+  /* การ์ดสรุป: ใช้ชุดเดียวกับหน้าประธาน/คณบดี กดเพื่อกรองรายการ */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;width:100%}
+  .kpi-card{appearance:none;-webkit-appearance:none;position:relative;display:flex;flex-direction:column;justify-content:center;width:100%;min-width:0;min-height:125px;padding:24px 28px;overflow:hidden;text-align:left;font:inherit;color:#0f172a;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 12px rgba(15,23,42,.06);transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+  .kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#991b1b,#c79a24)}
+  button.kpi-card{cursor:pointer}
+  button.kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(15,23,42,.12)}
+  .kpi-card:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+  .kpi-card[aria-pressed="true"]{background:#fffaf0;box-shadow:0 0 0 2px rgba(183,138,34,.25),0 4px 12px rgba(15,23,42,.06)}
+  .kpi-card__value{display:block;margin-bottom:6px;font-size:36px;line-height:1.15;font-weight:700}
+  .kpi-card__label{display:block;font-size:15px;line-height:1.45;color:#334155}
+  .filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  @media (max-width:1000px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:560px){.kpi-grid{grid-template-columns:1fr}.kpi-card{min-height:110px;padding:20px}}
   .returned-list{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
 </style>
 </head>
@@ -55,11 +66,6 @@
   <button type="button" class="notif__btn" id="notif-btn" aria-label="การแจ้งเตือน" aria-expanded="false" aria-controls="notif-panel">🔔<span class="notif__badge" id="notif-badge" hidden>0</span></button>
   <div class="notif__panel" id="notif-panel" hidden>
     <div class="notif__head"><span>การแจ้งเตือน</span><span><button type="button" id="notif-read">อ่านทั้งหมด</button> <button type="button" id="notif-clear">ล้าง</button></span></div>
-        <div class="notif__tabs" id="notif-tabs">
-            <button type="button" data-tab="all" class="is-on">ทั้งหมด<i></i></button>
-            <button type="button" data-tab="chair">จากประธาน<i></i></button>
-            <button type="button" data-tab="researcher">จากนักวิจัย<i></i></button>
-        </div>
     <div id="notif-list" aria-live="polite"></div>
   </div>
 </div>
@@ -76,17 +82,6 @@
       </div>
     </div>
 
-    <!-- ถูกประธาน/คณบดีส่งกลับให้แก้ไข (อ่านจากผลที่หน้าประธานบันทึก) -->
-    <div class="notice notice--reject" id="rejected-note" role="status" hidden>
-      <span class="notice__title" id="rejected-title"></span>
-      <ul class="returned-list" id="rejected-list"></ul>
-    </div>
-
-    <div class="notice notice--wait" id="returned-note" role="status" hidden>
-      <span class="notice__title" id="returned-title"></span>
-      <ul class="returned-list" id="returned-list"></ul>
-    </div>
-
     <div class="notice notice--wait" id="revise-note" role="status" hidden>
       <span class="notice__title" id="revise-title"></span>
       <span class="notice__body">เปิดโครงการเพื่อดูเงื่อนไขตามมติ แล้วส่งฉบับแก้ไขกลับ</span>
@@ -99,9 +94,13 @@
 
     <div class="stack gap-3" id="open-calls"></div>
 
-    <div class="grid grid-3" id="kpis"></div>
+    <div class="kpi-grid" id="kpis" aria-label="สรุปสถานะโครงการ กดการ์ดเพื่อกรองรายการ กดซ้ำเพื่อกลับมุมมองเดิม"></div>
 
-    <div class="card card--pad-sm">
+    <div class="filter-bar" id="filter-bar" hidden>
+      <span class="text-sm text-muted" id="filter-label"></span>
+    </div>
+
+    <div class="card card--pad-sm" id="projects-card">
       <div class="card__header"><h2 class="text-subhead">รายการโครงการ</h2></div>
       <div class="table-wrap">
         <table class="table">
@@ -118,7 +117,7 @@
 </main>
 
 <button type="button" class="fab-reset" id="fab-reset" aria-label="รีเซ็ต กลับจุดเดิม" title="รีเซ็ต / กลับจุดเดิม">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
 </button>
 
 <script src="shared.js"></script>
@@ -149,7 +148,7 @@
   function chip(cls, text) {
     return '<span class="badge ' + (cls || "") + ' chip"><span class="chip__dot" aria-hidden="true"></span>' + esc(text) + "</span>";
   }
-  function statusChip(status) {
+  function statusChip(status, label) {
     var box = document.createElement("div");
     box.innerHTML = RGMS.badgeHTML(status);
     var b = box.querySelector(".badge") || box.firstElementChild;
@@ -159,7 +158,8 @@
     if (STATUS_NAME[status] && (!text || /^[A-Za-z][A-Za-z _-]*$/.test(text))) text = STATUS_NAME[status];  // รหัสอังกฤษ → ไทย
     if (status === "review" || status === "committee") cls = "chip--review";
     else if (["ongoing", "progress", "financial", "final"].indexOf(status) >= 0) cls = "chip--active";
-    return chip(cls, text);
+    else if (status === "revise") cls = "chip--revise";
+    return chip(cls, label || text);
   }
 
   /* ---------- วันที่ ---------- */
@@ -176,53 +176,25 @@
   $("greet").textContent = "สวัสดี " + (me || "นักวิจัย") + " — โครงการที่คุณเป็นหัวหน้าโครงการ";
   if (!RGMS.profileSaved()) $("profile-warn").hidden = false;
 
+  var KEY_CHAIR = "rgms_chair_state_v1";   // ต้องประกาศก่อนสร้าง mine ไม่งั้น chairState() อ่านคีย์ผิดและไม่เห็นโครงการที่ถูกส่งกลับ
   var mine = (RGMS.PROJECTS || [])
     .filter(function (p) { return me && p.pi === me; })
     .map(function (p, i) {
       var l = chairState()[String(p.id)], back = !!(l && l.status === "returned");
-      return { p: p, st: back ? "revise" : (l && l.status === "rejected" ? "rejected" : RGMS.effectiveStatus(p)), chair: back, i: i };   // ประธานส่งกลับ → สถานะ "รอแก้ไข"
+      return { p: p, l: (back || (l && l.status === "rejected")) ? l : null, st: back ? "revise" : (l && l.status === "rejected" ? "rejected" : RGMS.effectiveStatus(p)), chair: back, i: i };   // ประธานส่งกลับ → สถานะ "รอแก้ไข"
     })
     .sort(function (a, b) { return ((b.st === "revise") - (a.st === "revise")) || (a.i - b.i); });
 
   /* ---------- ถูกส่งกลับจากประธาน/คณบดี ---------- */
-  var KEY_CHAIR = "rgms_chair_state_v1";
   function chairState() {
     try { return JSON.parse(localStorage.getItem(KEY_CHAIR) || "{}") || {}; } catch (e) { return {}; }
   }
   function editHref(id) { return "proposal-new.html?edit=" + encodeURIComponent(id); }
-  function renderRejected(cs) {
-    var list = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && l.status === "rejected"; });
-    $("rejected-note").hidden = !list.length;
-    if (!list.length) return;
-    $("rejected-title").textContent = "ประธาน/คณบดีไม่รับรอง " + list.length + " โครงการ";
-    $("rejected-list").innerHTML = list.map(function (p) {
-      var l = cs[String(p.id)];
-      return '<li><a href="' + esc(detailHref(p.id)) + '">' + esc(p.id) + "</a> · " + esc(p.title || "") +
-        (l.reason ? '<br><b>เหตุผล:</b> ' + esc(l.reason) : "") + "</li>";
-    }).join("");
-  }
-  function renderReturned() {
-    var cs = chairState();
-    renderRejected(cs);
-    var list = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && l.status === "returned"; });
-    $("returned-note").hidden = !list.length;
-    if (!list.length) return;
-    $("returned-title").textContent = "ประธาน/คณบดีส่งกลับให้แก้ไข " + list.length + " โครงการ";
-    $("returned-list").innerHTML = list.map(function (p) {
-      var l = cs[String(p.id)];
-      return '<li><a href="' + esc(detailHref(p.id)) + '">' + esc(p.id) + "</a> · " + esc(p.title || "") +
-        (l.sections && l.sections.length ? '<br><b>ส่วนที่ต้องแก้ไข:</b> ' + esc(l.sections.join(", ")) : "") +
-        (l.reason ? '<br><b>รายละเอียด:</b> ' + esc(l.reason) : "") +
-        (l.at ? '<br><span class="text-muted">เมื่อ ' + esc(new Date(l.at).toLocaleString("th-TH")) + "</span>" : "") +
-        '<br><a class="btn btn-primary btn-sm" style="margin-top:6px;" href="' + esc(editHref(p.id)) + '">แก้ไขข้อเสนอ →</a></li>';
-    }).join("");
-  }
   function myProjects() { return (RGMS.PROJECTS || []).filter(function (p) { return me && p.pi === me; }); }
-  renderReturned();
-  window.addEventListener("storage", function () { renderReturned(); notifyTick(); });
-  window.addEventListener("focus", function () { renderReturned(); notifyTick(); });
-  window.addEventListener("pageshow", function () { renderReturned(); notifyTick(); });
-  setInterval(function () { renderReturned(); notifyTick(); }, 3000);
+  window.addEventListener("storage", function () { notifyTick(); });
+  window.addEventListener("focus", function () { notifyTick(); });
+  window.addEventListener("pageshow", function () { notifyTick(); });
+  setInterval(function () { notifyTick(); }, 3000);
 
   var reviseN = mine.filter(function (x) { return x.st === "revise" && !x.chair; }).length;
   if (reviseN) {
@@ -259,48 +231,89 @@
       '<span class="notice__body">' + (up ? ('รอบถัดไป: ' + esc(up.title) + ' · เปิดรับ ' + esc(fmtDate(up.open)) + ' ถึง ' + esc(fmtDate(up.close))) : 'โปรดรอประกาศเปิดรับจากส่วนบริหารงานวิจัย') + '</span></div>';
   }
 
-  /* ---------- KPI ---------- */
-  var REVIEWING = ["submitted", "endorse", "screening", "review", "committee", "revise", "approved"];
+  /* ---------- การ์ดสรุป (กดเพื่อกรองตารางโครงการ) ---------- */
+  var REVIEWING = ["submitted", "endorse", "screening", "review", "committee", "approved"];   // ไม่รวม revise (แยกเป็นการ์ด "เอกสารรอแก้ไข")
   var RUNNING   = ["ongoing", "progress", "final", "financial", "announced"];
-  var inReview = mine.filter(function (x) { return REVIEWING.indexOf(x.st) >= 0; }).length;
-  var running  = mine.filter(function (x) { return RUNNING.indexOf(x.st) >= 0; }).length;
+  var GROUPS = { review: REVIEWING, revise: ["revise"], running: RUNNING };
+  var FILTER_NAME = { review: "อยู่ระหว่างพิจารณา", revise: "เอกสารรอแก้ไข", running: "กำลังดำเนินการ" };
+  var selectedKPI = "all", savedScroll = 0;
+
+  function countOf(k) { return mine.filter(function (x) { return GROUPS[k].indexOf(x.st) >= 0; }).length; }
   var totalBudget = mine.reduce(function (s, x) { return s + (Number(x.p.budgetReq) || 0); }, 0);
-  $("kpis").innerHTML = [
-    ['อยู่ระหว่างพิจารณา', inReview, 'โครงการ'],
-    ['กำลังดำเนินการ', running, 'โครงการ'],
-    ['งบที่ขอรวม', RGMS.fmtMoney(totalBudget), 'บาท']
-  ].map(function (k) {
-    return '<div class="card stat"><span class="stat__value">' + esc(k[1]) + '</span>' +
-           '<span class="stat__label">' + esc(k[0]) + ' · ' + esc(k[2]) + '</span></div>';
-  }).join("");
+
+  function renderKPIs() {
+    var cards = [
+      { id: "review",  label: "อยู่ระหว่างพิจารณา", value: countOf("review") },
+      { id: "revise",  label: "เอกสารรอแก้ไข",     value: countOf("revise") },
+      { id: "running", label: "กำลังดำเนินการ",     value: countOf("running") }
+    ];
+    $("kpis").innerHTML = cards.map(function (c) {
+      return '<button type="button" class="kpi-card' + (c.cls || "") + '" data-kpi="' + c.id + '" aria-pressed="' + (selectedKPI === c.id) + '" aria-controls="projects-card">' +
+        '<span class="kpi-card__value">' + esc(c.value) + '</span>' +
+        '<span class="kpi-card__label">' + esc(c.label) + ' · โครงการ</span></button>';
+    }).join("") +
+    '<div class="kpi-card"><span class="kpi-card__value">' + esc(RGMS.fmtMoney(totalBudget)) + '</span>' +
+    '<span class="kpi-card__label">งบที่ขอรวม · บาท</span></div>';
+  }
 
   /* ---------- ตารางโครงการ ---------- */
   function actionFor(x) {
     var label, cls;
-    if (x.chair)                 { label = "แก้ไขข้อเสนอ"; cls = "btn-primary"; }
+    if (x.chair)                 { label = "แก้ไขเอกสาร"; cls = "btn-primary"; }
     else if (x.st === "revise")  { label = "ปรับแก้ตามมติ";     cls = "btn-primary"; }
     else if (x.st === "ongoing") { label = "ส่งรายงานก้าวหน้า"; cls = "btn-secondary"; }
     else if (x.st === "final")   { label = "ดูสถานะการเงิน";   cls = "btn-secondary"; }
     else                         { label = "รายละเอียด →";      cls = "btn-ghost"; }
     return '<a class="btn ' + cls + ' btn-sm" href="' + esc(x.chair ? editHref(x.p.id) : detailHref(x.p.id)) + '" aria-label="' + esc(label + " โครงการ " + x.p.id) + '">' + esc(label) + '</a>';
   }
+  function reviseNote(x) {
+    if (!x.l) return "";
+    var rej = x.l.status === "rejected", parts = [];
+    if (!rej && x.l.sections && x.l.sections.length) parts.push("<b>ส่วนที่ต้องแก้ไข:</b> " + esc(x.l.sections.join(", ")));
+    parts.push("<b>" + (rej ? "เหตุผลที่ไม่รับรอง" : "ความเห็นจากประธาน/คณบดี") + ":</b> " + (x.l.reason ? esc(x.l.reason) : '<span class="text-muted">ไม่ได้ระบุเหตุผล</span>'));
+    if (x.l.at) parts.push('<span class="text-muted">เมื่อ ' + esc(new Date(x.l.at).toLocaleString("th-TH")) + "</span>");
+    return '<div class="row-note' + (rej ? ' row-note--reject' : '') + '">' + parts.join("<br>") + "</div>";
+  }
 
   var rowsEl = $("rows");
-  if (!mine.length) {
-    rowsEl.innerHTML = '<tr><td colspan="6" class="text-muted" style="padding:24px; text-align:center;">ยังไม่มีโครงการที่คุณเป็นหัวหน้าโครงการ — เริ่มต้นด้วย <a href="proposal-new.html">ยื่นข้อเสนอใหม่</a></td></tr>';
-  } else {
-    rowsEl.innerHTML = mine.map(function (x) {
-      var p = x.p;
-      return '<tr class="is-clickable" data-id="' + esc(p.id) + '">' +
-        '<td class="num">' + esc(p.id) + '</td>' +
-        '<td><div class="proj-title">' + esc(p.title) + '</div>' + (p.duration ? '<div class="text-sm text-muted">ระยะเวลา ' + esc(p.duration) + '</div>' : '') + '</td>' +
-        '<td><span class="pill-round">' + esc(p.round) + '</span></td>' +
-        '<td class="right num">' + esc(RGMS.fmtMoney(Number(p.budgetReq) || 0)) + '</td>' +
-        '<td>' + statusChip(x.st) + '</td>' +
-        '<td class="right">' + actionFor(x) + '</td>' +
-      '</tr>';
-    }).join("");
+  function renderRows() {
+    var list = selectedKPI === "all" ? mine : mine.filter(function (x) { return GROUPS[selectedKPI].indexOf(x.st) >= 0; });
+    if (!mine.length) {
+      rowsEl.innerHTML = '<tr><td colspan="6" class="text-muted" style="padding:24px; text-align:center;">ยังไม่มีโครงการที่คุณเป็นหัวหน้าโครงการ — เริ่มต้นด้วย <a href="proposal-new.html">ยื่นข้อเสนอใหม่</a></td></tr>';
+    } else if (!list.length) {
+      rowsEl.innerHTML = '<tr><td colspan="6" class="text-muted" style="padding:24px; text-align:center;">ยังไม่มีโครงการในสถานะ “' + esc(FILTER_NAME[selectedKPI]) + '”</td></tr>';
+    } else {
+      rowsEl.innerHTML = list.map(function (x) {
+        var p = x.p;
+        return '<tr class="is-clickable" data-id="' + esc(p.id) + '">' +
+          '<td class="num">' + esc(p.id) + '</td>' +
+          '<td><div class="proj-title">' + esc(p.title) + '</div>' + (p.duration ? '<div class="text-sm text-muted">ระยะเวลา ' + esc(p.duration) + '</div>' : '') + reviseNote(x) + '</td>' +
+          '<td><span class="pill-round">' + esc(p.round) + '</span></td>' +
+          '<td class="right num">' + esc(RGMS.fmtMoney(Number(p.budgetReq) || 0)) + '</td>' +
+          '<td>' + statusChip(x.st, x.chair ? "รอแก้ไขเอกสาร" : null) + '</td>' +
+          '<td class="right">' + actionFor(x) + '</td>' +
+        '</tr>';
+      }).join("");
+    }
+    $("filter-bar").hidden = selectedKPI === "all";
+    $("filter-label").textContent = selectedKPI === "all" ? "" : "กำลังกรอง: " + FILTER_NAME[selectedKPI] + " (" + list.length + " โครงการ) — กดการ์ดเดิมอีกครั้งเพื่อแสดงทั้งหมด";
   }
+  renderKPIs();
+  renderRows();
+
+  $("kpis").addEventListener("click", function (e) {
+    var card = e.target.closest("[data-kpi]");
+    if (!card) return;
+    var next = card.getAttribute("data-kpi");
+    if (next === selectedKPI) {                      // กดซ้ำ = ยกเลิกตัวกรอง กลับจุดเดิม
+      selectedKPI = "all"; renderKPIs(); renderRows();
+      window.scrollTo({ top: savedScroll, behavior: "smooth" });
+      return;
+    }
+    if (selectedKPI === "all") savedScroll = window.pageYOffset;
+    selectedKPI = next; renderKPIs(); renderRows();
+    $("projects-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   rowsEl.addEventListener("click", function (e) {
     if (e.target.closest("a, button")) return;
@@ -308,15 +321,15 @@
     if (tr) window.location.href = detailHref(tr.getAttribute("data-id"));
   });
 
-  /* ---------- แจ้งเตือน (แยก จากประธาน / จากนักวิจัย) ---------- */
+  /* ---------- แจ้งเตือน: เฉพาะผลการพิจารณาจากประธาน/คณบดี (รับรอง / ไม่รับรอง / ส่งกลับแก้ไข) ---------- */
   var escapeHTML = esc;
   function load(key, fallback) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
   function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
-  var KEY_NOTIF = "rgms_res_notif_v1", KEY_LAST_R = "rgms_res_last_v1";
+  var KEY_NOTIF = "rgms_res_notif_v2:" + me, KEY_LAST_C = "rgms_res_chair_last_v2:" + me;   // แยกตามนักวิจัยแต่ละคน
   var notifs = load(KEY_NOTIF, []);
   var notifBtn = $("notif-btn"), notifPanel = $("notif-panel");
 
-  /* ---------- บันทึกเหตุการณ์ร่วม (ทุกบทบาทอ่านชุดเดียวกัน) ---------- */
+  /* บันทึกเหตุการณ์ร่วม (ใช้ตอนรีเซ็ต เพื่อให้หน้าประธานเห็น) */
   var KEY_EVENTS = "rgms_events_v1";
   function logEvent(e) {
       var list = load(KEY_EVENTS, []);
@@ -325,57 +338,43 @@
       list.push(e);
       save(KEY_EVENTS, list.slice(-200));
   }
-  function pullEvents(seenKey, accept, onNew) {
-      var list = load(KEY_EVENTS, []);
-      var seen = load(seenKey, null);
-      var ids = list.map(function (e) { return e.id; });
-      if (seen === null) { save(seenKey, ids); return; }   // ครั้งแรก: ไม่แจ้งของเก่า
-      list.forEach(function (e) { if (seen.indexOf(e.id) < 0 && accept(e)) onNew(e); });
-      save(seenKey, ids);
-  }
 
-    var notifTab = "all";
-  var SRC_STYLE = { chair: ["ประธาน/คณบดี", "#991b1b", "#fee2e2"], researcher: ["นักวิจัย", "#075985", "#e0f2fe"], system: ["ระบบ", "#475569", "#f1f5f9"] };
-  function addNotif(text, src) {
-      notifs.unshift({ text: text, at: Date.now(), read: false, src: src || "system" });
+  var DECISION = {
+    passed:   { label: "รับรองแล้ว",     fg: "#065f46", bg: "#d1fae5", msg: "ประธาน/คณบดีรับรองโครงการแล้ว · ส่งต่อส่วนบริหารงานวิจัย" },
+    rejected: { label: "ไม่รับรอง",      fg: "#991b1b", bg: "#fee2e2", msg: "ประธาน/คณบดีไม่รับรองโครงการ" },
+    returned: { label: "ส่งกลับแก้ไข",   fg: "#92400e", bg: "#fef3c7", msg: "ประธาน/คณบดีส่งโครงการกลับให้แก้ไข" }
+  };
+  function addNotif(p, l) {
+      var id = String(p.id) + "@" + (l.at || "") + ":" + l.status;
+      if (notifs.some(function (n) { return n.id === id; })) return;
+      notifs.unshift({ id: id, kind: l.status, pid: String(p.id), title: p.title || "", reason: l.reason || "", sections: l.sections || [], at: l.at || Date.now(), read: false });
       notifs = notifs.slice(0, 40);
       save(KEY_NOTIF, notifs);
       renderNotifs();
   }
-  function inTab(n) { return notifTab === "all" || (n.src || "system") === notifTab; }
   function renderNotifs() {
       var unread = notifs.filter(function (n) { return !n.read; }).length;
-      var badge = document.getElementById("notif-badge");
+      var badge = $("notif-badge");
       badge.textContent = unread > 99 ? "99+" : unread;
       badge.hidden = unread === 0;
-      ["all", "chair", "researcher"].forEach(function (t) {
-          var btn = document.querySelector('#notif-tabs [data-tab="' + t + '"]');
-          if (!btn) return;
-          var c = notifs.filter(function (n) { return !n.read && (t === "all" || (n.src || "system") === t); }).length;
-          btn.classList.toggle("is-on", notifTab === t);
-          btn.querySelector("i").textContent = c ? " (" + c + ")" : "";
-      });
-      var shown = notifs.filter(inTab);
-      document.getElementById("notif-list").innerHTML = shown.length === 0
-          ? '<div class="notif__empty">ยังไม่มีการแจ้งเตือน</div>'
-          : shown.map(function (n) {
-              var s = SRC_STYLE[n.src || "system"] || SRC_STYLE.system;
+      $("notif-list").innerHTML = notifs.length === 0
+          ? '<div class="notif__empty">ยังไม่มีผลการพิจารณาจากประธาน/คณบดี</div>'
+          : notifs.map(function (n) {
+              var d = DECISION[n.kind] || DECISION.returned;
               var t = new Date(n.at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-              return '<div class="notif__item' + (n.read ? "" : " unread") + '"><span class="notif__src" style="color:' + s[1] + ';background:' + s[2] + ';">' +
-                  escapeHTML(s[0]) + "</span>" + escapeHTML(n.text) + '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
+              var comment = "";
+              if (n.kind !== "passed") {
+                  comment = '<div class="notif__comment' + (n.kind === "rejected" ? " notif__comment--reject" : "") + '">' +
+                      (n.kind === "returned" && n.sections.length ? "<b>ส่วนที่ต้องแก้ไข:</b> " + escapeHTML(n.sections.join(", ")) + "<br>" : "") +
+                      "<b>ความเห็นจากประธาน/คณบดี:</b> " + (n.reason ? escapeHTML(n.reason) : "ไม่ได้ระบุเหตุผล") + "</div>";
+              }
+              return '<div class="notif__item' + (n.read ? "" : " unread") + '">' +
+                  '<span class="notif__tag" style="color:' + d.fg + ";background:" + d.bg + ';">' + escapeHTML(d.label) + "</span><br>" +
+                  "<b>" + escapeHTML(n.pid) + "</b> · " + escapeHTML(n.title) + "<br>" + escapeHTML(d.msg) + comment +
+                  '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
           }).join("");
   }
-  function markRead() {
-      notifs.forEach(function (n) { if (inTab(n)) n.read = true; });
-      save(KEY_NOTIF, notifs);
-  }
-  document.getElementById("notif-tabs").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-tab]");
-      if (!b) return;
-      notifTab = b.getAttribute("data-tab");
-      markRead();
-      renderNotifs();
-  });
+  function markRead() { notifs.forEach(function (n) { n.read = true; }); save(KEY_NOTIF, notifs); }
 
   function setPanel(open) {
     notifPanel.hidden = !open;
@@ -383,30 +382,25 @@
     if (open) { markRead(); renderNotifs(); }
   }
   notifBtn.addEventListener("click", function (e) { e.stopPropagation(); setPanel(notifPanel.hidden); });
-  $("notif-read").addEventListener("click", function () { notifs.forEach(function (n) { n.read = true; }); save(KEY_NOTIF, notifs); renderNotifs(); });
+  $("notif-read").addEventListener("click", function () { markRead(); renderNotifs(); });
   $("notif-clear").addEventListener("click", function () { notifs = []; save(KEY_NOTIF, notifs); renderNotifs(); });
   document.addEventListener("click", function (e) { if (!notifPanel.hidden && !$("notif").contains(e.target)) setPanel(false); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !notifPanel.hidden) { setPanel(false); notifBtn.focus(); } });
 
   function sigNow() {
     var cs = chairState();
-    return myProjects().map(function (p) { var l = cs[String(p.id)]; return p.id + ":" + (l ? l.status : ""); }).join("|");
+    return myProjects().map(function (p) { var l = cs[String(p.id)]; return p.id + ":" + (l ? l.status + ":" + (l.at || "") : ""); }).join("|");
   }
   var loadSig = sigNow();
 
   function notifyTick() {
-    var mineNow = myProjects(), last = load(KEY_LAST_R, null), map = {};
-    mineNow.forEach(function (p) {
-      var id = String(p.id), cur = { s: RGMS.effectiveStatus(p), h: Array.isArray(p.history) ? p.history.length : 0 };
-      map[id] = cur;
-      if (!last || !last[id]) return;
-      if (last[id].s !== cur.s) addNotif("สถานะโครงการ " + id + " เปลี่ยนเป็น " + (STATUS_NAME[cur.s] || cur.s), "researcher");
-      if (last[id].h !== undefined && cur.h > last[id].h) addNotif("ความเคลื่อนไหวใหม่ในโครงการ " + id + ": " + (p.history[cur.h - 1].action || "มีการอัปเดต"), "researcher");
+    var cs = chairState(), last = load(KEY_LAST_C, null), first = (last === null), map = {};
+    myProjects().forEach(function (p) {
+      var id = String(p.id), l = cs[id], key = (l && DECISION[l.status]) ? l.status + ":" + (l.at || "") : "";
+      map[id] = key;
+      if (key && (first || (last[id] || "") !== key)) addNotif(p, l);   // เปิดครั้งแรกจะดึงผลที่ประธานตัดสินไว้แล้วมาแสดงด้วย
     });
-    save(KEY_LAST_R, map);
-    pullEvents("rgms_res_seen_ev_v1", function (e) {
-      return mineNow.some(function (p) { return String(p.id) === String(e.pid); });
-    }, function (e) { addNotif(e.text, e.src === "chair" ? "chair" : "researcher"); });
+    save(KEY_LAST_C, map);
     if (sigNow() !== loadSig) location.reload();   // ผลจากประธานเปลี่ยน → วาดตารางและสถานะใหม่
   }
   renderNotifs();
@@ -416,6 +410,7 @@
   var fab = $("fab-reset");
   fab.addEventListener("click", function () {
     fab.classList.remove("spin"); void fab.offsetWidth; fab.classList.add("spin");
+    setTimeout(function () { fab.classList.remove("spin"); }, 600);
     setPanel(false);
     var cs = chairState();
     var decided = myProjects().filter(function (p) { var l = cs[String(p.id)]; return l && (l.status === "returned" || l.status === "rejected"); });
