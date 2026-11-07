@@ -6,6 +6,19 @@
 <title>ภาพรวมพอร์ตทุน — RGMS ทุนวิจัย มฟล.</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="exec.css">
+<style>
+.docview{max-height:min(72vh,640px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px}
+.docview__head{position:sticky;top:0;z-index:2;background:#fff;padding:14px 18px;border-bottom:1px solid #e2e8f0}
+.docview__chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.docview__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px;align-items:start}
+.docview__col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.docview__card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;min-width:0}
+.docview__card h4{margin:0 0 8px;font-size:14px;color:#334155}
+.docview__card--wide{grid-column:1/-1}
+@media (max-width:720px){.docview__grid{grid-template-columns:1fr}.docview__card--wide{grid-column:auto}}
+  .proj-doc-link{color:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+  .proj-doc-link:hover{text-decoration:underline}
+</style>
 </head>
 <body>
 <div id="app-nav-root"></div>
@@ -60,7 +73,7 @@
       <div class="card__header"><div><h2 class="text-subhead">รายการโครงการ</h2><p class="text-sm text-muted" id="list-meta"></p></div></div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>รหัส</th><th>โครงการ / ผู้วิจัย</th><th>ประเภททุน</th><th class="right">งบที่ขอ</th><th>สถานะ</th></tr></thead>
+          <thead><tr><th>รหัส</th><th>โครงการ / ผู้วิจัย</th><th>ประเภททุน</th><th class="right">งบที่ขอ</th><th>สถานะ</th><th><span class="sr-only">เอกสาร</span></th></tr></thead>
           <tbody id="plist"></tbody>
         </table>
       </div>
@@ -89,6 +102,134 @@
   fySel.addEventListener("change", function () { F.fy = fySel.value ? Number(fySel.value) : ""; render(); });
   $("f-school").addEventListener("change", function () { F.school = $("f-school").value; render(); });
   $("f-reset").addEventListener("click", function () { F.fy = ""; F.school = ""; fySel.value = ""; $("f-school").value = ""; render(); });
+
+  var escapeHTML = esc;
+  function chip(cls, text) { return '<span class="badge ' + (cls || "") + '">' + esc(text) + "</span>"; }
+  function statusBadge(p) {
+    var s = X.stateOf(p), r = X.resolutionOf(p.id);
+    return r ? R.resolutionBadge(r.code) + (s === "announced" ? ' <span class="ex-pill">ประกาศแล้ว</span>' : "") : R.badgeHTML(R.effectiveStatus(p));
+  }
+    /* ---------- เอกสาร / รายละเอียด (ดูในหน้านี้ ไม่เปลี่ยนหน้า) ---------- */
+    function getDocs(p) {
+        var raw = p.documents || p.docs || p.attachments || p.files || [];
+        if (!raw.length && typeof RGMS.docsOf === "function") raw = RGMS.docsOf(p.id) || [];
+        if (!raw.length && Array.isArray(RGMS.DOCS)) {
+            raw = RGMS.DOCS.filter(function (d) { return String(d.projectId || d.project) === String(p.id); });
+        }
+        return (Array.isArray(raw) ? raw : []).map(function (d) {
+            if (typeof d === "string") d = { name: d };
+            return {
+                name: d.name || d.title || d.filename || d.label || "เอกสารไม่ระบุชื่อ",
+                by: d.byRole || d.role || d.by || d.owner || d.uploader || d.source || "ไม่ระบุผู้แนบ",
+                date: d.date || d.uploadedAt || d.at || "",
+                url: d.url || d.href || ""
+            };
+        });
+    }
+
+    // เนื้อหาเอกสารของโครงการ สร้างจากข้อมูลโครงการโดยตรง — ดูได้ในหน้านี้ ไม่ต้องเปิดหน้านักวิจัย
+    function docViewHTML(p0, chipsHTML) {
+        var snap = (function () { try { return (JSON.parse(localStorage.getItem("rgms_proposals_v1") || "{}") || {})[String(p0.id)]; } catch (e) { return null; } })();
+        var p = Object.assign({}, p0);
+        if (snap) {
+            var sf = snap.fields || {};
+            if (sf["f-title"]) p.title = sf["f-title"];
+            if (sf["f-abstract"]) p.abstract = sf["f-abstract"];
+            if (sf["f-duration"]) p.duration = sf["f-duration"];
+            if (Array.isArray(snap.budgetItems) && snap.budgetItems.length) p.budget = snap.budgetItems;
+        }
+        function card(t, inner, wide) {
+            return '<section class="docview__card' + (wide ? " docview__card--wide" : "") + '"><h4>' + t + "</h4>" + inner + "</section>";
+        }
+        var none = '<p class="text-sm text-muted" style="margin:0;">ไม่มีข้อมูล</p>';
+
+        var head = '<div class="docview__head"><div style="font-weight:600;overflow-wrap:anywhere;">' + escapeHTML(p.title || "ไม่ระบุชื่อโครงการ") + "</div>" +
+            '<div class="text-sm text-muted" style="margin-top:4px;">' + escapeHTML(p.id) + " · " + escapeHTML(p.pi || "ไม่ระบุผู้วิจัย") +
+            " · " + escapeHTML(p.school || "") + (p.round ? " · " + escapeHTML(p.round) : "") +
+            (p.duration ? " · ระยะเวลา " + escapeHTML(p.duration) : "") + "</div>" +
+            (chipsHTML ? '<div class="docview__chips">' + chipsHTML + "</div>" : "") + "</div>";
+
+        var abs = card("บทคัดย่อ", p.abstract
+            ? '<p class="text-sm" style="margin:0;overflow-wrap:anywhere;">' + escapeHTML(p.abstract) + "</p>" : none);
+
+        var items = Array.isArray(p.budget) ? p.budget : [];
+        var total = 0;
+        items.forEach(function (b) { total += Number(b.amount) || 0; });
+        if (!total) total = Number(p.budgetReq) || 0;
+        var bud = card("งบประมาณ · รวม " + escapeHTML(RGMS.fmtBaht(total)), items.length
+            ? items.map(function (b) {
+                return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid #f1f5f9;"><span>' +
+                    escapeHTML(b.item) + '</span><span class="num">' + escapeHTML(RGMS.fmtMoney(Number(b.amount) || 0)) + "</span></div>";
+            }).join("") : none);
+
+        var cl = Array.isArray(p.checklist) ? p.checklist : [];
+        var docRows = cl.map(function (c) {
+            return '<div class="text-sm" style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere;">' +
+                '<span aria-hidden="true">' + (c.ok ? "✅" : "⚠️") + "</span><span>" + escapeHTML(c.label) +
+                (c.note ? ' <span class="text-muted">— ' + escapeHTML(c.note) + "</span>" : "") + "</span></div>";
+        }).concat(getDocs(p).map(function (d) {
+            var openable = d.url && !/\.html?(\?|#|$)/i.test(d.url);
+            return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere;"><span>📄 ' +
+                escapeHTML(d.name) + ' <span class="text-muted">· แนบโดย ' + escapeHTML(d.by) + "</span></span>" +
+                (openable ? '<a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="' + escapeHTML(d.url) + '">เปิดไฟล์</a>' : "") + "</div>";
+        }));
+        var docs = card("เอกสารแนบ / ความครบถ้วน", docRows.length ? docRows.join("") : none);
+
+        var rv = Array.isArray(p.reviewers) ? p.reviewers : [];
+        var REC = { approve: ["เห็นควรสนับสนุน", "badge-ok"], approve_revise: ["ให้ปรับแก้", "badge-revise"], reject: ["ไม่สนับสนุน", "badge-reject"] };
+        var rev = rv.length ? card("ความเห็นคณะอนุกรรมการ / ผู้ทรงคุณวุฒิ", rv.map(function (r) {
+            if (!r.submitted) return '<div class="text-sm" style="padding:5px 0;">' + escapeHTML(r.name) + ' <span class="text-muted">· ยังไม่ส่งความเห็น</span></div>';
+            var rec = REC[r.recommend] || ["-", ""];
+            return '<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;"><b class="text-sm">' +
+                escapeHTML(r.name) + "</b>" + chip(rec[1], rec[0]) + "</div>" +
+                (r.comment ? '<p class="text-sm text-muted" style="margin:4px 0 0;overflow-wrap:anywhere;">“' + escapeHTML(r.comment) + "”</p>" : "") + "</div>";
+        }).join("")) : "";
+
+        var hist = Array.isArray(p.history) ? p.history.slice().reverse().slice(0, 8) : [];
+        var his = card("ประวัติการดำเนินการ", hist.length ? hist.map(function (x) {
+            return '<div class="text-sm" style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;"><span>' +
+                escapeHTML(x.action || "มีการอัปเดต") + (x.by ? ' <span class="text-muted">· ' + escapeHTML(x.by) + "</span>" : "") +
+                '</span><span class="text-muted num" style="white-space:nowrap;">' + escapeHTML(x.at || "") + "</span></div>";
+        }).join("") : none, true);
+
+        var extraC = "";
+        if (snap) {
+            var sf2 = snap.fields || {}, names = Object.keys(snap.docs || {}).map(function (k) { return snap.docs[k].name; });
+            extraC = card("ฉบับล่าสุดที่นักวิจัยส่งมา · " + escapeHTML(new Date(snap.at).toLocaleString("th-TH")),
+                [["วัตถุประสงค์", sf2["f-objective"]], ["ขอบเขต", sf2["f-scope"]], ["ผลลัพธ์ที่คาดว่าจะได้รับ", sf2["f-outcome"]]].map(function (r) {
+                    return r[1] ? '<div class="text-sm" style="margin-bottom:8px;overflow-wrap:anywhere;"><b>' + r[0] + ":</b> " + escapeHTML(r[1]) + "</div>" : "";
+                }).join("") + (names.length ? '<div class="text-sm" style="overflow-wrap:anywhere;"><b>เอกสารแนบ:</b> ' + names.map(escapeHTML).join(" · ") + "</div>" : ""));
+        }
+        return '<div class="docview" tabindex="0" aria-label="เอกสารของโครงการ เลื่อนดูได้">' + head +
+            '<div class="docview__grid"><div class="docview__col">' + abs + bud + extraC + '</div><div class="docview__col">' + docs + rev + "</div>" + his + "</div></div>";
+    }
+
+    // ขยายหน้าต่างเป็นแนวนอน (สี่เหลี่ยมผืนผ้า)
+    function widenModal(back) {
+        var d = back && back.querySelector(".docview");
+        if (!d) return;
+        var el = d;
+        while (el.parentElement && el.parentElement !== back) el = el.parentElement;
+        if (el && el !== d) { el.style.width = "min(900px, 94vw)"; el.style.maxWidth = "none"; }
+    }
+
+  function showDetail(id) {
+    var p = (R.PROJECTS || []).find(function (x) { return String(x.id) === String(id); });
+    if (!p) return;
+    R.modal({
+      title: "เอกสารและรายละเอียดโครงการ",
+      body: docViewHTML(p, statusBadge(p)),
+      foot: '<button class="btn btn-secondary btn-md" data-close>ปิด</button>' +
+            '<a class="btn btn-ghost btn-md" href="project-detail.html?id=' + encodeURIComponent(p.id) + '">เปิดหน้าโครงการเต็ม →</a>',
+      onMount: function (back) { widenModal(back); }
+    });
+  }
+  $("plist").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-doc]");
+    if (!t) return;
+    e.preventDefault();
+    showDetail(t.getAttribute("data-doc"));
+  });
 
   var STEPS = [
     [1, "ยื่นข้อเสนอ", ["submitted"]],
@@ -138,11 +279,10 @@
 
     $("list-meta").textContent = d.total + " โครงการ" + (F.fy ? " · ปีงบประมาณ " + F.fy : "") + (F.school ? " · " + F.school : "");
     $("plist").innerHTML = d.list.map(function (p) {
-      var s = X.stateOf(p), r = X.resolutionOf(p.id);
-      var badge = r ? R.resolutionBadge(r.code) + (s === "announced" ? ' <span class="ex-pill">ประกาศแล้ว</span>' : "") : R.badgeHTML(R.effectiveStatus(p));
-      return '<tr><td><span class="mono text-sm">' + esc(p.id) + '</span></td><td><a href="project-detail.html?id=' + encodeURIComponent(p.id) + '" class="text-strong">' + esc(p.title) + '</a><div class="text-sm text-muted">' + esc(p.pi) + ' · ' + esc(p.school) + '</div></td>' +
-        '<td>' + esc(R.tierOf(p).label) + '</td><td class="right">' + money(p.budgetReq) + '</td><td>' + badge + '</td></tr>';
-    }).join("") || '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">ไม่มีโครงการตามตัวกรอง</td></tr>';
+      return '<tr><td><span class="mono text-sm">' + esc(p.id) + '</span></td><td><a href="#" data-doc="' + esc(p.id) + '" class="proj-doc-link">' + esc(p.title) + '</a><div class="text-sm text-muted">' + esc(p.pi) + ' · ' + esc(p.school) + '</div></td>' +
+        '<td>' + esc(R.tierOf(p).label) + '</td><td class="right">' + money(p.budgetReq) + '</td><td>' + statusBadge(p) + '</td>' +
+        '<td class="right"><button type="button" class="btn btn-secondary btn-sm" data-doc="' + esc(p.id) + '" aria-label="ดูเอกสารโครงการ ' + esc(p.id) + '">ดูเอกสาร</button></td></tr>';
+    }).join("") || '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:20px;">ไม่มีโครงการตามตัวกรอง</td></tr>';
 
     var m = X.meeting(), ann = X.announcements();
     $("meet-card").innerHTML = '<div class="ex-meeting"><div><div class="text-sm text-muted">การประชุมที่เปิดอยู่</div><span class="ex-meeting__no">ครั้งที่ ' + esc(m.no) + '</span></div>' +
