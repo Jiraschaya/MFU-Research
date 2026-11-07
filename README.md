@@ -110,7 +110,7 @@ draft → submitted
 
 ## วิธีรัน
 
-## ([https://mfuresearch.vercel.app/](https://rgms-prototype.vercel.app))
+## (https://rgms-prototype.vercel.app)
 
 
 ---
