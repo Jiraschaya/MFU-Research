@@ -59,15 +59,11 @@
 .notif__empty{padding:20px;text-align:center;color:#64748b;font-size:14px}
 
 /* ปุ่มรีเซ็ต มุมขวาล่าง */
-.fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:56px;height:56px;border-radius:50%;border:0;background:#991b1b;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s ease,box-shadow .2s ease,background .2s ease}
-.fab-reset svg{width:28px;height:28px;transition:transform .45s ease}
-.fab-reset:hover{background:#7f1d1d;box-shadow:0 8px 22px rgba(15,23,42,.4)}
-.fab-reset:hover svg{transform:rotate(60deg)}
-.fab-reset:active{transform:scale(.94)}
+.fab-reset{position:fixed;right:24px;bottom:24px;z-index:900;width:52px;height:52px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#96181F 0%,#851419 100%);border:1px solid #680E12;color:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(133,20,25,.35);transition:transform .2s,box-shadow .2s}
+.fab-reset:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(133,20,25,.4);color:#fff}
+.fab-reset svg{width:24px;height:24px;transition:transform .5s}
+.fab-reset:hover svg,.fab-reset.spin svg{transform:rotate(360deg)}
 .fab-reset:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
-.fab-reset.spin svg{animation:fab-spin .6s ease}
-@keyframes fab-spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.fab-reset svg,.fab-reset.spin svg{transition:none;animation:none}}
 
 /* เอกสาร */
 .doc-group{margin-bottom:14px}
@@ -105,11 +101,6 @@
                 <button type="button" id="notif-read">อ่านทั้งหมด</button>
                 <button type="button" id="notif-clear">ล้าง</button>
             </span>
-        </div>
-        <div class="notif__tabs" id="notif-tabs">
-            <button type="button" data-tab="all" class="is-on">ทั้งหมด<i></i></button>
-            <button type="button" data-tab="chair">จากประธาน<i></i></button>
-            <button type="button" data-tab="researcher">จากนักวิจัย<i></i></button>
         </div>
         <div id="notif-list" aria-live="polite"></div>
     </div>
@@ -154,7 +145,7 @@
 </main>
 
 <button type="button" class="fab-reset" id="fab-reset" aria-label="รีเซ็ตมุมมอง กลับจุดเดิม" title="รีเซ็ต / กลับจุดเดิม">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
 </button>
 
 <script src="shared.js"></script>
@@ -176,7 +167,7 @@
     var kpiEl = document.getElementById("kpis");
 
     var KEY_STATE = "rgms_chair_state_v1";   // สถานะ + เหตุผลที่หน้านี้บันทึกเอง
-    var KEY_NOTIF = "rgms_chair_notif_v1";
+    var KEY_NOTIF = "rgms_chair_notif_v2";
     var KEY_SEEN = "rgms_chair_seen_v1";     // ข้อเสนอที่เคยเห็นแล้ว
     var KEY_LAST = "rgms_chair_last_v1";     // สถานะโครงการล่าสุดที่เห็น
 
@@ -271,48 +262,37 @@
         save(seenKey, ids);
     }
 
-    var notifTab = "all";
-    var SRC_STYLE = { chair: ["ประธาน/คณบดี", "#991b1b", "#fee2e2"], researcher: ["นักวิจัย", "#075985", "#e0f2fe"], system: ["ระบบ", "#475569", "#f1f5f9"] };
-    function addNotif(text, src) {
-        notifs.unshift({ text: text, at: Date.now(), read: false, src: src || "system" });
+    /* แจ้งเตือนฝั่งประธาน/คณบดี: บอกว่า "มีเอกสารจากนักวิจัยเข้ามา" เท่านั้น ไม่บอกว่าใครทำอะไร */
+    var NOTIF_KIND = {
+        "new":     { label: "เอกสารใหม่", fg: "#075985", bg: "#e0f2fe", msg: "มีเอกสารข้อเสนอโครงการจากนักวิจัยมารอรับรอง" },
+        "revised": { label: "ฉบับแก้ไข",  fg: "#92400e", bg: "#fef3c7", msg: "มีเอกสารฉบับแก้ไขส่งกลับมารอตรวจอีกครั้ง" },
+        "back":    { label: "รอรับรอง",   fg: "#475569", bg: "#f1f5f9", msg: "เอกสารโครงการกลับมาอยู่ในรายการรอรับรอง" }
+    };
+    function addNotif(kind, id, title) {
+        notifs.unshift({ kind: kind, pid: String(id), title: title || "", at: Date.now(), read: false });
         notifs = notifs.slice(0, 40);
         save(KEY_NOTIF, notifs);
         renderNotifs();
     }
-    function inTab(n) { return notifTab === "all" || (n.src || "system") === notifTab; }
     function renderNotifs() {
         var unread = notifs.filter(function (n) { return !n.read; }).length;
         var badge = document.getElementById("notif-badge");
         badge.textContent = unread > 99 ? "99+" : unread;
         badge.hidden = unread === 0;
-        ["all", "chair", "researcher"].forEach(function (t) {
-            var btn = document.querySelector('#notif-tabs [data-tab="' + t + '"]');
-            if (!btn) return;
-            var c = notifs.filter(function (n) { return !n.read && (t === "all" || (n.src || "system") === t); }).length;
-            btn.classList.toggle("is-on", notifTab === t);
-            btn.querySelector("i").textContent = c ? " (" + c + ")" : "";
-        });
-        var shown = notifs.filter(inTab);
-        document.getElementById("notif-list").innerHTML = shown.length === 0
-            ? '<div class="notif__empty">ยังไม่มีการแจ้งเตือน</div>'
-            : shown.map(function (n) {
-                var s = SRC_STYLE[n.src || "system"] || SRC_STYLE.system;
+        document.getElementById("notif-list").innerHTML = notifs.length === 0
+            ? '<div class="notif__empty">ยังไม่มีเอกสารเข้ามาใหม่</div>'
+            : notifs.map(function (n) {
+                var k = NOTIF_KIND[n.kind] || NOTIF_KIND["new"];
                 var t = new Date(n.at).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-                return '<div class="notif__item' + (n.read ? "" : " unread") + '"><span class="notif__src" style="color:' + s[1] + ';background:' + s[2] + ';">' +
-                    escapeHTML(s[0]) + "</span>" + escapeHTML(n.text) + '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
+                return '<div class="notif__item' + (n.read ? "" : " unread") + '"><span class="notif__src" style="color:' + k.fg + ';background:' + k.bg + ';">' +
+                    escapeHTML(k.label) + "</span><br><b>" + escapeHTML(n.pid) + "</b> · " + escapeHTML(n.title) + "<br>" + escapeHTML(k.msg) +
+                    '<span class="notif__time">' + escapeHTML(t) + "</span></div>";
             }).join("");
     }
     function markRead() {
-        notifs.forEach(function (n) { if (inTab(n)) n.read = true; });
+        notifs.forEach(function (n) { n.read = true; });
         save(KEY_NOTIF, notifs);
     }
-    document.getElementById("notif-tabs").addEventListener("click", function (e) {
-        var b = e.target.closest("[data-tab]");
-        if (!b) return;
-        notifTab = b.getAttribute("data-tab");
-        markRead();
-        renderNotifs();
-    });
 
     function setPanel(open) {
         notifPanel.hidden = !open;
@@ -353,19 +333,18 @@
             projects.forEach(function (p) {
                 var id = String(p.id);
                 var title = p.title || "ไม่ระบุชื่อโครงการ";
-                if (seen.indexOf(id) < 0 && isEligible(p)) {
-                    addNotif("มีข้อเสนอใหม่รอรับรอง: " + id + " · " + title, "researcher");
-                } else if (last[id] && last[id] !== p.status) {
-                    addNotif("สถานะโครงการ " + id + " เปลี่ยนจาก " + last[id] + " เป็น " + p.status, "researcher");
-                }
+                if (seen.indexOf(id) < 0 && isEligible(p)) addNotif("new", id, title);
             });
         }
         save(KEY_SEEN, ids);
         save(KEY_LAST, map);
         // เหตุการณ์จากนักวิจัย (เช่น ส่งฉบับแก้ไขกลับมา)
         pullEvents("rgms_chair_seen_ev_v1", function (e) {
-            return e.src === "researcher" && !!findProject(e.pid);
-        }, function (e) { addNotif(e.text, "researcher"); });
+            return e.src === "researcher" && (e.kind === "resubmitted" || e.kind === "reset") && !!findProject(e.pid);
+        }, function (e) {
+            var p = findProject(e.pid);
+            addNotif(e.kind === "resubmitted" ? "revised" : "back", e.pid, p && p.title);
+        });
     }
 
     /* ---------- เอกสารของโครงการ ---------- */
@@ -631,6 +610,7 @@
         fab.classList.remove("spin");
         void fab.offsetWidth;
         fab.classList.add("spin");
+    setTimeout(function () { fab.classList.remove("spin"); }, 600);
         setPanel(false);
 
         var done = getProjects().filter(function (p) {
@@ -660,7 +640,6 @@
                     save(KEY_STATE, local);
                     selectedKPI = "all";
                     close();
-                    addNotif("รีเซ็ตแล้ว: ย้าย " + done.length + " โครงการกลับไปรอรับรอง", "chair");
                     done.forEach(function (p) {
                         logEvent({ src: "chair", kind: "reset", pid: String(p.id), text: "ประธาน/คณบดีรีเซ็ตโครงการ " + p.id + " กลับมารอรับรอง" });
                     });
@@ -701,7 +680,6 @@
         if (status === "passed") text = "ประธาน/คณบดีรับรองโครงการ " + id + " แล้ว · ส่งต่อส่วนบริหารงานวิจัย";
         else if (status === "rejected") text = "ประธาน/คณบดีไม่รับรองโครงการ " + id + " · เหตุผล: " + reason;
         else text = "ประธาน/คณบดีส่งโครงการ " + id + " กลับให้นักวิจัยแก้ไข · ส่วนที่ต้องแก้: " + sections.join(", ") + " · เหตุผล: " + reason;
-        addNotif(text + " (" + title + ")", "chair");
         logEvent({ src: "chair", kind: status, pid: id, text: text });
 
         render();   // อัปเดตตัวเลข KPI และรายการทันที
