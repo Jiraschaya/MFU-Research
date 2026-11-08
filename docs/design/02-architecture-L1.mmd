@@ -1,0 +1,28 @@
+flowchart TB
+  subgraph UI["Presentation layer (static HTML + CSS + JS)"]
+    P1[researcher-home / proposal-new / researcher-profile]
+    P2[chair-review / secretary-home]
+    P3[staff-queue / staff-calls / staff-agenda]
+    P4[reviewer-list / reviewer-console]
+    P5[finance-review-queue / finance-review-console]
+    P6[exec-overview]
+  end
+  subgraph SVC["Service layer (shared.js · window.RGMS)"]
+    PM[ProfileManager]
+    DP[DocxParser / XlsxParser]
+    BV[BudgetValidator<br/>tier cap + 25% sub-cap]
+    SR[SchoolReviewService]
+    TR[TrackRouter + FormLockEngine]
+    EX[Resolution and Announcement service]
+    AU[Audit log]
+  end
+  subgraph DATA["Data layer"]
+    LS[(localStorage rgms_*<br/>prototype state)]
+    API[Node API server.js]
+    PG[(PostgreSQL<br/>schema.sql)]
+  end
+  UI --> SVC
+  SVC --> LS
+  LS <-->|db-client.js sync| API
+  API --> PG
+  SSO[[MFU SSO — planned]] -.-> UI

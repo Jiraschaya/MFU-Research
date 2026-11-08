@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor Staff as Research Staff
+  actor PI as Researcher
+  participant UI as staff-calls.html
+  participant CS as Call service (RGMS.CALLS)
+  participant PN as proposal-new.html
+  Staff->>UI: Click "สร้างรอบทุนใหม่" (tier cap 100k/200k/300k, deadline)
+  UI->>CS: validate fiscal year, dates (close after open), cap
+  CS-->>UI: created, status = upcoming
+  Staff->>UI: Click "เปิดรับ"
+  UI->>CS: setCallStatus(open), close any other open call
+  CS-->>UI: status = Open (published)
+  PI->>PN: Open new proposal
+  PN->>CS: openCall()
+  alt call Open and before deadline
+    CS-->>PN: call
+    PN-->>PI: form enabled
+  else deadline passed or closed
+    CS-->>PN: null
+    PN-->>PI: "Call Closed" notice, submit blocked
+  end

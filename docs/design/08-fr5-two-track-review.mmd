@@ -1,0 +1,21 @@
+flowchart TD
+  S([Proposal passes screening]) --> SPLIT{{Start review: 2 parallel tracks}}
+  SPLIT --> C1[Content track<br/>Sub-committee writes comments, no scoring]
+  SPLIT --> F0[Finance track<br/>unclaimed in finance queue]
+  F0 -->|Finance staff clicks Claim| F1[Bound as permanent finance reviewer<br/>across all revision cycles]
+  F0 -.->|Reviewer unavailable: Ops Admin Reassign| F0
+  F1 --> F2[Verify budget lines against documents, audit note]
+  C1 --> CR{Content result}
+  F2 --> FR{Finance result}
+  CR -->|Approved| LOCKC[Content fields become Read-Only]
+  FR -->|Approved| LOCKF[Finance and budget fields become Read-Only]
+  CR -->|Revise| REV[Researcher opens revision]
+  FR -->|Revise| REV
+  REV --> FL[FormLockEngine: lock fields of Approved tracks]
+  FL --> RS[Researcher resubmits]
+  RS --> TRR[TrackRouter: route only non-approved tracks<br/>back to original reviewers]
+  TRR --> CR
+  TRR --> FR
+  LOCKC --> JOIN{Both tracks Approved?}
+  LOCKF --> JOIN
+  JOIN -->|yes| READY([Status = Ready for Executive Committee])

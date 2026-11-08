@@ -1,0 +1,24 @@
+sequenceDiagram
+  actor PI as Researcher
+  actor Chair as School Chair / Dean
+  actor Sec as School Secretary
+  participant Q as chair-review.html
+  participant SS as SchoolReviewService
+  participant D as secretary-home.html
+  PI->>SS: Submit proposal
+  SS-->>Q: appears in school queue (own school only)
+  Chair->>Q: Open queue, view documents
+  alt Endorse (Pass)
+    Chair->>Q: Click "รับรอง → ส่งส่วนบริหาร"
+    Q->>SS: endorse(id)
+    SS-->>PI: notified, proposal goes to central screening
+  else Return for revision
+    Chair->>Q: Click "ส่งกลับแก้ไข" + reason
+    Q->>SS: returnToPI(id, reason)
+    SS-->>PI: notified to revise
+    PI->>SS: Resubmit
+    SS-->>Q: goes straight back to Chair queue
+  end
+  Sec->>D: Open dashboard
+  D->>SS: list proposals of own school
+  SS-->>D: documents, statuses, reviewer comments (real time)
