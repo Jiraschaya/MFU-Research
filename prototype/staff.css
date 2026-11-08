@@ -191,4 +191,6 @@
 .fab-reset:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
 .fab-reset.spin svg { animation: fab-spin .6s ease; }   /* ตอนกดคลิก (staff-queue.html เติมคลาส spin) */
 @keyframes fab-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .fab-reset, .fab-reset svg, .fab-reset.spin svg { transition: none; animation: none; } .fab-reset:hover, .fab-reset:hover svg { transform: none; } .kpi-card:hover { transform: none; } }
+/* หมายเหตุ: ปุ่มรีเซ็ตนี้ไม่ผูกกับ prefers-reduced-motion โดยตั้งใจ เพื่อให้หมุนเหมือนหน้าคณะอนุกรรมการ/การเงิน
+   (ถ้าต้องการเคารพการตั้งค่าลดการเคลื่อนไหวของระบบ ให้เพิ่มกฎปิด transition/animation ของ .fab-reset ตรงนี้) */
+@media (prefers-reduced-motion: reduce) { .kpi-card:hover { transform: none; } }
