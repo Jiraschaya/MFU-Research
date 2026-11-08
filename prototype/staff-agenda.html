@@ -105,10 +105,12 @@
 
 <script src="shared.js"></script>
 <script src="exec.js"></script>
+<script src="staff-pages.js"></script>
 <script>
 (function () {
   var R = RGMS, X = R.exec, esc = X.esc;
   R.renderAppNav("staff-agenda");
+  StaffPage.mountReset("staff-agenda");
 
   var draft = {};          // id -> {code, amount, note}
   var errors = {};         // id -> {code?, amount?, note?}
