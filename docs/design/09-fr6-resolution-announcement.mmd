@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor Ex as Executive Committee
+  actor St as Staff
+  participant AG as staff-agenda.html
+  participant RS as Resolution service
+  participant EO as e-Office
+  participant N as Email + System To-Do
+  Ex->>AG: Select resolution per proposal (อนุมัติ / มีเงื่อนไข / ไม่อนุมัติ) + approved amount
+  AG->>RS: validate amount ≤ min(request, tier cap), reason required for conditions/reject
+  RS-->>AG: statuses updated (Approved / Rejected)
+  St->>AG: Select proposals, click "ตรวจร่างและลงนามประกาศ"
+  AG->>RS: previewAnnouncement(ids)
+  RS-->>AG: draft announcement (approved list, total)
+  St->>AG: Confirm review, sign
+  AG->>EO: send for e-Office signing
+  EO-->>AG: signed, announcement no.
+  AG->>N: notify every researcher (Email + To-Do)
+  N-->>St: delivery summary

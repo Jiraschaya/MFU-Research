@@ -1,0 +1,28 @@
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Submitted: Researcher submits (call must be Open)
+  Submitted --> Endorsed: Chair endorses (FR-4)
+  Submitted --> Returned: Chair returns to PI
+  Returned --> Submitted: PI resubmits, back to Chair queue
+  Endorsed --> Screening: Staff checks completeness
+  Screening --> InReview: Staff assigns, 2 tracks start
+  state InReview {
+    [*] --> Content
+    [*] --> Finance
+    state "Content track (Sub-committee)" as Content
+    state "Finance track (claimed staff)" as Finance
+    Content --> ContentApproved
+    Finance --> FinanceApproved
+    ContentApproved --> [*]
+    FinanceApproved --> [*]
+  }
+  InReview --> Revise: A track requests revision
+  Revise --> InReview: PI resubmits, only non-approved tracks re-route
+  InReview --> ReadyForCommittee: both tracks Approved (FR-5)
+  ReadyForCommittee --> Approved: Committee resolution (FR-6)
+  ReadyForCommittee --> ApprovedWithConditions
+  ApprovedWithConditions --> ReadyForCommittee: PI revises
+  ReadyForCommittee --> Rejected
+  Approved --> Announced: Award announcement signed
+  Rejected --> Announced
+  Announced --> [*]

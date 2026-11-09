@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor PI as Researcher
+  participant PR as researcher-profile.html
+  participant PM as ProfileManager
+  participant PN as proposal-new.html
+  participant DP as DocxParser (client-side)
+  PI->>PR: Fill RS-01 Part B once, click "บันทึกโปรไฟล์"
+  PR->>PM: saveProfile()
+  PI->>PN: Create proposal
+  PN->>PM: getProfile()
+  PM-->>PN: profile data
+  PN-->>PI: auto-fill contact and team fields
+  PI->>PN: Drop RS-01 .docx in dropzone
+  PN->>DP: extractRS01(file)
+  alt valid layout
+    DP-->>PN: Title, Abstract, Objectives, Methodology
+    PN-->>PI: preview panel, fill form fields
+  else corrupt or unknown layout
+    DP-->>PN: parse error
+    PN-->>PI: warning, continue with manual entry
+  end

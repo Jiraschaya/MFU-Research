@@ -174,12 +174,23 @@
 @media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } .kpi-card { padding: 18px 20px; } }
 
-.fab-reset { position: fixed; right: 24px; bottom: 24px; z-index: 900; width: 56px; height: 56px; border-radius: 50%; border: 0; background: #991b1b; color: #fff; box-shadow: 0 6px 16px rgba(15, 23, 42, .3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .25s ease, box-shadow .2s ease, background .2s ease; }
-.fab-reset svg { width: 28px; height: 28px; transition: transform .45s ease; }
-.fab-reset:hover { background: #7f1d1d; box-shadow: 0 8px 22px rgba(15, 23, 42, .4); }
-.fab-reset:hover svg { transform: rotate(60deg); }
-.fab-reset:active { transform: scale(.94); }
+/* ปุ่มรีเซ็ตมุมขวาล่าง — แอนิเมชันเดียวกับหน้าคณะอนุกรรมการ/การเงิน (.reset-fab):
+   ยกตัวขึ้นเล็กน้อยเมื่อชี้เมาส์ และลูกศรหมุนครบ 1 รอบ */
+.fab-reset {
+  position: fixed; right: 24px; bottom: 24px; z-index: 900;
+  width: 52px; height: 52px; border-radius: 50%; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #96181F 0%, #851419 100%);
+  border: 1px solid #680E12; color: #fff; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(133, 20, 25, .35);
+  transition: transform .2s, box-shadow .2s;
+}
+.fab-reset:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(133, 20, 25, .4); color: #fff; }
+.fab-reset svg { width: 24px; height: 24px; transition: transform .5s; }
+.fab-reset:hover svg { transform: rotate(360deg); }
 .fab-reset:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
-.fab-reset.spin svg { animation: fab-spin .6s ease; }
-@keyframes fab-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .fab-reset svg, .fab-reset.spin svg { transition: none; animation: none; } .kpi-card:hover { transform: none; } }
+.fab-reset.spin svg { animation: fab-spin .6s ease; }   /* ตอนกดคลิก (staff-queue.html เติมคลาส spin) */
+@keyframes fab-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* หมายเหตุ: ปุ่มรีเซ็ตนี้ไม่ผูกกับ prefers-reduced-motion โดยตั้งใจ เพื่อให้หมุนเหมือนหน้าคณะอนุกรรมการ/การเงิน
+   (ถ้าต้องการเคารพการตั้งค่าลดการเคลื่อนไหวของระบบ ให้เพิ่มกฎปิด transition/animation ของ .fab-reset ตรงนี้) */
+@media (prefers-reduced-motion: reduce) { .kpi-card:hover { transform: none; } }

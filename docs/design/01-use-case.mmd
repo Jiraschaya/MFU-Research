@@ -1,0 +1,28 @@
+flowchart LR
+  R([Researcher])
+  C([School Chair / Dean])
+  S([School Secretary])
+  O([Research Operations Staff])
+  F([Research Finance Staff])
+  SC([Sub-committee])
+  E([Executive Committee])
+  subgraph RGMS["RGMS — MVP Phase 1 (pre-award)"]
+    UC1[UC-1 Manage Grant Call<br/>FR-1]
+    UC2[UC-2 Submit Proposal and Profile<br/>FR-2, FR-3]
+    UC3[UC-3 Endorse Proposal<br/>FR-4]
+    UC4[UC-4 Review Proposal 2-Track<br/>FR-5]
+    UC5[UC-5 Issue Award Announcement<br/>FR-6]
+    UC6[Track school proposals<br/>FR-4]
+  end
+  O --- UC1
+  R --- UC2
+  C --- UC3
+  S --- UC6
+  SC --- UC4
+  F --- UC4
+  O --- UC4
+  E --- UC5
+  O --- UC5
+  UC2 -. include .-> UC1
+  UC3 -. precedes .-> UC4
+  UC4 -. precedes .-> UC5

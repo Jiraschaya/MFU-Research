@@ -1,0 +1,15 @@
+flowchart TD
+  A([Researcher chooses budget input]) --> B{Excel 17.2 or Web form?}
+  B -->|Excel .xlsx| C[XlsxParser maps rows to 6 categories]
+  B -->|Web form| D[Enter line items per category]
+  C --> E[BudgetValidator: calculate subtotals and total]
+  D --> E
+  E --> F{Total over tier cap?<br/>100k new / 200k dev / 300k strategic}
+  F -->|yes| G[Block submit, highlight excess amount]
+  F -->|no| H{Travel + equipment over 25% of total?}
+  H -->|yes| I[Show 25% sub-cap warning chip]
+  H -->|no| J[Checklist item turns green]
+  G --> K([Researcher edits budget])
+  I --> K
+  K --> E
+  J --> L([Submit enabled when all checklist items pass])

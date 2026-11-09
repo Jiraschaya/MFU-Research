@@ -1,0 +1,19 @@
+flowchart LR
+  IDX[index.html<br/>choose role] --> R1[researcher-home]
+  IDX --> C1[chair-review]
+  IDX --> S1[secretary-home]
+  IDX --> ST[staff-queue]
+  IDX --> RV[reviewer-list]
+  IDX --> FN[finance-review-queue]
+  IDX --> EX[exec-overview]
+  R1 --> RP[researcher-profile<br/>FR-2]
+  R1 --> PN[proposal-new<br/>FR-2, FR-3]
+  R1 --> PD[project-detail]
+  ST --> SC[staff-calls<br/>FR-1]
+  ST --> PD
+  ST --> SA[staff-agenda<br/>FR-6]
+  C1 --> PD
+  RV --> RC[reviewer-console<br/>FR-5 content]
+  FN --> FC[finance-review-console<br/>FR-5 finance]
+  EX --> SA
+  ST --> OTHER[staff-team · staff-roles · staff-export · staff-audit · staff-finance]
